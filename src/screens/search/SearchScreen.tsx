@@ -14,10 +14,11 @@ import { useCart } from '../../context/CartContext';
 import { foodCategories, searchFood, searchProducts, shopCategories } from '../../data/mock';
 import { colors } from '@/theme/colors';
 import { haptic } from '@/lib/haptics';
+import { switchTab } from '../../navigation/RootNavigation';
 import type { FoodItem, Product, ShopCategory } from '../../types';
 import type { SearchStackParamList } from '../../navigation/types';
 
-type Props = NativeStackScreenProps<SearchStackParamList, 'Search'>;
+type Props = NativeStackScreenProps<SearchStackParamList, 'SearchResults'>;
 
 export function SearchScreen({ navigation }: Props): React.ReactElement {
   const [query, setQuery] = useState('');
@@ -38,8 +39,11 @@ export function SearchScreen({ navigation }: Props): React.ReactElement {
   const foods = query.trim() ? searchFood(query) : [];
   const shops = query.trim() ? searchProducts(query) : [];
 
-  const openFood = (d: FoodItem): void => navigation.navigate('Restaurant', { restaurantId: d.restaurantId });
-  const openProduct = (p: Product): void => navigation.navigate('Product', { productId: p.id });
+  // These detail screens live in the Food/Shop tab stacks, so jump through the
+  // tab navigator with nested params instead of navigate('Restaurant') — a bare
+  // navigate from this stack is not handled by any parent navigator.
+  const openFood = (d: FoodItem): void => switchTab('Food', { screen: 'Restaurant', params: { restaurantId: d.restaurantId } });
+  const openProduct = (p: Product): void => switchTab('Shop', { screen: 'Product', params: { productId: p.id } });
 
   const header = (
     <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, backgroundColor: colors.background }}>

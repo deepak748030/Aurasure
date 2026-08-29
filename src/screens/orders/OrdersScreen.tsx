@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Screen } from '../../components/ui/Screen';
 import { Text } from '../../components/ui/Text';
 import { Icon } from '@/lib/icons';
@@ -97,7 +97,7 @@ export function OrdersScreen({ navigation }: Props): React.ReactElement {
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.md,
@@ -107,4 +107,4 @@ const styles = {
   cardTop: { flexDirection: 'row', alignItems: 'center' },
   modIcon: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   cardFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, borderTopWidth: 1, borderColor: colors.border, paddingTop: 12 },
-};
+});

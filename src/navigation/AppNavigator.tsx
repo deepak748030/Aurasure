@@ -17,10 +17,10 @@ import { OrdersScreen } from '../screens/orders/OrdersScreen';
 import { OrderDetailScreen } from '../screens/orders/OrderDetailScreen';
 import { ProfileScreen } from '../screens/profile/ProfileScreen';
 
-import type { FoodStackParamList, OrdersStackParamList, ProfileStackParamList, RootStackParamList, SearchStackParamList, ShopStackParamList } from './types';
+import type { FoodStackParamList, MainTabsParamList, OrdersStackParamList, ProfileStackParamList, RootStackParamList, SearchStackParamList, ShopStackParamList } from './types';
 
-const Tab = createBottomTabNavigator();
-const Root = createNativeStackNavigator();
+const Tab = createBottomTabNavigator<MainTabsParamList>();
+const Root = createNativeStackNavigator<RootStackParamList>();
 const FoodStack = createNativeStackNavigator<FoodStackParamList>();
 const ShopStack = createNativeStackNavigator<ShopStackParamList>();
 const SearchStack = createNativeStackNavigator<SearchStackParamList>();
@@ -50,7 +50,7 @@ function ShopNavigator(): React.ReactElement {
 function SearchNavigator(): React.ReactElement {
   return (
     <SearchStack.Navigator screenOptions={screenOptions}>
-      <SearchStack.Screen name="Search" component={SearchScreen} />
+      <SearchStack.Screen name="SearchResults" component={SearchScreen} />
     </SearchStack.Navigator>
   );
 }

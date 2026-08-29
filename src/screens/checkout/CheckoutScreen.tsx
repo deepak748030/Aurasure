@@ -19,7 +19,7 @@ import { haptic } from '@/lib/haptics';
 import { switchTab } from '@/navigation/RootNavigation';
 import type { Address, IconName } from '@/types';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../../navigation/types';
+import type { MainTabsParamList, RootStackParamList } from '../../navigation/types';
 
 const DELIVERY_FEE = 29;
 
@@ -67,7 +67,7 @@ export function CheckoutScreen({ navigation }: Props): React.ReactElement {
     setDone(true);
   };
 
-  const finish = (tab: string): void => {
+  const finish = (tab: keyof MainTabsParamList): void => {
     setDone(false);
     switchTab(tab);
     navigation.goBack();

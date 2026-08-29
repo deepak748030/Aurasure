@@ -1,5 +1,5 @@
 import { createNavigationContainerRef, CommonActions } from '@react-navigation/native';
-import type { RootStackParamList } from './types';
+import type { MainTabsParamList, RootStackParamList } from './types';
 
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
@@ -25,9 +25,14 @@ export function resetRoot(name: RouteName): void {
 }
 
 // Switch the active bottom tab from anywhere (e.g. from a root-level screen).
-export function switchTab(name: string): void {
+// Pass `params` to land on a nested screen inside that tab, e.g.
+// switchTab('Food', { screen: 'Restaurant', params: { restaurantId: 'r_aurora' } }).
+export function switchTab<Name extends keyof MainTabsParamList>(name: Name, params?: MainTabsParamList[Name]): void {
   if (navigationRef.isReady()) {
-    navigationRef.navigate('MainTabs', { screen: name });
+    navigationRef.navigate(
+      'MainTabs',
+      (params ? { screen: name, params } : { screen: name }) as RootStackParamList['MainTabs'],
+    );
   }
 }
 

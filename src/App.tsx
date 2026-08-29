@@ -15,7 +15,10 @@ export default function App(): React.ReactElement {
   useEffect(() => {
     loadAppFonts();
     if (Platform.OS === 'android') {
-      NavigationBar.setBackgroundColorAsync(colors.background).catch(() => undefined);
+      // Edge-to-edge is always on in Expo SDK 54 / Android 16, and
+      // NavigationBar.setBackgroundColorAsync() is a no-op there (it only logs
+      // a warning). The root View below already paints colors.background
+      // behind the transparent system bars, so the visual result is unchanged.
       NavigationBar.setButtonStyleAsync('dark').catch(() => undefined);
     }
     SplashScreen.hideAsync().catch(() => undefined);

@@ -1,5 +1,6 @@
 import React from 'react';
-import type { ComponentType, StyleProp, ViewStyle } from 'react';
+import type { ComponentType } from 'react';
+import type { StyleProp, ViewStyle } from 'react-native';
 import {
   Search,
   User,
@@ -108,11 +109,12 @@ import {
 export type IconType = ComponentType<{
   size?: number;
   color?: string;
+  fill?: string;
   strokeWidth?: number | string;
   style?: StyleProp<ViewStyle>;
 }>;
 
-const registry: Record<string, IconType> = {
+const registry = {
   search: Search,
   user: User,
   userRound: UserRound,
@@ -215,7 +217,7 @@ const registry: Record<string, IconType> = {
   arrowUpDown: ArrowUpDown,
   circleAlert: CircleAlert,
   share: ShareIcon,
-};
+} satisfies Record<string, IconType>;
 
 export type IconName = keyof typeof registry;
 
@@ -229,6 +231,8 @@ export interface IconProps {
 }
 
 export function Icon({ name, size = 20, color = '#0B1020', fill, strokeWidth = 2, style }: IconProps): React.ReactElement {
-  const Cmp = registry[name];
+  // Exact key lookup + single callable type; the annotation-free registry keeps
+  // IconName as a literal union instead of collapsing to `string`.
+  const Cmp = registry[name] as IconType;
   return <Cmp size={size} color={color} fill={fill} strokeWidth={strokeWidth} style={style} />;
 }

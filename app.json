@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Aurasure",
+    "slug": "aurasure",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "aurasure",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "entryPoint": "index.js",
+    "splash": {
+      "image": "./assets/images/logo_aurasure.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFFFF"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.aurasure.app",
+      "softwareKeyboardLayoutMode": "pan"
+    },
+    "android": {
+      "package": "com.aurasure.app",
+      "softwareKeyboardLayoutMode": "resize",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/logo_aurasure.png",
+        "backgroundColor": "#FFFFFF"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "experiments": {
+      "tsconfigPaths": true
+    },
+    "plugins": []
+  }
+}

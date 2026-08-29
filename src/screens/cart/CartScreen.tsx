@@ -1,0 +1,241 @@
+import React, { useEffect, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Screen } from '../../components/ui/Screen';
+import { Text } from '../../components/ui/Text';
+import { Icon } from '@/lib/icons';
+import { SmartImage } from '../../components/ui/SmartImage';
+import { Button } from '../../components/ui/Button';
+import { Card } from '../../components/ui/Card';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { Skeleton } from '../../components/ui/Skeleton';
+import { useCart } from '../../context/CartContext';
+import { colors } from '@/theme/colors';
+import { radius, shadow } from '@/theme/tokens';
+import { TAB_BAR_HEIGHT } from '@/lib/layout';
+import { formatINR } from '@/lib/format';
+import { haptic } from '@/lib/haptics';
+import { navigationRef } from '@/navigation/RootNavigation';
+import type { CartItem } from '@/types';
+
+const DELIVERY_FEE = 29;
+
+export function CartScreen(): React.ReactElement {
+  const insets = useSafeAreaInsets();
+  const { items, subtotal, setQty, remove, clear } = useCart();
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 650);
+    return () => clearTimeout(t);
+  }, []);
+
+  const onRefresh = (): void => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 650);
+  };
+
+  const delivery = subtotal > 149 || subtotal === 0 ? 0 : DELIVERY_FEE;
+  const total = subtotal + delivery;
+
+  const goCheckout = (): void => {
+    if (navigationRef.isReady()) navigationRef.navigate('Checkout');
+  };
+
+  const footer = items.length > 0 ? (
+    <View style={[styles.footer, { bottom: insets.bottom + TAB_BAR_HEIGHT + 10 }]}>
+      <View style={styles.footerInner}>
+        <View>
+          <Text variant="caption" color="rgba(255,255,255,0.85)">
+            {delivery === 0 ? 'Free delivery' : `Delivery ₹${formatINR(delivery)}`}
+          </Text>
+          <Text variant="title" weight="bold" color={colors.white}>
+            {formatINR(total)}
+          </Text>
+        </View>
+        <Button title="Checkout" variant="secondary" onPress={goCheckout} leftIcon="arrowRight" />
+      </View>
+    </View>
+  ) : null;
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <Screen
+        title="My Cart"
+        subtitle={items.length > 0 ? `${items.length} item(s)` : undefined}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        contentStyle={{ paddingBottom: items.length > 0 ? 100 : 8 }}
+        scroll
+      >
+        {items.length === 0 && !loading ? (
+          <EmptyState
+            icon="cart"
+            title="Your cart is empty"
+            subtitle="Add delicious food or trending products and they'll show up here."
+            actionLabel="Start shopping"
+            onAction={() => {
+              if (navigationRef.isReady()) navigationRef.goBack();
+            }}
+          />
+        ) : null}
+
+        {loading
+          ? [1, 2, 3].map((k) => (
+              <View key={k} style={{ marginBottom: 12 }}>
+                <View style={[styles.rowCard, { flexDirection: 'row', padding: 12 }]}>
+                  <Skeleton width={64} height={64} radius={radius.md} />
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Skeleton width="70%" height={14} />
+                    <Skeleton width="40%" height={11} style={{ marginTop: 8 }} />
+                    <Skeleton width="30%" height={13} style={{ marginTop: 10 }} />
+                  </View>
+                </View>
+              </View>
+            ))
+          : items.map((item) => <CartRow key={item.id} item={item} onQty={(q) => setQty(item.id, q)} onRemove={() => remove(item.id)} />)}
+
+        {!loading && items.length > 0 ? (
+          <Card variant="alt" style={{ marginTop: 4 }}>
+            <Text variant="title" weight="bold" color={colors.text}>
+              Bill details
+            </Text>
+            <View style={styles.billRow}>
+              <Text variant="body" color={colors.textSecondary}>
+                Item total
+              </Text>
+              <Text variant="body" color={colors.text}>
+                {formatINR(subtotal)}
+              </Text>
+            </View>
+            <View style={styles.billRow}>
+              <Text variant="body" color={colors.textSecondary}>
+                Delivery fee
+              </Text>
+              <Text variant="body" color={delivery === 0 ? colors.success : colors.text}>
+                {delivery === 0 ? 'FREE' : formatINR(delivery)}
+              </Text>
+            </View>
+            <View style={[styles.billRow, { borderTopWidth: 1, borderColor: colors.border, paddingTop: 10, marginTop: 4 }]}>
+              <Text variant="title" weight="bold" color={colors.text}>
+                Total
+              </Text>
+              <Text variant="title" weight="bold" color={colors.text}>
+                {formatINR(total)}
+              </Text>
+            </View>
+          </Card>
+        ) : null}
+        <View style={{ height: 8 }} />
+      </Screen>
+      {footer}
+    </View>
+  );
+}
+
+function CartRow({
+  item,
+  onQty,
+  onRemove,
+}: {
+  item: CartItem;
+  onQty: (qty: number) => void;
+  onRemove: () => void;
+}): React.ReactElement {
+  return (
+    <View style={styles.rowCard}>
+      <SmartImage source={item.image} placeholderIcon={item.kind === 'food' ? 'utensils' : 'bag'} style={styles.thumb} tint={colors.brand[50]} />
+      <View style={styles.rowInfo}>
+        <Text variant="title" weight="semibold" color={colors.text} numberOfLines={1}>
+          {item.name}
+        </Text>
+        {item.meta ? <Text variant="caption" color={colors.textSecondary}>{item.meta}</Text> : null}
+        <Text variant="subtitle" weight="bold" color={colors.text} style={{ marginTop: 4 }}>
+          {formatINR(item.unitPrice * item.qty)}
+        </Text>
+        <View style={styles.rowActions}>
+          <View style={styles.stepper}>
+            <Pressable onPress={() => { haptic.light(); onQty(Math.max(1, item.qty - 1)); }} style={styles.stepBtn}>
+              <Icon name="minus" size={16} color={colors.text} />
+            </Pressable>
+            <Text variant="subtitle" weight="bold" color={colors.text} style={{ minWidth: 26, textAlign: 'center' }}>
+              {item.qty}
+            </Text>
+            <Pressable onPress={() => { haptic.light(); onQty(item.qty + 1); }} style={styles.stepBtn}>
+              <Icon name="plus" size={16} color={colors.text} />
+            </Pressable>
+          </View>
+          <Pressable onPress={() => { haptic.medium(); onRemove(); }} hitSlop={8}>
+            <Icon name="trash" size={18} color={colors.danger} />
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  rowCard: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: 12,
+    marginBottom: 12,
+    ...shadow.xs,
+  },
+  thumb: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.md,
+  },
+  rowInfo: {
+    flex: 1,
+    marginLeft: 12,
+    justifyContent: 'center',
+  },
+  rowActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  stepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.pill,
+    paddingVertical: 3,
+    paddingHorizontal: 5,
+  },
+  stepBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadow.xs,
+  },
+  footer: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+  },
+  footerInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.brand[600],
+    borderRadius: radius.lg,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    ...shadow.md,
+  },
+  billRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+});

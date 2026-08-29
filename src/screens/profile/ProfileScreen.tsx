@@ -198,4 +198,4 @@ const styles = StyleSheet.create({
   menuIconDanger: { backgroundColor: colors.dangerBg },
   addrItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
   helpRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
-};
+});

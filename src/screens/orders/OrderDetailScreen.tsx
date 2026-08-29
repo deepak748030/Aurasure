@@ -169,4 +169,4 @@ const styles = StyleSheet.create({
   itemRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
   itemImg: { width: 48, height: 48, borderRadius: radius.sm },
   billRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
-};
+});

@@ -8,7 +8,7 @@ import { Price } from '../ui/Price';
 import { Icon } from '@/lib/icons';
 import { Skeleton } from '../ui/Skeleton';
 import { colors } from '@/theme/colors';
-import { radius, shadow } from '@/theme/tokens';
+import { radius } from '@/theme/tokens';
 import { haptic } from '@/lib/haptics';
 import type { Product } from '@/types';
 
@@ -44,7 +44,7 @@ export function ProductCard({ product, onPress }: ProductCardProps): React.React
           hitSlop={8}
           style={styles.wish}
         >
-          <Icon name="heart" size={16} color={liked ? colors.danger : colors.textTertiary} fill={liked ? colors.danger : 'transparent'} />
+          <Icon name="heart" size={16} color={liked ? colors.danger : colors.textTertiary} filled={liked} />
         </Pressable>
         {!product.inStock ? (
           <View style={styles.out}>
@@ -92,7 +92,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     overflow: 'hidden',
-    ...shadow.sm,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
   imageWrap: {
     position: 'relative',
@@ -119,7 +120,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.9)',
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadow.xs,
   },
   out: {
     position: 'absolute',

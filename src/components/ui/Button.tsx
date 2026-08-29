@@ -75,7 +75,7 @@ export function Button({
         {
           height: s.height,
           paddingHorizontal: s.pad,
-          borderRadius: radius.lg,
+          borderRadius: radius.md,
           opacity: disabled || loading ? 0.5 : pressed ? 0.94 : 1,
           alignSelf: fullWidth ? 'stretch' : 'flex-start',
           backgroundColor: isFlat ? GRADIENT[variant][0] : 'transparent',

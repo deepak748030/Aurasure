@@ -7,7 +7,7 @@ import { Badge } from '../ui/Badge';
 import { Icon } from '@/lib/icons';
 import { Skeleton } from '../ui/Skeleton';
 import { colors } from '@/theme/colors';
-import { radius, shadow } from '@/theme/tokens';
+import { radius } from '@/theme/tokens';
 import { formatINR } from '@/lib/format';
 import { haptic } from '@/lib/haptics';
 import type { FoodItem } from '@/types';
@@ -49,7 +49,7 @@ export function DishCard({ item, onPress }: DishCardProps): React.ReactElement {
           {item.description}
         </Text>
         <View style={styles.metaRow}>
-          <Icon name="star" size={12} color={colors.star} fill={colors.star} />
+          <Icon name="star" size={12} color={colors.star} filled />
           <Text variant="caption" color={colors.textSecondary} weight="semibold" style={{ marginLeft: 4 }}>
             {item.rating.toFixed(1)}
           </Text>
@@ -102,7 +102,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     padding: 12,
-    ...shadow.xs,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
   thumbWrap: {
     position: 'relative',
@@ -168,7 +169,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     borderRadius: radius.pill,
     overflow: 'hidden',
-    ...shadow.sm,
   },
   addBtnGrad: {
     width: 34,

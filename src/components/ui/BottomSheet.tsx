@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/lib/icons';
 import { Text } from './Text';
 import { colors } from '@/theme/colors';
-import { radius, shadow } from '@/theme/tokens';
+import { layout, radius } from '@/theme/tokens';
 
 interface BottomSheetProps {
   visible: boolean;
@@ -112,7 +112,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: radius.xxl,
     maxHeight: '92%',
     paddingTop: 10,
-    ...shadow.lg,
   },
   handle: {
     width: 40,
@@ -126,7 +125,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: layout.contentHorizontalPadding,
     paddingBottom: 12,
   },
   closeBtn: {
@@ -138,6 +137,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   body: {
-    paddingHorizontal: 20,
+    paddingHorizontal: layout.contentHorizontalPadding,
   },
 });

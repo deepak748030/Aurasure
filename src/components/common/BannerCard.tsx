@@ -5,7 +5,7 @@ import { SmartImage } from '../ui/SmartImage';
 import { Text } from '../ui/Text';
 import { Badge } from '../ui/Badge';
 import { colors } from '@/theme/colors';
-import { radius, shadow } from '@/theme/tokens';
+import { layout, radius } from '@/theme/tokens';
 import { haptic } from '@/lib/haptics';
 import type { ImageRef } from '@/types';
 
@@ -16,16 +16,37 @@ interface BannerCardProps {
   image: ImageRef;
   height?: number;
   onPress?: () => void;
+  /**
+   * true  -> the banner touches the left/right device edges (negative margin
+   *          cancels the screen gutter, no side radius) - the default.
+   * false -> keep the small radius and stay inside the gutter.
+   */
+  fullBleed?: boolean;
 }
 
-export function BannerCard({ title, subtitle, badge, image, height = 150, onPress }: BannerCardProps): React.ReactElement {
+export function BannerCard({
+  title,
+  subtitle,
+  badge,
+  image,
+  height = 150,
+  onPress,
+  fullBleed = true,
+}: BannerCardProps): React.ReactElement {
   return (
     <Pressable
       onPress={() => {
         haptic.light();
         onPress?.();
       }}
-      style={({ pressed }) => [styles.card, { height, opacity: pressed ? 0.96 : 1 }]}
+      style={({ pressed }) => [
+        styles.card,
+        { height, opacity: pressed ? 0.96 : 1 },
+        // Pull out of the screen gutter so the artwork is flush with the device edges.
+        fullBleed
+          ? { marginHorizontal: -layout.contentHorizontalPadding, borderRadius: 0 }
+          : { borderRadius: radius.sm },
+      ]}
     >
       <SmartImage source={image} style={StyleSheet.absoluteFill} />
       <LinearGradient
@@ -49,12 +70,12 @@ export function BannerCard({ title, subtitle, badge, image, height = 150, onPres
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: radius.lg,
     overflow: 'hidden',
     justifyContent: 'flex-end',
-    ...shadow.sm,
   },
   content: {
-    padding: 16,
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 16,
   },
 });

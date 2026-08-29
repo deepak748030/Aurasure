@@ -7,7 +7,7 @@ import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Icon } from '@/lib/icons';
 import { Text } from './Text';
 import { colors } from '@/theme/colors';
-import { radius, shadow } from '@/theme/tokens';
+import { radius } from '@/theme/tokens';
 import { TAB_BAR_BOTTOM_PADDING, TAB_BAR_HEIGHT } from '@/lib/layout';
 import { haptic } from '@/lib/haptics';
 import type { IconName } from '@/types';
@@ -74,7 +74,7 @@ export function TabBar({ state, navigation }: BottomTabBarProps): React.ReactEle
           };
           return (
             <Pressable key={route.key} onPress={onPress} style={styles.tab}>
-              <View style={[styles.iconWrap, isFocused && styles.iconWrapActive]}>
+              <View style={styles.iconWrap}>
                 {isFocused ? (
                   <LinearGradient colors={colors.brandGradient} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
                 ) : null}
@@ -82,7 +82,7 @@ export function TabBar({ state, navigation }: BottomTabBarProps): React.ReactEle
                   name={def.icon}
                   size={21}
                   color={isFocused ? colors.white : colors.textTertiary}
-                  strokeWidth={isFocused ? 2.4 : 2}
+                  filled={isFocused}
                 />
               </View>
               <Text
@@ -102,9 +102,9 @@ export function TabBar({ state, navigation }: BottomTabBarProps): React.ReactEle
 }
 
 const styles = StyleSheet.create({
+  // Flat: the hairline rule below replaces the old drop shadow.
   container: {
     position: 'relative',
-    ...shadow.lg,
   },
   border: {
     position: 'absolute',
@@ -127,12 +127,9 @@ const styles = StyleSheet.create({
   iconWrap: {
     width: 54,
     height: 36,
-    borderRadius: 12,
+    borderRadius: radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-  },
-  iconWrapActive: {
-    ...shadow.sm,
   },
 });

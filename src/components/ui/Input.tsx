@@ -1,5 +1,5 @@
 import React from 'react';
-import { TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
+import { StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
 import { Icon } from '@/lib/icons';
 import { Text } from './Text';
 import { colors } from '@/theme/colors';
@@ -52,7 +52,7 @@ export function Input({
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
   wrap: {
     marginBottom: 14,
   },
@@ -73,4 +73,4 @@ const styles = {
     paddingVertical: 10,
     paddingLeft: 12,
   },
-} as const;
+});

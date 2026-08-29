@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
+import { useFloatingBarBottomInset } from '@/hooks/useBottomInset';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Screen } from '../../components/ui/Screen';
 import { BackButton } from '../../components/ui/BackButton';
@@ -18,8 +18,7 @@ import { useMockQuery } from '../../hooks/useMockQuery';
 import { useCart } from '../../context/CartContext';
 import { cartItemFromProduct, getProductById } from '../../data/mock';
 import { colors } from '@/theme/colors';
-import { radius, shadow } from '@/theme/tokens';
-import { TAB_BAR_HEIGHT } from '@/lib/layout';
+import { layout, radius } from '@/theme/tokens';
 import { discountPercent, formatINR, formatRating } from '@/lib/format';
 import { haptic } from '@/lib/haptics';
 import { openCart } from '@/navigation/RootNavigation';
@@ -30,7 +29,7 @@ type Props = NativeStackScreenProps<ShopStackParamList, 'Product'>;
 
 export function ProductScreen({ route, navigation }: Props): React.ReactElement {
   const { productId } = route.params;
-  const insets = useSafeAreaInsets();
+  const barBottom = useFloatingBarBottomInset(10);
   const { add } = useCart();
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -192,7 +191,7 @@ export function ProductScreen({ route, navigation }: Props): React.ReactElement 
       </Screen>
 
       {product ? (
-        <View style={[styles.bottomBar, { bottom: insets.bottom + TAB_BAR_HEIGHT + 10 }]}>
+        <View style={[styles.bottomBar, { bottom: barBottom }]}>
           <View style={{ flex: 1 }}>
             <Text variant="caption" color={colors.textTertiary}>
               Total price
@@ -302,14 +301,13 @@ const styles = StyleSheet.create({
   feature: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
   bottomBar: {
     position: 'absolute',
-    left: 16,
-    right: 16,
+    left: layout.contentHorizontalPadding,
+    right: layout.contentHorizontalPadding,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     padding: 12,
-    ...shadow.md,
   },
   successIcon: {
     width: 64,

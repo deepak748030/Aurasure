@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
+import { useFloatingBarBottomInset } from '@/hooks/useBottomInset';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '../../components/ui/Screen';
 import { BackButton } from '../../components/ui/BackButton';
 import { Text } from '../../components/ui/Text';
@@ -12,8 +12,7 @@ import { BottomSheet } from '../../components/ui/BottomSheet';
 import { useCart } from '../../context/CartContext';
 import { userProfile } from '../../data/mock';
 import { colors } from '@/theme/colors';
-import { radius, shadow } from '@/theme/tokens';
-import { TAB_BAR_HEIGHT } from '@/lib/layout';
+import { layout, radius, spacing } from '@/theme/tokens';
 import { formatINR } from '@/lib/format';
 import { haptic } from '@/lib/haptics';
 import { switchTab } from '@/navigation/RootNavigation';
@@ -40,7 +39,7 @@ const PAYMENTS: PayOption[] = [
 type Props = NativeStackScreenProps<RootStackParamList, 'Checkout'>;
 
 export function CheckoutScreen({ navigation }: Props): React.ReactElement {
-  const insets = useSafeAreaInsets();
+  const barBottom = useFloatingBarBottomInset(10);
   const { items, subtotal, clear } = useCart();
   const [addressId, setAddressId] = useState(userProfile.addresses.find((a) => a.isDefault)?.id ?? userProfile.addresses[0]?.id ?? '');
   const [payment, setPayment] = useState('wallet');
@@ -162,7 +161,7 @@ export function CheckoutScreen({ navigation }: Props): React.ReactElement {
         <View style={{ height: 8 }} />
       </Screen>
 
-      <View style={[styles.footer, { bottom: insets.bottom + TAB_BAR_HEIGHT + 10 }]}>
+      <View style={[styles.footer, { bottom: barBottom }]}>
         <View style={styles.footerInner}>
           <View>
             <Text variant="caption" color="rgba(255,255,255,0.85)">To pay</Text>
@@ -221,7 +220,7 @@ const styles = StyleSheet.create({
   radio: {
     width: 20,
     height: 20,
-    borderRadius: 10,
+    borderRadius: radius.md,
     borderWidth: 2,
     borderColor: colors.borderStrong,
     alignItems: 'center',
@@ -243,7 +242,7 @@ const styles = StyleSheet.create({
   },
   payActive: { borderColor: colors.brand[500], backgroundColor: colors.brand[50] },
   billRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
-  footer: { position: 'absolute', left: 16, right: 16 },
+  footer: { position: 'absolute', left: layout.contentHorizontalPadding, right: layout.contentHorizontalPadding },
   footerInner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -251,8 +250,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brand[600],
     borderRadius: radius.lg,
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    ...shadow.md,
+    paddingHorizontal: spacing.md,
   },
   successIcon: {
     width: 64,

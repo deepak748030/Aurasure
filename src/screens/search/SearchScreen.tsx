@@ -13,6 +13,7 @@ import { Grid } from '../../components/common/Grid';
 import { useCart } from '../../context/CartContext';
 import { foodCategories, searchFood, searchProducts, shopCategories } from '../../data/mock';
 import { colors } from '@/theme/colors';
+import { layout } from '@/theme/tokens';
 import { haptic } from '@/lib/haptics';
 import { switchTab } from '../../navigation/RootNavigation';
 import type { FoodItem, Product, ShopCategory } from '../../types';
@@ -46,7 +47,7 @@ export function SearchScreen({ navigation }: Props): React.ReactElement {
   const openProduct = (p: Product): void => switchTab('Shop', { screen: 'Product', params: { productId: p.id } });
 
   const header = (
-    <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, backgroundColor: colors.background }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: layout.contentHorizontalPadding, paddingVertical: 10, backgroundColor: colors.background }}>
       <BackButton onPress={() => navigation.goBack()} />
       <View style={{ flex: 1, marginLeft: 6 }}>
         <SearchBar value={query} onChangeText={setQuery} autoFocus placeholder="Search food or products" />

@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { colors } from '@/theme/colors';
-import { radius, shadow } from '@/theme/tokens';
+import { radius, spacing } from '@/theme/tokens';
 
 interface CardProps {
   children: React.ReactNode;
@@ -9,13 +9,17 @@ interface CardProps {
   padding?: number;
   radiusSize?: number;
   variant?: 'surface' | 'alt';
+  /**
+   * Flat cards are separated by a hairline border instead of a drop shadow.
+   * Pass false when the card sits on a contrasting background and needs no edge.
+   */
   elevated?: boolean;
 }
 
 export function Card({
   children,
   style,
-  padding = 16,
+  padding = spacing.md,
   radiusSize = radius.md,
   variant = 'surface',
   elevated = true,
@@ -28,7 +32,9 @@ export function Card({
           borderRadius: radiusSize,
           padding,
         },
-        elevated ? shadow.sm : null,
+        // Flat separation: a hairline edge instead of a drop shadow. Tinted
+        // (alt) cards already read as a separate layer, so they stay borderless.
+        elevated && variant === 'surface' ? styles.border : null,
         style,
       ]}
     >
@@ -36,3 +42,10 @@ export function Card({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  border: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+});

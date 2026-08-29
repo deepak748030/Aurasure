@@ -8,10 +8,11 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from './Text';
 import { colors } from '@/theme/colors';
-import { TAB_BAR_HEIGHT } from '@/lib/layout';
+import { layout } from '@/theme/tokens';
+import { useContentBottomInset, useIsInsideTabs } from '@/hooks/useBottomInset';
 
 interface ScreenProps {
   children: React.ReactNode;
@@ -27,6 +28,13 @@ interface ScreenProps {
   padded?: boolean;
   scroll?: boolean;
   backgroundColor?: string;
+  /**
+   * Which safe-area edges the wrapper should respect. Top and the landscape
+   * cutouts are handled here once, so children never add `insets.top`
+   * themselves. Screens that draw their own edge-to-edge hero pass `['top']`
+   * only, or `[]` when they manage it internally.
+   */
+  edges?: ('top' | 'right' | 'bottom' | 'left')[];
 }
 
 export function Screen({
@@ -43,8 +51,11 @@ export function Screen({
   padded = true,
   scroll = true,
   backgroundColor = colors.background,
+  edges = ['top', 'left', 'right'],
 }: ScreenProps): React.ReactElement {
   const insets = useSafeAreaInsets();
+  const insideTabs = useIsInsideTabs();
+  const contentBottom = useContentBottomInset(24);
   const hasHeader = Boolean(header || title || subtitle || headerRight || headerLeft);
 
   const headerEl = (): React.ReactNode => {
@@ -53,8 +64,10 @@ export function Screen({
     return (
       <View
         style={{
-          paddingTop: insets.top + 10,
-          paddingHorizontal: 16,
+          // The SafeAreaView above already reserves the status bar area, so the
+          // header only needs its own breathing room.
+          paddingTop: 10,
+          paddingHorizontal: layout.contentHorizontalPadding,
           paddingBottom: 12,
           backgroundColor,
         }}
@@ -78,8 +91,8 @@ export function Screen({
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={[
-        padded ? { paddingHorizontal: 16 } : null,
-        { paddingTop: hasHeader ? 8 : insets.top + 8, paddingBottom: insets.bottom + 24 },
+        padded ? { paddingHorizontal: layout.contentHorizontalPadding } : null,
+        { paddingTop: hasHeader ? 8 : 4, paddingBottom: contentBottom },
         contentStyle,
       ]}
       refreshControl={
@@ -97,17 +110,19 @@ export function Screen({
       {children}
     </ScrollView>
   ) : (
-    <View style={[{ flex: 1, paddingBottom: insets.bottom }, contentStyle]}>{children}</View>
+    <View style={[{ flex: 1, paddingBottom: contentBottom }, contentStyle]}>{children}</View>
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor }} edges={edges}>
       {headerEl()}
       {keyboardAvoiding ? (
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={TAB_BAR_HEIGHT + insets.bottom}
+          // Inside the tabs the screen already sits above the bar, so nothing
+          // has to be compensated; outside them only the nav bar inset does.
+          keyboardVerticalOffset={insideTabs ? 0 : insets.bottom}
           enabled
         >
           {body}
@@ -115,6 +130,6 @@ export function Screen({
       ) : (
         body
       )}
-    </View>
+    </SafeAreaView>
   );
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { useFloatingBarBottomInset } from '@/hooks/useBottomInset';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '../../components/ui/Screen';
 import { Text } from '../../components/ui/Text';
 import { Icon } from '@/lib/icons';
@@ -11,8 +11,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { useCart } from '../../context/CartContext';
 import { colors } from '@/theme/colors';
-import { radius, shadow } from '@/theme/tokens';
-import { TAB_BAR_HEIGHT } from '@/lib/layout';
+import { layout, radius, spacing } from '@/theme/tokens';
 import { formatINR } from '@/lib/format';
 import { haptic } from '@/lib/haptics';
 import { navigationRef } from '@/navigation/RootNavigation';
@@ -21,7 +20,7 @@ import type { CartItem } from '@/types';
 const DELIVERY_FEE = 29;
 
 export function CartScreen(): React.ReactElement {
-  const insets = useSafeAreaInsets();
+  const barBottom = useFloatingBarBottomInset(10);
   const { items, subtotal, setQty, remove, clear } = useCart();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -44,7 +43,7 @@ export function CartScreen(): React.ReactElement {
   };
 
   const footer = items.length > 0 ? (
-    <View style={[styles.footer, { bottom: insets.bottom + TAB_BAR_HEIGHT + 10 }]}>
+    <View style={[styles.footer, { bottom: barBottom }]}>
       <View style={styles.footerInner}>
         <View>
           <Text variant="caption" color="rgba(255,255,255,0.85)">
@@ -182,7 +181,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: 12,
     marginBottom: 12,
-    ...shadow.xs,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
   thumb: {
     width: 64,
@@ -215,12 +215,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadow.xs,
   },
   footer: {
     position: 'absolute',
-    left: 16,
-    right: 16,
+    left: layout.contentHorizontalPadding,
+    right: layout.contentHorizontalPadding,
   },
   footerInner: {
     flexDirection: 'row',
@@ -229,8 +228,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brand[600],
     borderRadius: radius.lg,
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    ...shadow.md,
+    paddingHorizontal: spacing.md,
   },
   billRow: {
     flexDirection: 'row',

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, type ImageStyle, type StyleProp } from 'react-native';
+import { StyleSheet, View, type ImageStyle, type StyleProp } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { Icon } from '@/lib/icons';
 import { colors } from '@/theme/colors';
@@ -25,7 +25,7 @@ export function SmartImage({
   if (!source) {
     return (
       <View style={[styles.placeholder, style]}>
-        <Icon name={placeholderIcon} size={iconSize} color={tint ?? colors.brand[300]} strokeWidth={1.6} />
+        <Icon name={placeholderIcon} size={iconSize} color={tint ?? colors.brand[300]} />
       </View>
     );
   }
@@ -35,10 +35,10 @@ export function SmartImage({
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
   placeholder: {
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.brand[50],
   },
-} as const;
+});

@@ -10,7 +10,7 @@ import { BottomSheet } from '../../components/ui/BottomSheet';
 import { useMockQuery } from '../../hooks/useMockQuery';
 import { userProfile } from '../../data/mock';
 import { colors } from '@/theme/colors';
-import { radius, shadow } from '@/theme/tokens';
+import { radius, spacing } from '@/theme/tokens';
 import { formatINR } from '@/lib/format';
 import { haptic } from '@/lib/haptics';
 import { switchTab } from '@/navigation/RootNavigation';
@@ -169,9 +169,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: colors.brand[600],
-    borderRadius: radius.lg,
-    padding: 16,
-    ...shadow.sm,
+    borderRadius: radius.md,
+    padding: spacing.md,
   },
   walletIcon: {
     width: 42,

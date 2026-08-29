@@ -10,7 +10,7 @@ import { SmartImage } from '../../components/ui/SmartImage';
 import { useMockQuery } from '../../hooks/useMockQuery';
 import { orders } from '../../data/mock';
 import { colors } from '@/theme/colors';
-import { radius, shadow } from '@/theme/tokens';
+import { radius } from '@/theme/tokens';
 import { formatINR } from '@/lib/format';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { Order, OrderStatus } from '@/types';

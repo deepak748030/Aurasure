@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import * as NavigationBar from 'expo-navigation-bar';
 import { AppNavigator } from './navigation/AppNavigator';
 import { CartProvider } from './context/CartContext';
+import { AppProvider } from './context/AppContext';
 import { loadAppFonts } from './lib/fonts';
 import { colors } from './theme/colors';
 
@@ -27,11 +28,13 @@ export default function App(): React.ReactElement {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <CartProvider>
-          <View style={{ flex: 1, backgroundColor: colors.background }}>
-            <AppNavigator />
-          </View>
-        </CartProvider>
+        <AppProvider>
+          <CartProvider>
+            <View style={{ flex: 1, backgroundColor: colors.background }}>
+              <AppNavigator />
+            </View>
+          </CartProvider>
+        </AppProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

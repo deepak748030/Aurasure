@@ -10,18 +10,24 @@ import { Card } from '../../components/ui/Card';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { useCart } from '../../context/CartContext';
+import { useModuleCart } from '../../hooks/useModuleCart';
+import { switchTab } from '@/navigation/RootNavigation';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { CartStackParamList } from '../../navigation/types';
 import { colors } from '@/theme/colors';
 import { layout, radius, spacing } from '@/theme/tokens';
 import { formatINR } from '@/lib/format';
 import { haptic } from '@/lib/haptics';
-import { navigationRef } from '@/navigation/RootNavigation';
 import type { CartItem } from '@/types';
 
 const DELIVERY_FEE = 29;
 
-export function CartScreen(): React.ReactElement {
+type Props = NativeStackScreenProps<CartStackParamList, 'Cart'>;
+
+export function CartScreen({ navigation }: Props): React.ReactElement {
   const barBottom = useFloatingBarBottomInset(10);
-  const { items, subtotal, setQty, remove, clear } = useCart();
+  const { setQty, remove } = useCart();
+  const { module, items, subtotal } = useModuleCart();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -39,7 +45,7 @@ export function CartScreen(): React.ReactElement {
   const total = subtotal + delivery;
 
   const goCheckout = (): void => {
-    if (navigationRef.isReady()) navigationRef.navigate('Checkout');
+    void navigation.navigate('Checkout');
   };
 
   const footer = items.length > 0 ? (
@@ -72,11 +78,9 @@ export function CartScreen(): React.ReactElement {
           <EmptyState
             icon="cart"
             title="Your cart is empty"
-            subtitle="Add delicious food or trending products and they'll show up here."
-            actionLabel="Start shopping"
-            onAction={() => {
-              if (navigationRef.isReady()) navigationRef.goBack();
-            }}
+            subtitle={module === 'food' ? "Add dishes from a nearby restaurant and they'll show up here." : "Add products from the store and they'll show up here."}
+            actionLabel="Browse now"
+            onAction={() => switchTab('Home')}
           />
         ) : null}
 
@@ -181,8 +185,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: 12,
     marginBottom: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
   },
   thumb: {
     width: 64,

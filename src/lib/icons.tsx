@@ -114,6 +114,10 @@ const registry = {
   chevronsUpDown: ['unfold-more-horizontal', 'unfold-more-horizontal'],
   arrowUpDown: ['sort-variant', 'sort-variant'],
   circleAlert: ['alert-circle', 'alert-circle-outline'],
+  menu: ['menu', 'menu'],
+  apps: ['apps', 'apps'],
+  grid: ['view-grid', 'view-grid'],
+  list: ['format-list-bulleted', 'format-list-bulleted'],
   share: ['share-variant', 'share-variant-outline'],
 } as const satisfies Record<string, readonly [GlyphName, GlyphName]>;
 

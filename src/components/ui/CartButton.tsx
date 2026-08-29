@@ -5,18 +5,21 @@ import { Text } from './Text';
 import { colors } from '@/theme/colors';
 import { radius } from '@/theme/tokens';
 import { haptic } from '@/lib/haptics';
-import { useCart } from '@/context/CartContext';
-import { navigationRef } from '@/navigation/RootNavigation';
+import { useModuleCart } from '@/hooks/useModuleCart';
+import { switchTab } from '@/navigation/RootNavigation';
 
+/** Header shortcut to the Cart tab, badged with the active module's line count. */
 export function CartButton(): React.ReactElement {
-  const { count } = useCart();
+  const { count } = useModuleCart();
   return (
     <Pressable
       onPress={() => {
         haptic.light();
-        if (navigationRef.isReady()) navigationRef.navigate('Cart');
+        switchTab('Cart');
       }}
       hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel={count > 0 ? `Cart, ${count} items` : 'Cart'}
       style={({ pressed }) => [
         {
           width: 42,

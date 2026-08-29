@@ -18,7 +18,8 @@ import { haptic } from '@/lib/haptics';
 import { switchTab } from '@/navigation/RootNavigation';
 import type { Address, IconName } from '@/types';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { MainTabsParamList, RootStackParamList } from '../../navigation/types';
+import type { MainTabsParamList, CartStackParamList } from '../../navigation/types';
+import { useModuleCart } from '../../hooks/useModuleCart';
 
 const DELIVERY_FEE = 29;
 
@@ -36,11 +37,12 @@ const PAYMENTS: PayOption[] = [
   { id: 'cod', label: 'Cash on Delivery', icon: 'rupee' },
 ];
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Checkout'>;
+type Props = NativeStackScreenProps<CartStackParamList, 'Checkout'>;
 
 export function CheckoutScreen({ navigation }: Props): React.ReactElement {
   const barBottom = useFloatingBarBottomInset(10);
-  const { items, subtotal, clear } = useCart();
+  const { remove } = useCart();
+  const { items, subtotal } = useModuleCart();
   const [addressId, setAddressId] = useState(userProfile.addresses.find((a) => a.isDefault)?.id ?? userProfile.addresses[0]?.id ?? '');
   const [payment, setPayment] = useState('wallet');
   const [coupon, setCoupon] = useState('');
@@ -62,7 +64,7 @@ export function CheckoutScreen({ navigation }: Props): React.ReactElement {
       return;
     }
     haptic.success();
-    clear();
+    items.forEach((i) => remove(i.id));
     setDone(true);
   };
 
@@ -197,7 +199,7 @@ export function CheckoutScreen({ navigation }: Props): React.ReactElement {
             Your order is confirmed and will be with you shortly.
           </Text>
           <Button title="View orders" onPress={() => finish('Orders')} fullWidth style={{ marginTop: 16 }} leftIcon="receipt" />
-          <Button title="Back to home" variant="ghost" onPress={() => finish('Food')} fullWidth style={{ marginTop: 8 }} />
+          <Button title="Back to home" variant="ghost" onPress={() => finish('Home')} fullWidth style={{ marginTop: 8 }} />
         </View>
       </BottomSheet>
     </View>

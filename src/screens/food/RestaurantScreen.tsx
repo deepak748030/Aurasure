@@ -27,10 +27,9 @@ import { formatDistance, formatINR, formatMinutes } from '@/lib/format';
 import { haptic } from '@/lib/haptics';
 import { openCart } from '@/navigation/RootNavigation';
 import type { FoodItem } from '@/types';
-import type { FoodStackParamList } from '../../navigation/types';
-import { switchTab } from '@/navigation/RootNavigation';
+import type { HomeStackParamList } from '../../navigation/types';
 
-type Props = NativeStackScreenProps<FoodStackParamList, 'Restaurant'>;
+type Props = NativeStackScreenProps<HomeStackParamList, 'Restaurant'>;
 
 export function RestaurantScreen({ route, navigation }: Props): React.ReactElement {
   const { restaurantId } = route.params;
@@ -67,7 +66,7 @@ export function RestaurantScreen({ route, navigation }: Props): React.ReactEleme
         <SmartImage source={restaurant.cover} placeholderIcon="utensils" style={styles.cover} />
         <View style={styles.topBar}>
           <BackButton onPress={() => navigation.goBack()} />
-          <Pressable onPress={() => switchTab('Search')} hitSlop={10} style={styles.roundBtn}>
+          <Pressable onPress={() => navigation.navigate('Search')} hitSlop={10} style={styles.roundBtn}>
             <Icon name="search" size={18} color={colors.text} />
           </Pressable>
         </View>

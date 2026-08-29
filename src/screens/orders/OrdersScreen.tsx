@@ -16,6 +16,7 @@ import { haptic } from '@/lib/haptics';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { Order, OrderStatus } from '@/types';
 import type { OrdersStackParamList } from '../../navigation/types';
+import { useApp } from '@/context/AppContext';
 
 type Props = NativeStackScreenProps<OrdersStackParamList, 'Orders'>;
 
@@ -38,7 +39,9 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
 };
 
 export function OrdersScreen({ navigation }: Props): React.ReactElement {
-  const { data, loading, refreshing, refresh } = useMockQuery(() => orders);
+  const { module } = useApp();
+  // Orders are shared history, but each module only shows its own.
+  const { data, loading, refreshing, refresh } = useMockQuery(() => orders.filter((o) => o.module === module));
   const [list, setList] = useState<Order[]>(data);
 
   // keep local list in sync after refresh

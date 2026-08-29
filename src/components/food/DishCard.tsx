@@ -10,6 +10,7 @@ import { colors } from '@/theme/colors';
 import { radius } from '@/theme/tokens';
 import { formatINR } from '@/lib/format';
 import { haptic } from '@/lib/haptics';
+import { useApp } from '@/context/AppContext';
 import type { FoodItem } from '@/types';
 
 interface DishCardProps {
@@ -18,6 +19,8 @@ interface DishCardProps {
 }
 
 export function DishCard({ item, onPress }: DishCardProps): React.ReactElement {
+  const { module, isLiked, toggleLike } = useApp();
+  const liked = isLiked(module, item.id);
   return (
     <Pressable
       onPress={() => {
@@ -44,6 +47,18 @@ export function DishCard({ item, onPress }: DishCardProps): React.ReactElement {
             {item.name}
           </Text>
           {item.isBestseller ? <Icon name="flame" size={15} color={colors.food[500]} style={{ marginLeft: 6 }} /> : null}
+          <Pressable
+            onPress={() => {
+              haptic.medium();
+              toggleLike(module, item.id);
+            }}
+            hitSlop={8}
+            accessibilityRole="togglebutton"
+            accessibilityState={{ checked: liked }}
+            style={styles.likeBtn}
+          >
+            <Icon name="heart" size={16} color={liked ? colors.danger : colors.textTertiary} filled={liked} />
+          </Pressable>
         </View>
         <Text variant="caption" color={colors.textSecondary} numberOfLines={2} style={{ marginTop: 3 }}>
           {item.description}
@@ -102,8 +117,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     padding: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
   },
   thumbWrap: {
     position: 'relative',
@@ -154,6 +167,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  likeBtn: { width: 26, height: 26, alignItems: 'center', justifyContent: 'center', marginLeft: 4 },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,36 +1,37 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 
-// The root stack and the tab bar both need to know about the nested tab routes so
-// that deep links like navigate('MainTabs', { screen: 'Food', params: {...} }) type-check.
+/**
+ * The five tabs are identical in both modules (Home, Likes, Cart, Orders,
+ * Menu); only the screens behind them change with the selected module.
+ */
 export type MainTabsParamList = {
-  Food: NavigatorScreenParams<FoodStackParamList>;
-  Shop: NavigatorScreenParams<ShopStackParamList>;
-  Search: NavigatorScreenParams<SearchStackParamList>;
+  Home: NavigatorScreenParams<HomeStackParamList>;
+  Likes: NavigatorScreenParams<LikesStackParamList>;
+  Cart: NavigatorScreenParams<CartStackParamList>;
   Orders: NavigatorScreenParams<OrdersStackParamList>;
-  Profile: NavigatorScreenParams<ProfileStackParamList>;
+  Menu: NavigatorScreenParams<MenuStackParamList>;
 };
 
-export type RootStackParamList = {
-  MainTabs: NavigatorScreenParams<MainTabsParamList> | undefined;
+/**
+ * Home holds the module-specific landing screen plus everything reachable from
+ * it, so detail navigation stays local to the tab instead of jumping between
+ * nested navigators. FoodHome/ShopHome are swapped by the selected module.
+ */
+export type HomeStackParamList = {
+  FoodHome: undefined;
+  ShopHome: undefined;
+  Restaurant: { restaurantId: string };
+  Product: { productId: string };
+  Search: undefined;
+};
+
+export type LikesStackParamList = {
+  Likes: undefined;
+};
+
+export type CartStackParamList = {
   Cart: undefined;
   Checkout: undefined;
-};
-
-export type FoodStackParamList = {
-  FoodHome: undefined;
-  Restaurant: { restaurantId: string };
-};
-
-export type ShopStackParamList = {
-  ShopHome: undefined;
-  Product: { productId: string };
-};
-
-// Note: the inner screen is deliberately NOT called "Search" — the tab that
-// hosts this navigator is already named "Search", and React Navigation warns
-// when a nested screen shares a name with its parent ("MainTabs > Search > Search").
-export type SearchStackParamList = {
-  SearchResults: undefined;
 };
 
 export type OrdersStackParamList = {
@@ -38,6 +39,12 @@ export type OrdersStackParamList = {
   OrderDetail: { orderId: string };
 };
 
-export type ProfileStackParamList = {
-  Profile: undefined;
+export type MenuStackParamList = {
+  Menu: undefined;
+};
+
+/** `Gate` is the onboarding flow (location -> module -> login). */
+export type RootStackParamList = {
+  Gate: undefined;
+  MainTabs: NavigatorScreenParams<MainTabsParamList> | undefined;
 };

@@ -22,10 +22,9 @@ import { layout, radius } from '@/theme/tokens';
 import { discountPercent, formatINR, formatRating } from '@/lib/format';
 import { haptic } from '@/lib/haptics';
 import { openCart } from '@/navigation/RootNavigation';
-import type { ShopStackParamList } from '../../navigation/types';
-import { switchTab } from '@/navigation/RootNavigation';
+import type { HomeStackParamList } from '../../navigation/types';
 
-type Props = NativeStackScreenProps<ShopStackParamList, 'Product'>;
+type Props = NativeStackScreenProps<HomeStackParamList, 'Product'>;
 
 export function ProductScreen({ route, navigation }: Props): React.ReactElement {
   const { productId } = route.params;
@@ -60,7 +59,7 @@ export function ProductScreen({ route, navigation }: Props): React.ReactElement 
     <View style={styles.topBar}>
       <BackButton onPress={() => navigation.goBack()} />
       <View style={{ flexDirection: 'row' }}>
-        <Pressable onPress={() => switchTab('Search')} hitSlop={10} style={styles.roundBtn}>
+        <Pressable onPress={() => navigation.navigate('Search')} hitSlop={10} style={styles.roundBtn}>
           <Icon name="share" size={18} color={colors.text} />
         </Pressable>
         <View style={{ width: 10 }} />

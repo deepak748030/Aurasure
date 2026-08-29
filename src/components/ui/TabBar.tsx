@@ -1,36 +1,39 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Keyboard, Pressable, StyleSheet, View } from 'react-native';
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Icon } from '@/lib/icons';
 import { Text } from './Text';
 import { colors } from '@/theme/colors';
-import { radius } from '@/theme/tokens';
+import { radius, spacing } from '@/theme/tokens';
 import { TAB_BAR_BOTTOM_PADDING, TAB_BAR_HEIGHT } from '@/lib/layout';
 import { haptic } from '@/lib/haptics';
+import { useApp } from '@/context/AppContext';
+import { useModuleCart } from '@/hooks/useModuleCart';
 import type { IconName } from '@/types';
+import type { MainTabsParamList } from '@/navigation/types';
 
 interface TabDef {
-  key: string;
+  key: keyof MainTabsParamList;
   label: string;
   icon: IconName;
-  accent: string;
 }
 
+/** Same five tabs for both modules - Home is the only screen that swaps. */
 const TABS: TabDef[] = [
-  { key: 'Food', label: 'Food', icon: 'utensils', accent: colors.food[500] },
-  { key: 'Shop', label: 'Mart', icon: 'bag', accent: colors.brand[600] },
-  { key: 'Search', label: 'Search', icon: 'search', accent: colors.brand[600] },
-  { key: 'Orders', label: 'Orders', icon: 'receipt', accent: colors.brand[600] },
-  { key: 'Profile', label: 'Profile', icon: 'user', accent: colors.brand[600] },
+  { key: 'Home', label: 'Home', icon: 'home' },
+  { key: 'Likes', label: 'Likes', icon: 'heart' },
+  { key: 'Cart', label: 'Cart', icon: 'cart' },
+  { key: 'Orders', label: 'Orders', icon: 'receipt' },
+  { key: 'Menu', label: 'Menu', icon: 'menu' },
 ];
 
 export function TabBar({ state, navigation }: BottomTabBarProps): React.ReactElement {
   const insets = useSafeAreaInsets();
   const [kbHeight, setKbHeight] = useState(0);
   const translateY = useRef(new Animated.Value(0)).current;
+  const { module } = useApp();
+  const { count } = useModuleCart();
 
   useEffect(() => {
     const show = Keyboard.addListener('keyboardWillShow', (e) => setKbHeight(e.endCoordinates.height));
@@ -50,6 +53,8 @@ export function TabBar({ state, navigation }: BottomTabBarProps): React.ReactEle
     }).start();
   }, [kbHeight, translateY]);
 
+  const active = module === 'food' ? colors.food[600] : colors.brand[600];
+
   return (
     <Animated.View
       style={[
@@ -57,9 +62,6 @@ export function TabBar({ state, navigation }: BottomTabBarProps): React.ReactEle
         { paddingBottom: insets.bottom + TAB_BAR_BOTTOM_PADDING, transform: [{ translateY }] },
       ]}
     >
-      <BlurView style={StyleSheet.absoluteFill} intensity={80} tint="light" />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,0.86)' }]} pointerEvents="none" />
-      <View style={styles.border} pointerEvents="none" />
       <View style={styles.row}>
         {state.routes.map((route, index) => {
           const def = TABS.find((t) => t.key === route.name);
@@ -72,27 +74,28 @@ export function TabBar({ state, navigation }: BottomTabBarProps): React.ReactEle
               navigation.navigate(route.name);
             }
           };
+          const badge = def.key === 'Cart' ? count : 0;
           return (
-            <Pressable key={route.key} onPress={onPress} style={styles.tab}>
-              <View style={styles.iconWrap}>
-                {isFocused ? (
-                  <LinearGradient colors={colors.brandGradient} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+            <Pressable key={route.key} onPress={onPress} style={styles.tab} accessibilityRole="button" accessibilityState={{ selected: isFocused }}>
+              <View style={styles.iconBox}>
+                <Icon name={def.icon} size={22} color={isFocused ? active : colors.textTertiary} filled={isFocused} />
+                {badge > 0 ? (
+                  <View style={styles.badge}>
+                    <Text variant="caption" weight="bold" color={colors.white} style={{ fontSize: 9, lineHeight: 12 }}>
+                      {badge > 99 ? '99+' : badge}
+                    </Text>
+                  </View>
                 ) : null}
-                <Icon
-                  name={def.icon}
-                  size={21}
-                  color={isFocused ? colors.white : colors.textTertiary}
-                  filled={isFocused}
-                />
               </View>
               <Text
                 variant="caption"
-                color={isFocused ? colors.brand[700] : colors.textTertiary}
+                color={isFocused ? active : colors.textTertiary}
                 weight={isFocused ? 'bold' : 'medium'}
-                style={{ marginTop: 4 }}
+                style={{ marginTop: 2 }}
               >
                 {def.label}
               </Text>
+              <View style={[styles.indicator, { backgroundColor: isFocused ? active : 'transparent' }]} />
             </Pressable>
           );
         })}
@@ -102,34 +105,47 @@ export function TabBar({ state, navigation }: BottomTabBarProps): React.ReactEle
 }
 
 const styles = StyleSheet.create({
-  // Flat: the hairline rule below replaces the old drop shadow.
+  // Flat bar: solid surface with a hairline rule on top - no blur, no shadow.
   container: {
-    position: 'relative',
-  },
-  border: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
+    backgroundColor: colors.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
   },
   row: {
     flexDirection: 'row',
     height: TAB_BAR_HEIGHT,
     alignItems: 'center',
+    paddingHorizontal: spacing.xs,
   },
   tab: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconWrap: {
-    width: 54,
-    height: 36,
-    borderRadius: radius.lg,
+  iconBox: {
+    width: 44,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
+  },
+  badge: {
+    position: 'absolute',
+    top: -2,
+    right: 2,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 3,
+    borderRadius: radius.pill,
+    backgroundColor: colors.food[600],
+    borderWidth: 2,
+    borderColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  indicator: {
+    width: 14,
+    height: 3,
+    borderRadius: radius.xs,
+    marginTop: 4,
   },
 });

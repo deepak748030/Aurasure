@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import * as NavigationBar from 'expo-navigation-bar';
 import { AppNavigator } from './navigation/AppNavigator';
 import { CartProvider } from './context/CartContext';
+import { AppProvider } from './context/AppContext';
 import { loadAppFonts } from './lib/fonts';
 import { colors } from './theme/colors';
 
@@ -15,7 +16,10 @@ export default function App(): React.ReactElement {
   useEffect(() => {
     loadAppFonts();
     if (Platform.OS === 'android') {
-      NavigationBar.setBackgroundColorAsync(colors.background).catch(() => undefined);
+      // Edge-to-edge is always on in Expo SDK 54 / Android 16, and
+      // NavigationBar.setBackgroundColorAsync() is a no-op there (it only logs
+      // a warning). The root View below already paints colors.background
+      // behind the transparent system bars, so the visual result is unchanged.
       NavigationBar.setButtonStyleAsync('dark').catch(() => undefined);
     }
     SplashScreen.hideAsync().catch(() => undefined);
@@ -24,11 +28,13 @@ export default function App(): React.ReactElement {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <CartProvider>
-          <View style={{ flex: 1, backgroundColor: colors.background }}>
-            <AppNavigator />
-          </View>
-        </CartProvider>
+        <AppProvider>
+          <CartProvider>
+            <View style={{ flex: 1, backgroundColor: colors.background }}>
+              <AppNavigator />
+            </View>
+          </CartProvider>
+        </AppProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

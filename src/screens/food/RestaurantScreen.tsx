@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
+import { useFloatingBarBottomInset } from '@/hooks/useBottomInset';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Screen } from '../../components/ui/Screen';
 import { BackButton } from '../../components/ui/BackButton';
@@ -22,20 +22,18 @@ import {
   getRestaurantById,
 } from '../../data/mock';
 import { colors } from '@/theme/colors';
-import { radius, shadow } from '@/theme/tokens';
-import { TAB_BAR_HEIGHT } from '@/lib/layout';
+import { layout, radius, spacing } from '@/theme/tokens';
 import { formatDistance, formatINR, formatMinutes } from '@/lib/format';
 import { haptic } from '@/lib/haptics';
 import { openCart } from '@/navigation/RootNavigation';
 import type { FoodItem } from '@/types';
-import type { FoodStackParamList } from '../../navigation/types';
-import { switchTab } from '@/navigation/RootNavigation';
+import type { HomeStackParamList } from '../../navigation/types';
 
-type Props = NativeStackScreenProps<FoodStackParamList, 'Restaurant'>;
+type Props = NativeStackScreenProps<HomeStackParamList, 'Restaurant'>;
 
 export function RestaurantScreen({ route, navigation }: Props): React.ReactElement {
   const { restaurantId } = route.params;
-  const insets = useSafeAreaInsets();
+  const barBottom = useFloatingBarBottomInset(10);
   const { count, subtotal, add } = useCart();
   const [activeDish, setActiveDish] = useState<FoodItem | null>(null);
   const [qty, setQty] = useState(1);
@@ -68,7 +66,7 @@ export function RestaurantScreen({ route, navigation }: Props): React.ReactEleme
         <SmartImage source={restaurant.cover} placeholderIcon="utensils" style={styles.cover} />
         <View style={styles.topBar}>
           <BackButton onPress={() => navigation.goBack()} />
-          <Pressable onPress={() => switchTab('Search')} hitSlop={10} style={styles.roundBtn}>
+          <Pressable onPress={() => navigation.navigate('Search')} hitSlop={10} style={styles.roundBtn}>
             <Icon name="search" size={18} color={colors.text} />
           </Pressable>
         </View>
@@ -114,7 +112,7 @@ export function RestaurantScreen({ route, navigation }: Props): React.ReactEleme
         contentStyle={{ paddingBottom: count > 0 ? 96 : 0 }}
         scroll
       >
-        <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
+        <View style={{ paddingHorizontal: layout.contentHorizontalPadding, paddingTop: 14 }}>
           <Text variant="overline" color={colors.textTertiary}>
             MENU
           </Text>
@@ -133,12 +131,12 @@ export function RestaurantScreen({ route, navigation }: Props): React.ReactEleme
         <View style={{ paddingTop: 14 }}>
           {loading
             ? [1, 2, 3, 4].map((k) => (
-                <View key={k} style={{ marginBottom: 12, paddingHorizontal: 16 }}>
+                <View key={k} style={{ marginBottom: 12, paddingHorizontal: layout.contentHorizontalPadding }}>
                   <DishCardSkeleton />
                 </View>
               ))
             : dishes.map((d) => (
-                <View key={d.id} style={{ marginBottom: 12, paddingHorizontal: 16 }}>
+                <View key={d.id} style={{ marginBottom: 12, paddingHorizontal: layout.contentHorizontalPadding }}>
                   <DishCard item={d} onPress={openDish} />
                 </View>
               ))}
@@ -189,7 +187,7 @@ export function RestaurantScreen({ route, navigation }: Props): React.ReactEleme
           onPress={openCart}
           style={[
             styles.cartBar,
-            { bottom: insets.bottom + TAB_BAR_HEIGHT + 10 },
+            { bottom: barBottom },
           ]}
         >
           <View style={styles.cartBarInner}>
@@ -249,12 +247,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   infoCard: {
-    marginHorizontal: 16,
+    marginHorizontal: layout.contentHorizontalPadding,
     marginTop: -28,
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     padding: 16,
-    ...shadow.sm,
   },
   infoHead: {
     flexDirection: 'row',
@@ -299,12 +296,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadow.xs,
   },
   cartBar: {
     position: 'absolute',
-    left: 16,
-    right: 16,
+    left: layout.contentHorizontalPadding,
+    right: layout.contentHorizontalPadding,
   },
   cartBarInner: {
     flexDirection: 'row',
@@ -312,8 +308,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brand[600],
     borderRadius: radius.lg,
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    ...shadow.md,
+    paddingHorizontal: spacing.md,
   },
   cartBadge: {
     position: 'relative',

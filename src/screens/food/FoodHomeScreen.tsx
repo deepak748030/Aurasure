@@ -17,11 +17,11 @@ import {
   restaurants,
   userProfile,
 } from '../../data/mock';
-import type { FoodStackParamList } from '../../navigation/types';
-import { switchTab } from '@/navigation/RootNavigation';
+import type { HomeStackParamList } from '../../navigation/types';
+import { useApp } from '@/context/AppContext';
 import type { FoodItem, Restaurant } from '../../types';
 
-type Props = NativeStackScreenProps<FoodStackParamList, 'FoodHome'>;
+type Props = NativeStackScreenProps<HomeStackParamList, 'FoodHome'>;
 
 export function FoodHomeScreen({ navigation }: Props): React.ReactElement {
   const { data, loading, refreshing, refresh } = useMockQuery(() => ({
@@ -30,6 +30,7 @@ export function FoodHomeScreen({ navigation }: Props): React.ReactElement {
     bestsellers: foodItems.filter((d) => d.isBestseller).slice(0, 4),
   }));
   const [activeCat, setActiveCat] = useState<string | undefined>(undefined);
+  const { city } = useApp();
 
   const filtered = activeCat
     ? data.restaurants.filter((r) => r.categoryIds.includes(activeCat))
@@ -43,7 +44,7 @@ export function FoodHomeScreen({ navigation }: Props): React.ReactElement {
   return (
     <Screen
       title={`Hi ${firstName}`}
-      subtitle="What are you craving today?"
+      subtitle={city ? `Craving something? Delivering to ${city}` : 'What are you craving today?'}
       headerRight={<CartButton />}
       refreshing={refreshing}
       onRefresh={refresh}
@@ -54,7 +55,7 @@ export function FoodHomeScreen({ navigation }: Props): React.ReactElement {
         badge={data.banners[0]?.badge}
         image={data.banners[0]?.image ?? null}
         height={150}
-        onPress={() => switchTab('Search')}
+        onPress={() => navigation.navigate('Search')}
       />
 
       <View style={{ height: 18 }} />

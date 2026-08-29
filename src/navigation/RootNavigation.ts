@@ -1,38 +1,30 @@
-import { createNavigationContainerRef, CommonActions } from '@react-navigation/native';
-import type { RootStackParamList } from './types';
+import { createNavigationContainerRef } from '@react-navigation/native';
+import type { HomeStackParamList, MainTabsParamList, RootStackParamList } from './types';
 
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
-type RouteName = keyof RootStackParamList;
-
-export function navigate<Name extends RouteName>(name: Name, params?: RootStackParamList[Name]): void {
-  if (navigationRef.isReady()) {
-    const go = navigationRef.navigate as (routeName: Name, routeParams?: RootStackParamList[Name]) => void;
-    go(name, params);
-  }
+// Switch the active bottom tab from anywhere, optionally landing on a nested
+// screen inside it: switchTab('Home', { screen: 'Restaurant', params: {...} }).
+export function switchTab<Name extends keyof MainTabsParamList>(name: Name, params?: MainTabsParamList[Name]): void {
+  if (!navigationRef.isReady()) return;
+  navigationRef.navigate(
+    'MainTabs',
+    (params ? { screen: name, params } : { screen: name }) as RootStackParamList['MainTabs'],
+  );
 }
 
-export function goBack(): void {
-  if (navigationRef.isReady() && navigationRef.canGoBack()) {
-    navigationRef.goBack();
-  }
-}
-
-export function resetRoot(name: RouteName): void {
-  if (navigationRef.isReady()) {
-    navigationRef.reset({ index: 0, routes: [{ name }] });
-  }
-}
-
-// Switch the active bottom tab from anywhere (e.g. from a root-level screen).
-export function switchTab(name: string): void {
-  if (navigationRef.isReady()) {
-    navigationRef.navigate('MainTabs', { screen: name });
-  }
+/**
+ * Deep link into the Home stack from a sibling tab (Likes / Orders / Menu).
+ * Those screens live inside the Home navigator, so a plain navigate() from
+ * another tab would be handled by nobody.
+ */
+export function openHomeRoute<T extends keyof HomeStackParamList>(name: T, params?: HomeStackParamList[T]): void {
+  const nested = params === undefined ? { screen: name } : { screen: name, params };
+  // The generic distributes over the tab param list, which RN's typed
+  // navigate() cannot narrow on its own.
+  switchTab('Home', nested as MainTabsParamList['Home']);
 }
 
 export function openCart(): void {
-  if (navigationRef.isReady()) {
-    navigationRef.dispatch(CommonActions.navigate({ name: 'Cart' }));
-  }
+  switchTab('Cart');
 }

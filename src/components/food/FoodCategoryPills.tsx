@@ -1,6 +1,7 @@
 import React from 'react';
 import { ScrollView, View } from 'react-native';
 import { Chip } from '../ui/Chip';
+import { layout } from '@/theme/tokens';
 import { haptic } from '@/lib/haptics';
 import type { FoodCategory } from '@/types';
 
@@ -15,7 +16,7 @@ export function FoodCategoryPills({ items, activeId, onSelect }: FoodCategoryPil
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ paddingHorizontal: 16, gap: 0 }}
+      contentContainerStyle={{ paddingHorizontal: layout.contentHorizontalPadding, gap: 0 }}
     >
       {items.map((c, i) => (
         <View key={c.id} style={{ marginRight: i === items.length - 1 ? 0 : 8 }}>

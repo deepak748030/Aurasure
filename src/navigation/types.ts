@@ -1,21 +1,37 @@
-export type RootStackParamList = {
-  MainTabs: { screen?: string } | undefined;
+import type { NavigatorScreenParams } from '@react-navigation/native';
+
+/**
+ * The five tabs are identical in both modules (Home, Likes, Cart, Orders,
+ * Menu); only the screens behind them change with the selected module.
+ */
+export type MainTabsParamList = {
+  Home: NavigatorScreenParams<HomeStackParamList>;
+  Likes: NavigatorScreenParams<LikesStackParamList>;
+  Cart: NavigatorScreenParams<CartStackParamList>;
+  Orders: NavigatorScreenParams<OrdersStackParamList>;
+  Menu: NavigatorScreenParams<MenuStackParamList>;
+};
+
+/**
+ * Home holds the module-specific landing screen plus everything reachable from
+ * it, so detail navigation stays local to the tab instead of jumping between
+ * nested navigators. FoodHome/ShopHome are swapped by the selected module.
+ */
+export type HomeStackParamList = {
+  FoodHome: undefined;
+  ShopHome: undefined;
+  Restaurant: { restaurantId: string };
+  Product: { productId: string };
+  Search: undefined;
+};
+
+export type LikesStackParamList = {
+  Likes: undefined;
+};
+
+export type CartStackParamList = {
   Cart: undefined;
   Checkout: undefined;
-};
-
-export type FoodStackParamList = {
-  FoodHome: undefined;
-  Restaurant: { restaurantId: string };
-};
-
-export type ShopStackParamList = {
-  ShopHome: undefined;
-  Product: { productId: string };
-};
-
-export type SearchStackParamList = {
-  Search: undefined;
 };
 
 export type OrdersStackParamList = {
@@ -23,6 +39,12 @@ export type OrdersStackParamList = {
   OrderDetail: { orderId: string };
 };
 
-export type ProfileStackParamList = {
-  Profile: undefined;
+export type MenuStackParamList = {
+  Menu: undefined;
+};
+
+/** `Gate` is the onboarding flow (location -> module -> login). */
+export type RootStackParamList = {
+  Gate: undefined;
+  MainTabs: NavigatorScreenParams<MainTabsParamList> | undefined;
 };

@@ -1,5 +1,6 @@
-// Spacing, radius, typography scale and soft elevation tokens.
-// Per design brief: keep border radius subtle (low) and lists tight (gap 0).
+// Spacing, radius and typography tokens.
+// Flat design language: no drop shadows anywhere, tight 4px side padding and
+// small radii so surfaces read as one continuous sheet (per design brief).
 
 export const spacing = {
   xs: 4,
@@ -12,14 +13,14 @@ export const spacing = {
   section: 24,
 };
 
-// Low, refined radii
+// Deliberately small radii (was 6/8/10/14/18/22 - now 2/4/6/8/10/12).
 export const radius = {
-  xs: 6,
-  sm: 8,
-  md: 10,
-  lg: 14,
-  xl: 18,
-  xxl: 22,
+  xs: 2,
+  sm: 4,
+  md: 6,
+  lg: 8,
+  xl: 10,
+  xxl: 12,
   pill: 999,
 };
 
@@ -41,40 +42,11 @@ export const typography = {
 
 export type TypographyVariant = keyof typeof typography;
 
-// Soft, low-profile elevation (no harsh shadows — fits the subtle radius language)
-export const shadow = {
-  xs: {
-    shadowColor: '#0B1020',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  sm: {
-    shadowColor: '#0B1020',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  md: {
-    shadowColor: '#0B1020',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 5,
-  },
-  lg: {
-    shadowColor: '#0B1020',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.12,
-    shadowRadius: 28,
-    elevation: 10,
-  },
-};
-
+// One place to control the left/right gutter of every screen. 4px keeps lists
+// wide and lets full-bleed rows (banners) sit flush with the device edge by
+// applying -layout.contentHorizontalPadding (see BannerCard).
 export const layout = {
   screenMaxWidth: 480,
-  contentHorizontalPadding: 16,
+  contentHorizontalPadding: 4,
   headerHeight: 56,
 };

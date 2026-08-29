@@ -33,6 +33,13 @@
     "experiments": {
       "tsconfigPaths": true
     },
-    "plugins": []
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Aurasure uses your location only to show nearby restaurants, delivery times and serviceable products."
+        }
+      ]
+    ]
   }
 }

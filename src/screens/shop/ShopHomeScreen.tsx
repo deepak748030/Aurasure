@@ -11,10 +11,10 @@ import { ProductCard, ProductCardSkeleton } from '../../components/shop/ProductC
 import { useMockQuery } from '../../hooks/useMockQuery';
 import { getBannersByModule, products, shopCategories, userProfile } from '../../data/mock';
 import type { Product, ShopCategory } from '../../types';
-import type { ShopStackParamList } from '../../navigation/types';
-import { switchTab } from '@/navigation/RootNavigation';
+import type { HomeStackParamList } from '../../navigation/types';
+import { useApp } from '@/context/AppContext';
 
-type Props = NativeStackScreenProps<ShopStackParamList, 'ShopHome'>;
+type Props = NativeStackScreenProps<HomeStackParamList, 'ShopHome'>;
 
 export function ShopHomeScreen({ navigation }: Props): React.ReactElement {
   const { data, loading, refreshing, refresh } = useMockQuery(() => ({
@@ -23,6 +23,7 @@ export function ShopHomeScreen({ navigation }: Props): React.ReactElement {
     categories: shopCategories,
   }));
   const [activeCat, setActiveCat] = useState<string | undefined>(undefined);
+  const { city } = useApp();
 
   const filtered = activeCat
     ? data.products.filter((p) => p.categoryId === activeCat)
@@ -36,7 +37,7 @@ export function ShopHomeScreen({ navigation }: Props): React.ReactElement {
   return (
     <Screen
       title={`Hi ${firstName}`}
-      subtitle="Discover the best deals"
+      subtitle={city ? `Best deals delivering to ${city}` : 'Discover the best deals'}
       headerRight={<CartButton />}
       refreshing={refreshing}
       onRefresh={refresh}
@@ -47,7 +48,7 @@ export function ShopHomeScreen({ navigation }: Props): React.ReactElement {
         badge={data.banners[0]?.badge}
         image={data.banners[0]?.image ?? null}
         height={150}
-        onPress={() => switchTab('Search')}
+        onPress={() => navigation.navigate('Search')}
       />
 
       <View style={{ height: 18 }} />

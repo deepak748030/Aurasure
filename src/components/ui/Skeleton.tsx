@@ -9,7 +9,7 @@ interface SkeletonProps {
   style?: ViewStyle;
 }
 
-export function Skeleton({ width, height = 14, radius = 8, style }: SkeletonProps): React.ReactElement {
+export function Skeleton({ width, height = 14, radius = 6, style }: SkeletonProps): React.ReactElement {
   const opacity = useRef(new Animated.Value(0.35)).current;
 
   useEffect(() => {

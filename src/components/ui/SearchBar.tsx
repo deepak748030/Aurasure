@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, TextInput, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Icon } from '@/lib/icons';
 import { colors } from '@/theme/colors';
-import { radius, shadow } from '@/theme/tokens';
+import { radius } from '@/theme/tokens';
 
 interface SearchBarProps {
   value: string;
@@ -28,13 +28,12 @@ export function SearchBar({
           flexDirection: 'row',
           alignItems: 'center',
           backgroundColor: colors.surfaceAlt,
-          borderRadius: radius.pill,
+          borderRadius: radius.md,
           paddingHorizontal: 14,
           height: 44,
           borderWidth: 1,
           borderColor: colors.border,
         },
-        shadow.xs,
         style,
       ]}
     >

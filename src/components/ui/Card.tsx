@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { colors } from '@/theme/colors';
-import { radius, shadow } from '@/theme/tokens';
+import { radius, spacing } from '@/theme/tokens';
 
 interface CardProps {
   children: React.ReactNode;
@@ -9,16 +9,14 @@ interface CardProps {
   padding?: number;
   radiusSize?: number;
   variant?: 'surface' | 'alt';
-  elevated?: boolean;
 }
 
 export function Card({
   children,
   style,
-  padding = 16,
+  padding = spacing.md,
   radiusSize = radius.md,
   variant = 'surface',
-  elevated = true,
 }: CardProps): React.ReactElement {
   return (
     <View
@@ -28,7 +26,6 @@ export function Card({
           borderRadius: radiusSize,
           padding,
         },
-        elevated ? shadow.sm : null,
         style,
       ]}
     >

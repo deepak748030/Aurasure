@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Screen } from '../../components/ui/Screen';
 import { Text } from '../../components/ui/Text';
 import { Icon } from '@/lib/icons';
@@ -16,6 +16,7 @@ import { haptic } from '@/lib/haptics';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { Order, OrderStatus } from '@/types';
 import type { OrdersStackParamList } from '../../navigation/types';
+import { useApp } from '@/context/AppContext';
 
 type Props = NativeStackScreenProps<OrdersStackParamList, 'Orders'>;
 
@@ -38,7 +39,9 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
 };
 
 export function OrdersScreen({ navigation }: Props): React.ReactElement {
-  const { data, loading, refreshing, refresh } = useMockQuery(() => orders);
+  const { module } = useApp();
+  // Orders are shared history, but each module only shows its own.
+  const { data, loading, refreshing, refresh } = useMockQuery(() => orders.filter((o) => o.module === module));
   const [list, setList] = useState<Order[]>(data);
 
   // keep local list in sync after refresh
@@ -97,7 +100,7 @@ export function OrdersScreen({ navigation }: Props): React.ReactElement {
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.md,
@@ -107,4 +110,4 @@ const styles = {
   cardTop: { flexDirection: 'row', alignItems: 'center' },
   modIcon: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   cardFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, borderTopWidth: 1, borderColor: colors.border, paddingTop: 12 },
-};
+});

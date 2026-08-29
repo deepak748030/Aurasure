@@ -7,7 +7,7 @@ import { Rating } from '../ui/Rating';
 import { Icon } from '@/lib/icons';
 import { Skeleton } from '../ui/Skeleton';
 import { colors } from '@/theme/colors';
-import { radius, shadow } from '@/theme/tokens';
+import { radius } from '@/theme/tokens';
 import { formatDistance, formatINR, formatMinutes } from '@/lib/format';
 import { haptic } from '@/lib/haptics';
 import type { Restaurant } from '@/types';
@@ -89,7 +89,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     overflow: 'hidden',
-    ...shadow.sm,
   },
   coverWrap: {
     position: 'relative',

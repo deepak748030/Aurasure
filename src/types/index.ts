@@ -68,6 +68,7 @@ export interface Product {
   inStock: boolean;
   isNew?: boolean;
   isTrending?: boolean;
+  isBestseller?: boolean;
   tags: string[];
   colors: string[];
   sizes?: string[];

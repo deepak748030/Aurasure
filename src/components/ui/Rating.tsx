@@ -15,7 +15,7 @@ interface RatingProps {
 export function Rating({ value, reviews, size = 13, showValue = true }: RatingProps): React.ReactElement {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      <Icon name="star" size={size} color={colors.star} fill={colors.star} style={{ marginRight: 4 }} />
+      <Icon name="star" size={size} color={colors.star} filled style={{ marginRight: 4 }} />
       {showValue ? (
         <Text variant="caption" color={colors.textSecondary} weight="semibold">
           {value.toFixed(1)}

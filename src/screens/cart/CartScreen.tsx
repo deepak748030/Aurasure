@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { useFloatingBarBottomInset } from '@/hooks/useBottomInset';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '../../components/ui/Screen';
 import { Text } from '../../components/ui/Text';
 import { Icon } from '@/lib/icons';
@@ -10,19 +10,24 @@ import { Card } from '../../components/ui/Card';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { useCart } from '../../context/CartContext';
+import { useModuleCart } from '../../hooks/useModuleCart';
+import { switchTab } from '@/navigation/RootNavigation';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { CartStackParamList } from '../../navigation/types';
 import { colors } from '@/theme/colors';
-import { radius, shadow } from '@/theme/tokens';
-import { TAB_BAR_HEIGHT } from '@/lib/layout';
+import { layout, radius, spacing } from '@/theme/tokens';
 import { formatINR } from '@/lib/format';
 import { haptic } from '@/lib/haptics';
-import { navigationRef } from '@/navigation/RootNavigation';
 import type { CartItem } from '@/types';
 
 const DELIVERY_FEE = 29;
 
-export function CartScreen(): React.ReactElement {
-  const insets = useSafeAreaInsets();
-  const { items, subtotal, setQty, remove, clear } = useCart();
+type Props = NativeStackScreenProps<CartStackParamList, 'Cart'>;
+
+export function CartScreen({ navigation }: Props): React.ReactElement {
+  const barBottom = useFloatingBarBottomInset(10);
+  const { setQty, remove } = useCart();
+  const { module, items, subtotal } = useModuleCart();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -40,11 +45,11 @@ export function CartScreen(): React.ReactElement {
   const total = subtotal + delivery;
 
   const goCheckout = (): void => {
-    if (navigationRef.isReady()) navigationRef.navigate('Checkout');
+    void navigation.navigate('Checkout');
   };
 
   const footer = items.length > 0 ? (
-    <View style={[styles.footer, { bottom: insets.bottom + TAB_BAR_HEIGHT + 10 }]}>
+    <View style={[styles.footer, { bottom: barBottom }]}>
       <View style={styles.footerInner}>
         <View>
           <Text variant="caption" color="rgba(255,255,255,0.85)">
@@ -73,11 +78,9 @@ export function CartScreen(): React.ReactElement {
           <EmptyState
             icon="cart"
             title="Your cart is empty"
-            subtitle="Add delicious food or trending products and they'll show up here."
-            actionLabel="Start shopping"
-            onAction={() => {
-              if (navigationRef.isReady()) navigationRef.goBack();
-            }}
+            subtitle={module === 'food' ? "Add dishes from a nearby restaurant and they'll show up here." : "Add products from the store and they'll show up here."}
+            actionLabel="Browse now"
+            onAction={() => switchTab('Home')}
           />
         ) : null}
 
@@ -182,7 +185,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: 12,
     marginBottom: 12,
-    ...shadow.xs,
   },
   thumb: {
     width: 64,
@@ -215,12 +217,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadow.xs,
   },
   footer: {
     position: 'absolute',
-    left: 16,
-    right: 16,
+    left: layout.contentHorizontalPadding,
+    right: layout.contentHorizontalPadding,
   },
   footerInner: {
     flexDirection: 'row',
@@ -229,8 +230,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brand[600],
     borderRadius: radius.lg,
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    ...shadow.md,
+    paddingHorizontal: spacing.md,
   },
   billRow: {
     flexDirection: 'row',

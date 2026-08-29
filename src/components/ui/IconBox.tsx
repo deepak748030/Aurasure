@@ -2,6 +2,7 @@ import React from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { Icon } from '@/lib/icons';
 import { colors } from '@/theme/colors';
+import { radius } from '@/theme/tokens';
 import type { IconName } from '@/types';
 
 interface IconBoxProps {
@@ -23,7 +24,8 @@ export function IconBox({
   iconSize,
   style,
 }: IconBoxProps): React.ReactElement {
-  const r = radiusSize ?? Math.min(14, Math.round(size / 2.6));
+  // Flat, tight corners - was Math.min(14, ...) which read as a rounded square.
+  const r = radiusSize ?? Math.min(radius.md, Math.round(size / 3));
   return (
     <View
       style={[
@@ -38,7 +40,7 @@ export function IconBox({
         style,
       ]}
     >
-      <Icon name={icon} size={iconSize ?? Math.round(size * 0.46)} color={iconColor ?? colors.brand[600]} strokeWidth={2} />
+      <Icon name={icon} size={iconSize ?? Math.round(size * 0.44)} color={iconColor ?? colors.brand[600]} filled />
     </View>
   );
 }

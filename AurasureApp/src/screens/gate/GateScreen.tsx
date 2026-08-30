@@ -11,7 +11,7 @@ import { SmartImage } from '../../components/ui/SmartImage';
 import { colors } from '@/theme/colors';
 import { radius, spacing } from '@/theme/tokens';
 import { haptic } from '@/lib/haptics';
-import { detectCity, POPULAR_CITIES } from '@/lib/location';
+import { CITY_COORDS, detectCity, POPULAR_CITIES } from '@/lib/location';
 import { Images } from '@/assets';
 import { useApp } from '@/context/AppContext';
 import { useScreenBars } from '@/lib/systemBars';
@@ -210,6 +210,25 @@ function MapPickStep({
     mapRef.current?.animateToRegion(r, 350);
   };
 
+  // Search actually works: picking a suggestion (or hitting enter) moves the
+  // map + marker to that city's centre, not just fills the input.
+  const pickCity = (city: string): void => {
+    haptic.selection();
+    setQuery(city);
+    setPicked(city);
+    const coords = CITY_COORDS[city];
+    if (coords) {
+      const next: Region = {
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        latitudeDelta: 0.12,
+        longitudeDelta: 0.12,
+      };
+      setRegion(next);
+      animateTo(next);
+    }
+  };
+
   const zoomIn = (): void => {
     haptic.light();
     animateTo({ ...region, latitudeDelta: Math.max(region.latitudeDelta / 2, 0.002), longitudeDelta: Math.max(region.longitudeDelta / 2, 0.002) });
@@ -262,8 +281,22 @@ function MapPickStep({
             placeholderTextColor={colors.textTertiary}
             style={styles.mapSearchInput}
             autoCorrect={false}
+            returnKeyType="search"
+            // Enter picks the first match directly.
+            onSubmitEditing={() => {
+              const first = suggestions[0];
+              if (first) pickCity(first);
+            }}
           />
-          <Icon name="search" size={22} color="#9C005E" />
+          <Pressable
+            onPress={() => {
+              const first = suggestions[0];
+              if (first) pickCity(first);
+            }}
+            hitSlop={8}
+          >
+            <Icon name="search" size={22} color="#9C005E" />
+          </Pressable>
         </View>
         <View style={styles.mapBack} />
       </View>
@@ -303,11 +336,7 @@ function MapPickStep({
           {suggestions.map((c) => (
             <Pressable
               key={c}
-              onPress={() => {
-                haptic.selection();
-                setQuery(c);
-                setPicked(c);
-              }}
+              onPress={() => pickCity(c)}
               style={({ pressed }) => [styles.mapSuggestion, { opacity: pressed ? 0.86 : 1 }]}
             >
               <Icon name="mapPin" size={18} color="#9C005E" />
@@ -829,10 +858,10 @@ function ErrorNote({ text }: { text: string }): React.ReactElement {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
-  progress: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xs },
+  progress: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, paddingTop: spacing.md, paddingBottom: spacing.xs },
   dot: { width: 22, height: 4, borderRadius: radius.xs, backgroundColor: colors.border },
   dotActive: { backgroundColor: colors.brand[600] },
-  shell: { paddingHorizontal: spacing.lg, paddingBottom: 40 },
+  shell: { paddingHorizontal: 6, paddingBottom: 40 },
   brandRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.xl },
   logo: { width: 44, height: 44, borderRadius: radius.md, marginRight: 12 },
   titleIcon: {
@@ -848,7 +877,7 @@ const styles = StyleSheet.create({
   errorRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
 
   // -- login page --
-  loginShell: { flexGrow: 1, paddingHorizontal: spacing.xxl, paddingBottom: 40 },
+  loginShell: { flexGrow: 1, paddingHorizontal: 6, paddingBottom: 40 },
   loginCentered: { flex: 1, paddingTop: 10 },
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   loginLogo: {
@@ -886,11 +915,8 @@ const styles = StyleSheet.create({
   rightIconBtn: { paddingLeft: 10 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
   rememberRow: { flexDirection: 'row', alignItems: 'center' },
-  // Login submit button: narrower than the other CTAs (keeps a visible side
-  // gutter) and a touch taller. Set on the Button via its style prop too.
+  // Login submit button: full width of the 6px-gutter content column.
   loginActions: {
-    marginHorizontal: -8,
-    paddingHorizontal: 8,
     alignItems: 'stretch',
   },
   checkbox: {
@@ -912,7 +938,7 @@ const styles = StyleSheet.create({
   // -- module picker --
   moduleRoot: { flex: 1, backgroundColor: colors.background },
   moduleScrollView: { flex: 1 },
-  moduleScroll: { flexGrow: 1, paddingHorizontal: 18, paddingTop: 22, paddingBottom: 22 },
+  moduleScroll: { flexGrow: 1, paddingHorizontal: 6, paddingTop: 22, paddingBottom: 22 },
   moduleTop: { flexDirection: 'row', alignItems: 'center' },
   moduleTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   moduleAddressRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
@@ -960,14 +986,14 @@ const styles = StyleSheet.create({
   otpHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 6,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
   otpBack: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   otpHeaderSpacer: { width: 36 },
-  otpContent: { flexGrow: 1, paddingHorizontal: 24, paddingBottom: 30 },
+  otpContent: { flexGrow: 1, paddingHorizontal: 6, paddingBottom: 30 },
   otpIllustration: { width: 104, height: 104, borderRadius: 28, backgroundColor: '#E9B7D6', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginTop: 44 },
   otpLockBadge: {
     position: 'absolute',
@@ -1000,12 +1026,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 22,
   },
-  // Verify button width matches the other full-width CTAs: content pads 24,
-  // pull back 24, add a 4px inner gutter so it lands inside the screen with a
-  // slight margin instead of overflowing the edges.
+  // Verify button spans the full 6px-gutter content column.
   otpActions: {
-    marginHorizontal: -24,
-    paddingHorizontal: 4,
     alignItems: 'stretch',
   },
 
@@ -1015,13 +1037,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: 6,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
   locationHeaderSide: { width: 36, height: 36 },
-  locationContent: { flexGrow: 1, paddingHorizontal: 24, paddingBottom: 34 },
+  locationContent: { flexGrow: 1, paddingHorizontal: 6, paddingBottom: 34 },
   locationIllustration: {
     width: 210,
     height: 190,
@@ -1067,13 +1089,10 @@ const styles = StyleSheet.create({
   locationPhoneLine: { height: 3, borderRadius: 2, backgroundColor: '#8CCDBF', width: 58, marginTop: 8 },
   locationHeadline: { textAlign: 'center', marginTop: 30, fontSize: 19, lineHeight: 25, letterSpacing: -0.1 },
   locationSub: { textAlign: 'center', marginTop: 12, lineHeight: 21 },
-  // The primary "Use Current Location" CTA is full width within a clean 4px
-  // side gutter (content pads 24, we pull back 24 then add 4 inner). It spans
-  // the content box and is wider than the narrower Set From Map button below.
+  // The primary "Use Current Location" CTA spans the full 6px-gutter column,
+  // wider than the narrower Set From Map button below it.
   locationActions: {
     marginTop: 26,
-    marginHorizontal: -24,
-    paddingHorizontal: 4,
     alignItems: 'stretch',
   },
   // Narrow wrapper that constrains Set From Map to a smaller width and centers
@@ -1092,7 +1111,7 @@ const styles = StyleSheet.create({
   mapTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 6,
     paddingVertical: 12,
     backgroundColor: colors.surface,
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -1108,14 +1127,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     height: 44,
     // Fill width between the back button and the screen edge.
-    marginHorizontal: 4,
+    marginHorizontal: 6,
   },
   mapSearchInput: { flex: 1, fontSize: 15, color: colors.text },
-  // Real map fills the screen with a 4px left/right gutter.
+  // Real map fills the screen with the 6px screen gutter.
   mapArea: {
     flex: 1,
     backgroundColor: '#C5C8CF',
-    marginHorizontal: 4,
+    marginHorizontal: 6,
   },
   mapControls: {
     position: 'absolute',
@@ -1156,7 +1175,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    paddingHorizontal: 20,
+    paddingHorizontal: 14,
     paddingTop: 12,
     paddingBottom: 26,
   },

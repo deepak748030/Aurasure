@@ -6,7 +6,7 @@ import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Icon } from '@/lib/icons';
 import { Text } from './Text';
 import { colors } from '@/theme/colors';
-import { radius, spacing } from '@/theme/tokens';
+import { layout, radius } from '@/theme/tokens';
 import { TAB_BAR_BOTTOM_PADDING, TAB_BAR_HEIGHT } from '@/lib/layout';
 import { haptic } from '@/lib/haptics';
 import { useApp } from '@/context/AppContext';
@@ -148,7 +148,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: TAB_BAR_HEIGHT,
     alignItems: 'center',
-    paddingHorizontal: spacing.xs,
+    // Matches the 6px screen gutter so the tab row lines up with every screen.
+    paddingHorizontal: layout.contentHorizontalPadding,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     backgroundColor: '#F5EAF3',

@@ -41,6 +41,7 @@ export async function detectCity(ms = 8000): Promise<PlaceResult> {
 
 // Offline/allow-list fallbacks for the "choose your city" step.
 export const POPULAR_CITIES = [
+  'Indore',
   'Bhopal',
   'Raipur',
   'Delhi NCR',
@@ -52,3 +53,24 @@ export const POPULAR_CITIES = [
   'Jaipur',
   'Lucknow',
 ];
+
+export interface CityCoords {
+  latitude: number;
+  longitude: number;
+}
+
+// Rough city centres used by the map picker so searching a city actually moves
+// the map (and the marker) there instead of only filling the input.
+export const CITY_COORDS: Record<string, CityCoords> = {
+  Indore: { latitude: 22.7196, longitude: 75.8577 },
+  Bhopal: { latitude: 23.2599, longitude: 77.4126 },
+  Raipur: { latitude: 21.2514, longitude: 81.6296 },
+  'Delhi NCR': { latitude: 28.6139, longitude: 77.209 },
+  Mumbai: { latitude: 19.076, longitude: 72.8777 },
+  Bengaluru: { latitude: 12.9716, longitude: 77.5946 },
+  Hyderabad: { latitude: 17.385, longitude: 78.4867 },
+  Pune: { latitude: 18.5204, longitude: 73.8567 },
+  Kolkata: { latitude: 22.5726, longitude: 88.3639 },
+  Jaipur: { latitude: 26.9124, longitude: 75.7873 },
+  Lucknow: { latitude: 26.8467, longitude: 80.9462 },
+};

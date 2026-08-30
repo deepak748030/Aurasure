@@ -7,6 +7,7 @@ import { SectionHeader } from '../../components/ui/SectionHeader';
 import { BannerCard } from '../../components/common/BannerCard';
 import { Grid } from '../../components/common/Grid';
 import { ShopCategoryRow } from '../../components/shop/ShopCategoryCard';
+import { layout } from '@/theme/tokens';
 import { ProductCard, ProductCardSkeleton } from '../../components/shop/ProductCard';
 import { useMockQuery } from '../../hooks/useMockQuery';
 import { getBannersByModule, products, shopCategories, userProfile } from '../../data/mock';

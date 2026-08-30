@@ -42,11 +42,12 @@ export const typography = {
 
 export type TypographyVariant = keyof typeof typography;
 
-// One place to control the left/right gutter of every screen. 4px keeps lists
-// wide and lets full-bleed rows (banners) sit flush with the device edge by
-// applying -layout.contentHorizontalPadding (see BannerCard).
+// One place to control the left/right gutter of every screen. 6px gives a
+// consistent breathing gap between the app content and the device edges, and
+// lets full-bleed rows (banners) sit flush with the device edge by applying
+// -layout.contentHorizontalPadding (see BannerCard).
 export const layout = {
   screenMaxWidth: 480,
-  contentHorizontalPadding: 4,
+  contentHorizontalPadding: 6,
   headerHeight: 56,
 };

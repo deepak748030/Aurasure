@@ -505,9 +505,9 @@ function FullWidthButton({ label }: { label: string }): React.ReactElement {
 /* ---------------------------- styles ---------------------------- */
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.background },
+  root: { flex: 1, backgroundColor: colors.background, paddingHorizontal: 10 },
   hero: {
-    paddingHorizontal: 18,
+    paddingHorizontal: 12,
     paddingTop: 40,
     paddingBottom: 26,
     borderBottomLeftRadius: 26,
@@ -531,7 +531,8 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 12,
   },
-  content: { paddingHorizontal: 16, marginTop: 16 },
+  // Side spacing comes from the 10px root gutter - no double padding here.
+  content: { marginTop: 16 },
   avatarWrap: { alignItems: 'center', paddingVertical: 10 },
   avatar: {
     width: 72,

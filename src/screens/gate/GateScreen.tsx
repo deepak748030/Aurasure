@@ -136,29 +136,32 @@ function LocationStep(): React.ReactElement {
 
         {error ? <ErrorNote text={error} /> : null}
 
-        <Button
-          title={busy ? 'Detecting location…' : 'Use Current Location'}
-          variant="login"
-          leftIcon="locate"
-          fullWidth
-          size="lg"
-          loading={busy}
-          style={{ marginTop: 24 }}
-          onPress={() => void useCurrent()}
-        />
-        <Pressable
-          onPress={() => {
-            haptic.light();
-            setError(null);
-            setMode('map');
-          }}
-          style={({ pressed }) => [styles.locationMapBtn, { opacity: pressed ? 0.9 : 1 }]}
-        >
-          <Icon name="mapPinned" size={20} color="#9C005E" />
-          <Text variant="title" weight="bold" color="#9C005E" style={{ marginLeft: 10 }}>
-            Set From Map
-          </Text>
-        </Pressable>
+        {/* Both CTAs share one box: same width (both sides flush, wider than the
+            copy column), same height, same radius - only the fill differs. */}
+        <View style={styles.locationActions}>
+          <Button
+            title={busy ? 'Detecting location…' : 'Use Current Location'}
+            variant="login"
+            leftIcon="locate"
+            fullWidth
+            size="lg"
+            loading={busy}
+            onPress={() => void useCurrent()}
+          />
+          <Pressable
+            onPress={() => {
+              haptic.light();
+              setError(null);
+              setMode('map');
+            }}
+            style={({ pressed }) => [styles.locationMapBtn, { opacity: pressed ? 0.9 : 1 }]}
+          >
+            <Icon name="mapPinned" size={20} color="#9C005E" />
+            <Text variant="title" weight="bold" color="#9C005E" style={{ marginLeft: 10 }}>
+              Set From Map
+            </Text>
+          </Pressable>
+        </View>
 
         <Text variant="caption" color={colors.textTertiary} style={{ textAlign: 'center', marginTop: 22 }}>
           We only use your location to show serviceable stores near you.
@@ -1034,6 +1037,9 @@ const styles = StyleSheet.create({
   locationPhoneLine: { height: 3, borderRadius: 2, backgroundColor: '#8CCDBF', width: 58, marginTop: 8 },
   locationHeadline: { textAlign: 'center', marginTop: 30, fontSize: 19, lineHeight: 25, letterSpacing: -0.1 },
   locationSub: { textAlign: 'center', marginTop: 12, lineHeight: 21 },
+  // Widens both buttons by 12px on each side (24 - 12 = 12px gutter) and keeps
+  // them stacked with an even 12px gap.
+  locationActions: { marginTop: 26, marginHorizontal: -12 },
   locationMapBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1041,8 +1047,9 @@ const styles = StyleSheet.create({
     marginTop: 12,
     borderWidth: 1.5,
     borderColor: '#C5A0BB',
-    borderRadius: 12,
-    paddingVertical: 15,
+    borderRadius: radius.pill,
+    minHeight: 56,
+    paddingVertical: 16,
   },
 
   // -- map picker --

@@ -117,7 +117,12 @@ export function Button({
           )}
           <View style={styles.row} pointerEvents="none">
             {loading ? (
-              <ActivityIndicator color={textColor} />
+              <View style={styles.row}>
+                <ActivityIndicator color={textColor} style={styles.leftIcon} />
+                <Text variant={s.variant} color={textColor} weight="bold" numberOfLines={1} style={styles.label}>
+                  {title}
+                </Text>
+              </View>
             ) : (
               <>
                 {leftIcon ? (

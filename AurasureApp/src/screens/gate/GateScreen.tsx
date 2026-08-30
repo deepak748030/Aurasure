@@ -984,9 +984,9 @@ const styles = StyleSheet.create({
   locationPhoneLine: { height: 3, borderRadius: 2, backgroundColor: '#8CCDBF', width: 58, marginTop: 8 },
   locationHeadline: { textAlign: 'center', marginTop: 30, fontSize: 19, lineHeight: 25, letterSpacing: -0.1 },
   locationSub: { textAlign: 'center', marginTop: 12, lineHeight: 21 },
-  // Widens both buttons into the gutters (24 - 18 = 6px side gutter) and keeps
-  // them stacked with an even 12px gap.
-  locationActions: { marginTop: 26, marginHorizontal: -18 },
+  // Widens both buttons flush to the screen edges (24 - 24 = 0 side gutter) so
+  // they span the full width, and keeps them stacked with an even 12px gap.
+  locationActions: { marginTop: 26, marginHorizontal: -24 },
   locationMapBtn: {
     flexDirection: 'row',
     alignItems: 'center',

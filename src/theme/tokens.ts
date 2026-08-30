@@ -1,6 +1,7 @@
 // Spacing, radius and typography tokens.
-// Flat design language: no drop shadows anywhere, tight 4px side padding and
-// small radii so surfaces read as one continuous sheet (per design brief).
+// Flat design language: no drop shadows anywhere and tight side padding, but
+// real radii - CTAs are pills and surfaces round. This scale is the single
+// source of truth, so a bump here lands everywhere at once.
 
 export const spacing = {
   xs: 4,
@@ -13,14 +14,13 @@ export const spacing = {
   section: 24,
 };
 
-// Deliberately small radii (was 6/8/10/14/18/22 - now 2/4/6/8/10/12).
 export const radius = {
-  xs: 2,
-  sm: 4,
-  md: 6,
-  lg: 8,
-  xl: 10,
-  xxl: 12,
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 26,
   pill: 999,
 };
 

@@ -45,7 +45,7 @@ export function BannerCard({
         // Pull out of the screen gutter so the artwork is flush with the device edges.
         fullBleed
           ? { marginHorizontal: -layout.contentHorizontalPadding, borderRadius: 0 }
-          : { borderRadius: radius.sm },
+          : { borderRadius: radius.lg },
       ]}
     >
       <SmartImage source={image} style={StyleSheet.absoluteFill} />

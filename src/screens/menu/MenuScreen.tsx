@@ -67,7 +67,6 @@ const SECTIONS: MenuSection[] = [
 
 export function MenuScreen(): React.ReactElement {
   const { phone, name, login } = useApp();
-  const [dark, setDark] = useState(false);
   const displayName = name && phone ? name : 'Guest User';
   const insets = useSafeAreaInsets();
   // The hero runs all the way under the status bar, so the notification bar
@@ -106,14 +105,6 @@ export function MenuScreen(): React.ReactElement {
             <Text variant="h2" weight="extrabold" color={colors.white} style={{ flex: 1, marginLeft: 14 }}>
               {displayName}
             </Text>
-            <Pressable onPress={() => setDark((v) => !v)} style={styles.toggle} hitSlop={6}>
-              <View style={styles.toggleKnob}>
-                <Icon name="phone" size={13} color="#8B0057" />
-              </View>
-              <Text variant="caption" color="rgba(255,255,255,0.85)">
-                {dark ? 'Dark' : 'Light'}
-              </Text>
-            </Pressable>
           </View>
 
           <View style={styles.loginCard}>
@@ -210,23 +201,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.65)',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  toggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.82)',
-  },
-  toggleKnob: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#A4006B',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 6,
   },
   loginCard: {
     flexDirection: 'row',

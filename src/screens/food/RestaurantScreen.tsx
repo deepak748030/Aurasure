@@ -305,10 +305,12 @@ const styles = StyleSheet.create({
   cartBarInner: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: colors.brand[600],
     borderRadius: radius.pill,
-    paddingVertical: 13,
+    minHeight: 72,
     paddingHorizontal: spacing.lg,
+    paddingVertical: 8,
   },
   cartBadge: {
     position: 'relative',

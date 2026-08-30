@@ -24,7 +24,8 @@ export function IconBox({
   iconSize,
   style,
 }: IconBoxProps): React.ReactElement {
-  // Flat, tight corners - was Math.min(14, ...) which read as a rounded square.
+  // Rounded square: a third of the box, capped by radius.md, so a 48px icon
+  // tile and a 76px empty-state tile read as the same family.
   const r = radiusSize ?? Math.min(radius.md, Math.round(size / 3));
   return (
     <View

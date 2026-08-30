@@ -15,7 +15,7 @@ export function Card({
   children,
   style,
   padding = spacing.md,
-  radiusSize = radius.md,
+  radiusSize = radius.lg,
   variant = 'surface',
 }: CardProps): React.ReactElement {
   return (

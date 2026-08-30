@@ -312,8 +312,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.surface,
     borderRadius: radius.pill,
-    padding: 10,
-    paddingLeft: 20,
+    minHeight: 72,
+    padding: 8,
+    paddingLeft: 22,
   },
   successIcon: {
     width: 64,

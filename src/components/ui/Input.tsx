@@ -60,10 +60,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surfaceAlt,
-    borderRadius: radius.xxl,
+    // 26 (xxl) reads as a squircle on a 52px field; lg keeps fields distinct
+    // from the pill CTAs below them.
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    minHeight: 50,
+    minHeight: 52,
     paddingRight: 14,
   },
   input: {

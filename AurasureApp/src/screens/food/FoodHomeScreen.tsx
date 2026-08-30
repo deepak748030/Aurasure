@@ -9,6 +9,7 @@ import { Grid } from '../../components/common/Grid';
 import { FoodCategoryPills } from '../../components/food/FoodCategoryPills';
 import { RestaurantCard, RestaurantCardSkeleton } from '../../components/food/RestaurantCard';
 import { DishCard, DishCardSkeleton } from '../../components/food/DishCard';
+import { BestsellerCard, BestsellerCardSkeleton } from '../../components/food/BestsellerCard';
 import { useMockQuery } from '../../hooks/useMockQuery';
 import {
   foodCategories,
@@ -89,9 +90,25 @@ export function FoodHomeScreen({ navigation }: Props): React.ReactElement {
       <View style={{ height: 26 }} />
       <SectionHeader title="Bestsellers" subtitle="Loved by Raipur" />
       {loading ? (
-        <Grid data={[1, 2, 3, 4]} renderItem={() => <DishCardSkeleton />} />
+        <FlatList
+          horizontal
+          data={[1, 2, 3, 4]}
+          keyExtractor={(i) => `${i}`}
+          renderItem={() => <BestsellerCardSkeleton />}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingRight: 24 }}
+          ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+        />
       ) : (
-        <Grid data={data.bestsellers} renderItem={(d) => <DishCard item={d} onPress={openDish} />} />
+        <FlatList
+          horizontal
+          data={data.bestsellers}
+          keyExtractor={(d) => d.id}
+          renderItem={({ item }) => <BestsellerCard item={item} onPress={openDish} />}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingRight: 24 }}
+          ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+        />
       )}
       <View style={{ height: 8 }} />
     </Screen>

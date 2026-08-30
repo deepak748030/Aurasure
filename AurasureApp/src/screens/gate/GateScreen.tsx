@@ -605,7 +605,7 @@ function LoginStep(): React.ReactElement {
               fullWidth
               size="lg"
               onPress={submit}
-              style={{ marginTop: 18, height: 52 }}
+              style={{ marginTop: 18, height: 58 }}
             />
           </View>
 
@@ -649,6 +649,12 @@ function OtpStep({ phone, onBack, onVerify }: { phone: string; onBack: () => voi
     onVerify();
   };
 
+  // The slot that currently owns the caret (next digit to type), or the last
+  // one once full. Tapping any slot brings focus (keyboard) back to the input.
+  const caretIndex = Math.min(otp.length, 5);
+
+  const focusInput = (): void => inputRef.current?.focus();
+
   return (
     <View style={styles.otpScreen}>
       <View style={styles.otpHeader}>
@@ -677,11 +683,20 @@ function OtpStep({ phone, onBack, onVerify }: { phone: string; onBack: () => voi
 
         <View style={styles.otpSlotsRow}>
           {[0, 1, 2, 3, 4, 5].map((i) => (
-            <View key={i} style={[styles.otpSlot, otp.length > i ? styles.otpSlotActive : null]}>
+            <Pressable
+              key={i}
+              onPress={focusInput}
+              style={({ pressed }) => [
+                styles.otpSlot,
+                otp.length > i ? styles.otpSlotActive : null,
+                i === caretIndex ? styles.otpSlotCaret : null,
+                { opacity: pressed ? 0.82 : 1 },
+              ]}
+            >
               <Text variant="h3" weight="bold" color={colors.text}>
                 {otp[i] ?? ''}
               </Text>
-            </View>
+            </Pressable>
           ))}
         </View>
         <TextInput
@@ -871,11 +886,11 @@ const styles = StyleSheet.create({
   rightIconBtn: { paddingLeft: 10 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
   rememberRow: { flexDirection: 'row', alignItems: 'center' },
-  // Matches the location CTA width: cancel the 24px content padding, add 4px
-  // inner gutter so the full-width button spans the same box on every screen.
+  // Login submit button: narrower than the other CTAs (keeps a visible side
+  // gutter) and a touch taller. Set on the Button via its style prop too.
   loginActions: {
-    marginHorizontal: -44,
-    paddingHorizontal: 4,
+    marginHorizontal: -8,
+    paddingHorizontal: 8,
     alignItems: 'stretch',
   },
   checkbox: {
@@ -968,7 +983,7 @@ const styles = StyleSheet.create({
   otpSlotsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 36 },
   otpSlot: {
     width: 50,
-    height: 50,
+    height: 54,
     borderRadius: 14,
     borderWidth: 1.5,
     borderColor: '#D9D3DA',
@@ -977,16 +992,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   otpSlotActive: { borderColor: '#A4006B', borderWidth: 2 },
+  // The slot that currently owns the caret (next digit to type).
+  otpSlotCaret: { borderColor: '#C88BB4', borderWidth: 2, backgroundColor: '#FBF2F8' },
   otpResendRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 22,
   },
-  // Same box width as login/location CTAs: cancel 24px content padding, keep a
-  // 4px inner gutter so the Verify button spans identically on every screen.
+  // Verify button width matches the other full-width CTAs: content pads 24,
+  // pull back 24, add a 4px inner gutter so it lands inside the screen with a
+  // slight margin instead of overflowing the edges.
   otpActions: {
-    marginHorizontal: -44,
+    marginHorizontal: -24,
     paddingHorizontal: 4,
     alignItems: 'stretch',
   },
@@ -1049,15 +1067,14 @@ const styles = StyleSheet.create({
   locationPhoneLine: { height: 3, borderRadius: 2, backgroundColor: '#8CCDBF', width: 58, marginTop: 8 },
   locationHeadline: { textAlign: 'center', marginTop: 30, fontSize: 19, lineHeight: 25, letterSpacing: -0.1 },
   locationSub: { textAlign: 'center', marginTop: 12, lineHeight: 21 },
-  // The primary "Use Current Location" CTA is full width (spans the whole box,
-  // which reaches the screen edges). "Set From Map" is wrapped in a narrower,
-  // centered container so it is clearly smaller than the primary CTA.
+  // The primary "Use Current Location" CTA is full width within a clean 4px
+  // side gutter (content pads 24, we pull back 24 then add 4 inner). It spans
+  // the content box and is wider than the narrower Set From Map button below.
   locationActions: {
     marginTop: 26,
-    marginHorizontal: -44,
+    marginHorizontal: -24,
     paddingHorizontal: 4,
     alignItems: 'stretch',
-    // backgroundColor: 'red'
   },
   // Narrow wrapper that constrains Set From Map to a smaller width and centers
   // it below the wide Use Current Location button.

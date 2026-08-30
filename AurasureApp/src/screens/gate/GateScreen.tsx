@@ -11,7 +11,7 @@ import { SmartImage } from '../../components/ui/SmartImage';
 import { colors } from '@/theme/colors';
 import { radius, spacing } from '@/theme/tokens';
 import { haptic } from '@/lib/haptics';
-import { CITY_COORDS, detectCity, POPULAR_CITIES } from '@/lib/location';
+import { CITY_COORDS, detectCity, POPULAR_CITIES, type PlaceResult } from '@/lib/location';
 import { Images } from '@/assets';
 import { useApp } from '@/context/AppContext';
 import { useScreenBars } from '@/lib/systemBars';
@@ -82,6 +82,39 @@ function LocationStep(): React.ReactElement {
   const [mode, setMode] = useState<'intro' | 'map'>('intro');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const autoRan = useRef(false);
+
+  const applyDetection = (res: PlaceResult): void => {
+    if (res.ok) {
+      setLocation(res.city);
+      return;
+    }
+    setError(res.denied ? 'Location permission was denied. Try picking the location from map.' : 'Could not read your location. Pick it from the map.');
+    setMode('map');
+  };
+
+  // The gate only needs to ask when location is OFF. If the device already
+  // has location on, pick the city automatically and skip straight to the
+  // module picker - no tap needed.
+  useEffect(() => {
+    if (autoRan.current) return;
+    autoRan.current = true;
+    (async () => {
+      try {
+        const perm = await Location.getForegroundPermissionsAsync();
+        if (perm.status !== 'granted') return; // permission off -> show the gate
+        setBusy(true);
+        setError(null);
+        setLocationStatus('loading');
+        const res = await detectCity();
+        setBusy(false);
+        applyDetection(res);
+      } catch {
+        setBusy(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const useCurrent = async (): Promise<void> => {
     haptic.light();
@@ -90,12 +123,7 @@ function LocationStep(): React.ReactElement {
     setLocationStatus('loading');
     const res = await detectCity();
     setBusy(false);
-    if (res.ok) {
-      setLocation(res.city);
-      return;
-    }
-    setError(res.denied ? 'Location permission was denied. Try picking the location from map.' : 'Could not read your location. Pick it from the map.');
-    setMode('map');
+    applyDetection(res);
   };
 
   if (mode === 'map') {

@@ -408,7 +408,6 @@ function LoginStep(): React.ReactElement {
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-  const [otpMode, setOtpMode] = useState(false);
   const [otpFor, setOtpFor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -417,28 +416,29 @@ function LoginStep(): React.ReactElement {
 
   const submit = (): void => {
     setError(null);
-    if (otpMode || tab === 'phone') {
+    // Phone login has no password: after a valid number, straight to OTP.
+    if (tab === 'phone') {
       if (!validPhone) {
         haptic.error();
         setError('Enter a valid 10-digit Indian mobile number.');
         return;
       }
-    } else if (!validEmail) {
+      haptic.success();
+      setOtpFor(`+91 ${phone}`);
+      return;
+    }
+    if (!validEmail) {
       haptic.error();
       setError('Enter a valid email address.');
       return;
     }
-    if (!otpMode && !password) {
+    if (!password) {
       haptic.error();
       setError('Please enter your password.');
       return;
     }
     haptic.success();
-    if (otpMode) {
-      setOtpFor(`+91 ${phone}`);
-      return;
-    }
-    login(!otpMode && tab === 'email' ? email.trim() : `+91 ${phone}`);
+    login(email.trim());
   };
 
   if (otpFor) {
@@ -478,7 +478,6 @@ function LoginStep(): React.ReactElement {
                   onPress={() => {
                     setTab(t.key);
                     setError(null);
-                    setOtpMode(false);
                   }}
                   style={[styles.tab, active ? styles.tabActive : null]}
                 >
@@ -493,7 +492,7 @@ function LoginStep(): React.ReactElement {
           {tab === 'phone' ? (
             <LoginField
               icon="phone"
-              prefix="🇮🇳 +91"
+              prefix="+91"
               value={phone}
               onChangeText={(t) => setPhone(t.replace(/\D/g, '').slice(0, 10))}
               placeholder="Phone"
@@ -512,39 +511,48 @@ function LoginStep(): React.ReactElement {
             />
           )}
 
-          {!otpMode ? (
-            <LoginField
-              icon="lock"
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Password"
-              secureTextEntry={!showPassword}
-              rightIcon="eye"
-              onRightPress={() => setShowPassword((v) => !v)}
-              style={{ marginTop: 12 }}
-            />
+          {/* Password + remember/forgot only apply to email login. Phone login
+              has no password — after a valid number it goes straight to OTP. */}
+          {tab === 'email' ? (
+            <>
+              <LoginField
+                icon="lock"
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Password"
+                secureTextEntry={!showPassword}
+                rightIcon="eye"
+                onRightPress={() => setShowPassword((v) => !v)}
+                style={{ marginTop: 12 }}
+              />
+              <View style={styles.rowBetween}>
+                <Pressable style={styles.rememberRow} onPress={() => setRemember((v) => !v)} hitSlop={8}>
+                  <View style={[styles.checkbox, remember ? styles.checkboxActive : null]}>
+                    {remember ? <Icon name="check" size={14} color={colors.white} /> : null}
+                  </View>
+                  <Text variant="subtitle" color={colors.textSecondary}>
+                    Remember me?
+                  </Text>
+                </Pressable>
+                <Pressable onPress={() => setError('Password reset link would be sent to your account.')}>
+                  <Text variant="subtitle" color={colors.brand[700]} weight="semibold">
+                    Forgot Password?
+                  </Text>
+                </Pressable>
+              </View>
+            </>
           ) : null}
 
-          <View style={styles.rowBetween}>
-            <Pressable style={styles.rememberRow} onPress={() => setRemember((v) => !v)} hitSlop={8}>
-              <View style={[styles.checkbox, remember ? styles.checkboxActive : null]}>
-                {remember ? <Icon name="check" size={14} color={colors.white} /> : null}
-              </View>
-              <Text variant="subtitle" color={colors.textSecondary}>
-                Remember me?
-              </Text>
-            </Pressable>
-            {otpMode ? null : (
-              <Pressable onPress={() => setError('Password reset link would be sent to your account.')}>
-                <Text variant="subtitle" color={colors.brand[700]} weight="semibold">
-                  Forgot Password?
-                </Text>
-              </Pressable>
-            )}
-          </View>
-
           {error ? <ErrorNote text={error} /> : null}
-          <Button title="Login" variant="login" leftIcon="login" fullWidth size="lg" onPress={submit} style={{ marginTop: 18 }} />
+          <Button
+            title="Login"
+            variant="login"
+            leftIcon="login"
+            fullWidth
+            size="lg"
+            onPress={submit}
+            style={{ marginTop: 18, height: 52, marginHorizontal: -16 }}
+          />
 
           <View style={styles.orRow}>
             <View style={styles.orLine} />
@@ -553,22 +561,6 @@ function LoginStep(): React.ReactElement {
             </Text>
             <View style={styles.orLine} />
           </View>
-
-          <Pressable
-            onPress={() => {
-              setOtpMode((v) => !v);
-              if (!otpMode) setTab('phone');
-              setError(null);
-            }}
-            style={{ marginTop: 4, alignItems: 'center' }}
-          >
-            <Text variant="subtitle" color={colors.textSecondary}>
-              {otpMode ? 'Login with password instead' : 'Sign in with '}
-              <Text variant="subtitle" color={colors.brand[700]} weight="bold">
-                {otpMode ? 'Password' : 'OTP'}
-              </Text>
-            </Text>
-          </Pressable>
 
           <Pressable onPress={() => setError('Sign up flow will be added later.')} style={{ marginTop: 12, alignItems: 'center' }}>
             <Text variant="subtitle" color={colors.textSecondary}>

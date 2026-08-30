@@ -147,6 +147,7 @@ function LocationStep(): React.ReactElement {
             size="lg"
             loading={busy}
             onPress={() => void useCurrent()}
+            style={{ width: '100%' }}
           />
           <Pressable
             onPress={() => {
@@ -984,15 +985,19 @@ const styles = StyleSheet.create({
   locationPhoneLine: { height: 3, borderRadius: 2, backgroundColor: '#8CCDBF', width: 58, marginTop: 8 },
   locationHeadline: { textAlign: 'center', marginTop: 30, fontSize: 19, lineHeight: 25, letterSpacing: -0.1 },
   locationSub: { textAlign: 'center', marginTop: 12, lineHeight: 21 },
-  // Both CTAs share one box so they stay exactly the same width. Net gutter on
-  // each side is 4px (content pads 24, we pull back 20): left/right margins stay
-  // even and small on both buttons.
+  // Both CTAs live in one box so they share the exact same width. We pull the
+  // box back 20px each side (content pads 24 -> net 4px left/right gutter). The
+  // solid Button already uses alignSelf: 'stretch'; adding an explicit
+  // alignSelf stretch + width 100% to the outline button forces both children
+  // to fill the same content width, so they can never diverge.
   locationActions: { marginTop: 26, marginHorizontal: -20 },
   locationMapBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 12,
+    alignSelf: 'stretch',
+    width: '100%',
     borderWidth: 1.5,
     borderColor: '#C5A0BB',
     borderRadius: radius.pill,

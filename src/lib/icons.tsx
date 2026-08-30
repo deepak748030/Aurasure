@@ -46,7 +46,11 @@ const registry = {
   badgePercent: ['ticket-percent', 'ticket-percent-outline'],
   flame: ['fire', 'fire'],
   package: ['package', 'package'],
-  receipt: ['receipt', 'receipt-outline'],
+  receipt: ['receipt-text', 'receipt-text-outline'],
+  // Bottom-tab "Orders" glyph. The plain `receipt`/`receipt-outline` pair draws
+  // an almost empty box with a torn edge, which reads as a missing icon at the
+  // 22px a tab bar uses; `receipt-text` puts lines inside so it stays legible.
+  orders: ['receipt-text', 'receipt-text-outline'],
   settings: ['cog', 'cog-outline'],
   logout: ['logout-variant', 'logout-variant'],
   login: ['login', 'login'],

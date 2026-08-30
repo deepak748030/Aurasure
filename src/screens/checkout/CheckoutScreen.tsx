@@ -169,7 +169,14 @@ export function CheckoutScreen({ navigation }: Props): React.ReactElement {
             <Text variant="caption" color="rgba(255,255,255,0.85)">To pay</Text>
             <Text variant="title" weight="bold" color={colors.white}>{formatINR(total)}</Text>
           </View>
-          <Button title="Place order" onPress={placeOrder} variant="secondary" leftIcon="lock" />
+          <Button
+            title="Place order"
+            onPress={placeOrder}
+            variant="secondary"
+            leftIcon="lock"
+            size="lg"
+            style={{ flex: 1, marginLeft: 16 }}
+          />
         </View>
       </View>
 
@@ -211,9 +218,9 @@ const styles = StyleSheet.create({
   addrRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    borderRadius: radius.md,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: radius.xxl,
     borderWidth: 1,
     borderColor: colors.border,
     marginBottom: 8,
@@ -222,7 +229,7 @@ const styles = StyleSheet.create({
   radio: {
     width: 20,
     height: 20,
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
     borderWidth: 2,
     borderColor: colors.borderStrong,
     alignItems: 'center',
@@ -235,9 +242,9 @@ const styles = StyleSheet.create({
   payRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    borderRadius: radius.md,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: radius.xxl,
     borderWidth: 1,
     borderColor: colors.border,
     marginBottom: 8,
@@ -250,9 +257,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: colors.brand[600],
-    borderRadius: radius.lg,
-    paddingVertical: 12,
-    paddingHorizontal: spacing.md,
+    borderRadius: radius.pill,
+    paddingVertical: 10,
+    paddingLeft: 20,
+    paddingRight: 10,
   },
   successIcon: {
     width: 64,

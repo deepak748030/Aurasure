@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../components/ui/Text';
 import { Icon } from '@/lib/icons';
 import { Button } from '../../components/ui/Button';
@@ -15,6 +15,7 @@ import { colors } from '@/theme/colors';
 import { radius, spacing } from '@/theme/tokens';
 import { formatINR } from '@/lib/format';
 import { haptic } from '@/lib/haptics';
+import { useScreenBars } from '@/lib/systemBars';
 import type { CartItem } from '@/types';
 
 const FREE_DELIVERY_AT = 700;
@@ -46,9 +47,13 @@ export function CartScreen({ navigation }: Props): React.ReactElement {
   const total = subtotal + delivery;
   const remaining = Math.max(0, FREE_DELIVERY_AT - subtotal);
 
+  const insets = useSafeAreaInsets();
+  useScreenBars(colors.appBar);
+
   return (
-    <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
+    <SafeAreaView style={styles.root} edges={['left', 'right']}>
+      {/* App-bar strip: the status bar / notification bar sits on this. */}
+      <View style={[styles.header, { paddingTop: insets.top + 12, backgroundColor: colors.appBar }]}>
         <Pressable onPress={() => navigation.goBack()} style={styles.headerBtn} hitSlop={10}>
           <Icon name="arrowLeft" size={24} color={colors.text} />
         </Pressable>
@@ -254,7 +259,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 12,
   },
   headerBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   scroll: { paddingHorizontal: 18, paddingBottom: 30 },

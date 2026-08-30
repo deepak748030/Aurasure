@@ -58,7 +58,7 @@ export function SearchScreen({ navigation }: Props): React.ReactElement {
         alignItems: 'center',
         paddingHorizontal: layout.contentHorizontalPadding,
         paddingVertical: 10,
-        backgroundColor: colors.background,
+        backgroundColor: colors.appBar,
       }}
     >
       <BackButton onPress={() => navigation.goBack()} />

@@ -25,11 +25,15 @@ const TABS: TabDef[] = [
   { key: 'Home', label: 'Home', icon: 'home' },
   { key: 'Likes', label: 'Favourite', icon: 'heart' },
   { key: 'Cart', label: '', icon: 'cart' },
-  { key: 'Orders', label: 'Orders', icon: 'receipt' },
+  { key: 'Orders', label: 'Orders', icon: 'orders' },
   { key: 'Menu', label: 'Menu', icon: 'menu' },
 ];
 
 const CENTER_COLOR = '#A4006B';
+// Unfocused ink. colors.textTertiary (#98A1B3) is too light against the plum
+// bar - the outline glyphs disappeared into it at 22px.
+const IDLE_COLOR = '#6E6577';
+const ICON_SIZE = 23;
 
 export function TabBar({ state, navigation }: BottomTabBarProps): React.ReactElement {
   const insets = useSafeAreaInsets();
@@ -106,8 +110,8 @@ export function TabBar({ state, navigation }: BottomTabBarProps): React.ReactEle
               <View style={styles.iconBox}>
                 <Icon
                   name={def.icon}
-                  size={22}
-                  color={isFocused ? CENTER_COLOR : colors.textTertiary}
+                  size={ICON_SIZE}
+                  color={isFocused ? CENTER_COLOR : IDLE_COLOR}
                   filled={isFocused}
                 />
                 {badge > 0 ? (
@@ -120,7 +124,7 @@ export function TabBar({ state, navigation }: BottomTabBarProps): React.ReactEle
               </View>
               <Text
                 variant="caption"
-                color={isFocused ? CENTER_COLOR : colors.textTertiary}
+                color={isFocused ? CENTER_COLOR : IDLE_COLOR}
                 weight={isFocused ? 'bold' : 'medium'}
                 style={{ marginTop: 2 }}
               >
@@ -155,8 +159,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconBox: {
-    width: 44,
-    height: 28,
+    width: 46,
+    height: 30,
     alignItems: 'center',
     justifyContent: 'center',
   },

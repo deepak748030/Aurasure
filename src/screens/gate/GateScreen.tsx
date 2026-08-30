@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View, type ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../components/ui/Text';
 import { Icon } from '@/lib/icons';
 import { Button } from '../../components/ui/Button';
@@ -12,12 +12,16 @@ import { haptic } from '@/lib/haptics';
 import { detectCity, POPULAR_CITIES } from '@/lib/location';
 import { Images } from '@/assets';
 import { useApp } from '@/context/AppContext';
+import { useScreenBars } from '@/lib/systemBars';
 import type { IconName, ModuleKey } from '@/types';
 
 export function GateScreen(): React.ReactElement {
   const { gate } = useApp();
+  const insets = useSafeAreaInsets();
+  useScreenBars(colors.appBar, { navigationBar: colors.appBar });
   return (
-    <SafeAreaView style={styles.root} edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView style={styles.root} edges={['bottom', 'left', 'right']}>
+      <View style={{ height: insets.top, backgroundColor: colors.appBar }} />
       {gate === 'module' ? <Progress step={1} /> : null}
       {gate === 'location' ? <LocationStep /> : null}
       {gate === 'module' ? <ModuleStep /> : null}
@@ -348,7 +352,7 @@ const FAKE_TABS = [
   { key: 'Home', label: 'Home', icon: 'home' as IconName },
   { key: 'Likes', label: 'Favourite', icon: 'heart' as IconName },
   { key: 'Cart', label: '', icon: 'cart' as IconName },
-  { key: 'Orders', label: 'Orders', icon: 'receipt' as IconName },
+  { key: 'Orders', label: 'Orders', icon: 'orders' as IconName },
   { key: 'Menu', label: 'Menu', icon: 'menu' as IconName },
 ];
 
@@ -784,8 +788,8 @@ const styles = StyleSheet.create({
     width: '48%',
     flexGrow: 0,
     alignItems: 'center',
-    paddingVertical: 12,
-    borderRadius: radius.md,
+    paddingVertical: 13,
+    borderRadius: radius.pill,
     backgroundColor: colors.surface,
     marginBottom: spacing.sm,
     marginRight: '4%',
@@ -794,12 +798,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.xxl,
     borderWidth: 1,
     borderColor: colors.border,
-    minHeight: 50,
+    minHeight: 52,
     marginTop: spacing.lg,
-    paddingRight: 12,
+    paddingRight: 14,
     overflow: 'hidden',
   },
   prefix: {
@@ -814,8 +818,8 @@ const styles = StyleSheet.create({
   otpRow: { flexDirection: 'row', marginTop: spacing.lg, gap: spacing.sm },
   otpBox: {
     flex: 1,
-    height: 52,
-    borderRadius: radius.md,
+    height: 54,
+    borderRadius: radius.xxl,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,

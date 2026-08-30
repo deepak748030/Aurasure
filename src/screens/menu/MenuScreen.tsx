@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../components/ui/Text';
 import { Icon } from '@/lib/icons';
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/tokens';
+import { radius } from '@/theme/tokens';
 import { haptic } from '@/lib/haptics';
+import { useScreenBars } from '@/lib/systemBars';
 import { useApp } from '@/context/AppContext';
 import type { IconName } from '@/types';
+
+// Page background of the More screen; also what the status bar sits on once the
+// gradient hero has scrolled away.
+const PAGE_BG = '#F3F1F5';
 
 interface MenuRow {
   label: string;
@@ -64,11 +69,36 @@ export function MenuScreen(): React.ReactElement {
   const { phone, name, login } = useApp();
   const [dark, setDark] = useState(false);
   const displayName = name && phone ? name : 'Guest User';
+  const insets = useSafeAreaInsets();
+  // The hero runs all the way under the status bar, so the notification bar
+  // picks up the app's deep plum (and white icons) instead of a system grey.
+  // Once the hero has scrolled out, the strip behind the status bar is the
+  // light page background, so the icons flip back to ink.
+  const [heroHeight, setHeroHeight] = useState(0);
+  const [heroGone, setHeroGone] = useState(false);
+  const surface = heroGone ? PAGE_BG : colors.appBarHero;
+  useScreenBars(surface, { navigationBar: colors.appBar });
 
   return (
-    <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
-        <LinearGradient colors={['#6A0A45', '#A4006B', '#C21882']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+    <SafeAreaView style={styles.root} edges={['left', 'right']}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 32 }}
+        showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={(e) => {
+          const threshold = Math.max(0, heroHeight - insets.top - 12);
+          const gone = e.nativeEvent.contentOffset.y > threshold;
+          setHeroGone((prev) => (prev === gone ? prev : gone));
+        }}
+      >
+        <LinearGradient
+          colors={['#6A0A45', '#A4006B', '#C21882']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.hero, { paddingTop: insets.top + 18 }]}
+          onLayout={(e) => setHeroHeight(e.nativeEvent.layout.height)}
+        >
           <View style={styles.profileRow}>
             <View style={styles.avatar}>
               <Icon name="user" size={30} color="#5B3A7E" />
@@ -119,7 +149,11 @@ export function MenuScreen(): React.ReactElement {
                   <Pressable
                     key={row.label}
                     onPress={() => haptic.light()}
-                    style={({ pressed }) => [styles.row, { opacity: pressed ? 0.92 : 1 }, i > 0 ? styles.rowTop : null]}
+                    style={({ pressed }) => [
+                      styles.row,
+                      { opacity: pressed ? 0.92 : 1, backgroundColor: pressed ? '#FBF5FA' : 'transparent' },
+                      i > 0 ? styles.rowTop : null,
+                    ]}
                   >
                     <View style={[styles.rowIcon, { backgroundColor: row.tint }]}>
                       <Icon name={row.icon} size={20} color={row.color} filled />
@@ -155,10 +189,9 @@ export function MenuScreen(): React.ReactElement {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F3F1F5' },
+  root: { flex: 1, backgroundColor: PAGE_BG },
   hero: {
     paddingHorizontal: 18,
-    paddingTop: 18,
     paddingBottom: 38,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
@@ -227,7 +260,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
   },
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 15, minHeight: 60 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    // Bleeds into the card padding so the pressed pill reaches the card edge.
+    marginHorizontal: -10,
+    paddingHorizontal: 10,
+    minHeight: 60,
+    borderRadius: radius.pill,
+  },
   rowTop: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#F0EAF0' },
   rowIcon: {
     width: 46,
@@ -240,11 +282,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    width: '100%',
     backgroundColor: '#FAF0F9',
     borderWidth: 1,
     borderColor: '#E4BBD8',
-    borderRadius: 999,
-    paddingVertical: 14,
+    borderRadius: radius.pill,
+    paddingVertical: 16,
     marginTop: 24,
   },
   signInIcon: {

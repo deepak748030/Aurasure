@@ -11,10 +11,13 @@ import type { IconName } from '@/types';
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'login';
 type Size = 'sm' | 'md' | 'lg';
 
+// Pill shapes at every size, matching the Sign In CTA on the More screen
+// (borderRadius 999 + generous vertical padding) instead of the old 6px
+// "almost square" look.
 const SIZE: Record<Size, { height: number; pad: number; variant: 'button' | 'title' | 'subtitle'; icon: number }> = {
-  sm: { height: 38, pad: 14, variant: 'subtitle', icon: 16 },
-  md: { height: 46, pad: 18, variant: 'button', icon: 18 },
-  lg: { height: 54, pad: 22, variant: 'button', icon: 20 },
+  sm: { height: 42, pad: 18, variant: 'subtitle', icon: 16 },
+  md: { height: 50, pad: 22, variant: 'button', icon: 18 },
+  lg: { height: 56, pad: 26, variant: 'button', icon: 20 },
 };
 
 const GRADIENT: Record<Variant, [string, string]> = {
@@ -31,8 +34,15 @@ const TEXT_COLOR: Record<Variant, string> = {
   login: colors.white,
   success: colors.white,
   danger: colors.white,
-  secondary: colors.text,
-  ghost: colors.brand[700],
+  secondary: '#8B0057',
+  ghost: colors.textSecondary,
+};
+
+// Flat (non-gradient) variants borrow the Sign In button's skin from the More
+// screen: soft plum fill, thin plum outline, fully rounded.
+const FLAT: Record<'secondary' | 'ghost', { bg: string; border: string }> = {
+  secondary: { bg: '#FAF0F9', border: '#E4BBD8' },
+  ghost: { bg: colors.surface, border: colors.border },
 };
 
 export interface ButtonProps {
@@ -44,6 +54,7 @@ export interface ButtonProps {
   rightIcon?: IconName;
   loading?: boolean;
   disabled?: boolean;
+  /** Stretches across the row. On by default - CTAs are full width app-wide. */
   fullWidth?: boolean;
   style?: StyleProp<ViewStyle>;
 }
@@ -57,12 +68,13 @@ export function Button({
   rightIcon,
   loading = false,
   disabled = false,
-  fullWidth = false,
+  fullWidth = true,
   style,
 }: ButtonProps): React.ReactElement {
   const s = SIZE[size];
   const textColor = TEXT_COLOR[variant];
   const isFlat = variant === 'secondary' || variant === 'ghost';
+  const flat = isFlat ? FLAT[variant as 'secondary' | 'ghost'] : undefined;
 
   return (
     <Pressable
@@ -77,10 +89,18 @@ export function Button({
         {
           height: s.height,
           paddingHorizontal: s.pad,
-          borderRadius: radius.md,
+          borderRadius: radius.pill,
           opacity: disabled || loading ? 0.5 : pressed ? 0.94 : 1,
+          // fullWidth stretches across the row it sits in. Inside a horizontal
+          // row `stretch` only affects the cross axis, so callers keep using
+          // flex/width there - the explicit height above still wins.
           alignSelf: fullWidth ? 'stretch' : 'flex-start',
-          backgroundColor: isFlat ? GRADIENT[variant][0] : 'transparent',
+          minWidth: fullWidth ? undefined : 120,
+          // Gradient variants fall back to their first stop when disabled,
+          // since the gradient layer is skipped for the dimmed state.
+          backgroundColor: flat ? flat.bg : disabled ? GRADIENT[variant][0] : 'transparent',
+          borderWidth: flat ? 1 : 0,
+          borderColor: flat ? flat.border : 'transparent',
         },
         style,
       ]}
@@ -103,7 +123,13 @@ export function Button({
                 {leftIcon ? (
                   <Icon name={leftIcon} size={s.icon} color={textColor} style={styles.leftIcon} />
                 ) : null}
-                <Text variant={s.variant} color={textColor} weight="semibold">
+                <Text
+                  variant={s.variant}
+                  color={textColor}
+                  weight="bold"
+                  numberOfLines={1}
+                  style={styles.label}
+                >
                   {title}
                 </Text>
                 {rightIcon ? (
@@ -138,4 +164,5 @@ const styles = StyleSheet.create({
   },
   leftIcon: { marginRight: 8 },
   rightIcon: { marginLeft: 8 },
+  label: { textAlign: 'center', letterSpacing: 0.2, maxWidth: '100%' },
 });

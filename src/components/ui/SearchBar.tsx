@@ -28,9 +28,10 @@ export function SearchBar({
           flexDirection: 'row',
           alignItems: 'center',
           backgroundColor: colors.surfaceAlt,
-          borderRadius: radius.md,
-          paddingHorizontal: 14,
-          height: 44,
+          // Pill, so it lines up with the app's rounded CTAs.
+          borderRadius: radius.pill,
+          paddingHorizontal: 16,
+          height: 48,
           borderWidth: 1,
           borderColor: colors.border,
         },

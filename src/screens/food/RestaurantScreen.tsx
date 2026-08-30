@@ -306,9 +306,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.brand[600],
-    borderRadius: radius.lg,
-    paddingVertical: 12,
-    paddingHorizontal: spacing.md,
+    borderRadius: radius.pill,
+    paddingVertical: 13,
+    paddingHorizontal: spacing.lg,
   },
   cartBadge: {
     position: 'relative',

@@ -59,6 +59,14 @@ export const colors = {
     50: '#F6F7FB',
   },
 
+  // App chrome: the strip painted behind the status bar (Android notification
+  // bar) and behind the gesture nav pill. Deliberately the same soft plum as
+  // the tab bar so both system bars read as part of the app.
+  appBar: '#F5EAF3',
+  // Deep plum used by the gradient heroes (Menu / Gate). Dark enough that the
+  // system-bar contrast flips to white icons on its own.
+  appBarHero: '#6A0A45',
+
   // semantic surfaces & text
   background: '#F6F7FB',
   surface: '#FFFFFF',

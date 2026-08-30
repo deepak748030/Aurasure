@@ -13,7 +13,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#FFFFFF"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.aurasure.app",
@@ -25,7 +27,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo_aurasure.png",
         "backgroundColor": "#FFFFFF"
-      }
+      },
+      "navigationBarColor": "#F5EAF3"
     },
     "web": {
       "bundler": "metro"
@@ -40,6 +43,7 @@
           "locationWhenInUsePermission": "Aurasure uses your location only to show nearby restaurants, delivery times and serviceable products."
         }
       ]
-    ]
+    ],
+    "backgroundColor": "#F5EAF3"
   }
 }

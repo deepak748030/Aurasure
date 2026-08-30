@@ -199,7 +199,13 @@ export function ProductScreen({ route, navigation }: Props): React.ReactElement 
               {formatINR(product.price)}
             </Text>
           </View>
-          <Button title="Add to cart" leftIcon="cart" onPress={handleAdd} style={{ flex: 1.4 }} />
+          <Button
+            title="Add to cart"
+            leftIcon="cart"
+            onPress={handleAdd}
+            size="lg"
+            style={{ flex: 1.9, marginLeft: 14 }}
+          />
         </View>
       ) : null}
 
@@ -286,9 +292,9 @@ const styles = StyleSheet.create({
   },
   sizeRow: { flexDirection: 'row', marginTop: 10 },
   sizeChip: {
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: radius.md,
+    paddingVertical: 11,
+    paddingHorizontal: 20,
+    borderRadius: radius.pill,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -305,8 +311,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: 12,
+    borderRadius: radius.pill,
+    padding: 10,
+    paddingLeft: 20,
   },
   successIcon: {
     width: 64,

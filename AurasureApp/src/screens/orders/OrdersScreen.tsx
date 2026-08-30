@@ -13,6 +13,7 @@ import { colors } from '@/theme/colors';
 import { radius } from '@/theme/tokens';
 import { formatINR } from '@/lib/format';
 import { haptic } from '@/lib/haptics';
+import { switchTab } from '@/navigation/RootNavigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { Order, OrderStatus } from '@/types';
 import type { OrdersStackParamList } from '../../navigation/types';
@@ -65,7 +66,7 @@ export function OrdersScreen({ navigation }: Props): React.ReactElement {
           </View>
         ))
       ) : list.length === 0 ? (
-        <EmptyState icon="receipt" title="No orders yet" subtitle="Your orders will appear here once you place one." actionLabel="Browse food" onAction={() => navigation.getParent()?.navigate('Food')} />
+        <EmptyState icon="receipt" title="No orders yet" subtitle="Your orders will appear here once you place one." actionLabel="Browse food" onAction={() => switchTab('Home')} />
       ) : (
         list.map((o) => (
           <Pressable key={o.id} onPress={() => open(o)} style={({ pressed }) => [styles.card, { opacity: pressed ? 0.96 : 1 }]}>

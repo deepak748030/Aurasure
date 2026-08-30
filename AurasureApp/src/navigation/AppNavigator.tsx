@@ -93,7 +93,7 @@ function OrdersNavigator(): React.ReactElement {
 function MenuNavigator(): React.ReactElement {
   return (
     <MenuStack.Navigator screenOptions={screenOptions}>
-      <MenuStack.Screen name="Menu" component={MenuScreen} />
+      <MenuStack.Screen name="More" component={MenuScreen} />
       <MenuStack.Screen name="MenuDetail" component={MenuDetailScreen} />
       <MenuStack.Screen name="Login" component={MenuLoginScreen} />
     </MenuStack.Navigator>

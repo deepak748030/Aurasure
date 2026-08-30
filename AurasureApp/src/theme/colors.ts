@@ -27,23 +27,9 @@ export const food = {
   900: '#7E2B16',
 };
 
-export const teal = {
-  50: '#E7FBF6',
-  100: '#C6F4E9',
-  200: '#92E9D5',
-  300: '#54D6BC',
-  400: '#22BBA0',
-  500: '#0E9F88',
-  600: '#0A8472',
-  700: '#0B6A5E',
-  800: '#0D544C',
-  900: '#0E443E',
-};
-
 export const colors = {
   brand,
   food,
-  teal,
 
   // neutral ink scale
   ink: {
@@ -97,9 +83,7 @@ export const colors = {
 
   // gradients (used by expo-linear-gradient)
   brandGradient: ['#6A5EF5', '#8B5CF6'] as [string, string],
-  foodGradient: ['#FF8A5B', '#FF6A3D'] as [string, string],
-  shopGradient: ['#6A5EF5', '#4B36C9'] as [string, string],
-  auroraGradient: ['#6A5EF5', '#22BBA0'] as [string, string],
+
 };
 
 export type ColorScheme = typeof colors;

@@ -36,10 +36,6 @@ const subscribe = (onChange: () => void): (() => void) => {
   };
 };
 
-export function getSystemBars(): SystemBars {
-  return state;
-}
-
 /** Applies a patch; no-ops when nothing actually changed. */
 export function setSystemBars(patch: Partial<SystemBars>): void {
   const next = { ...state, ...patch };

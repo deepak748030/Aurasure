@@ -329,17 +329,8 @@ export const getRestaurantById = (id: string): Restaurant | undefined =>
 export const getFoodItemsByRestaurant = (restaurantId: string): FoodItem[] =>
   foodItems.filter((f) => f.restaurantId === restaurantId);
 
-export const getFoodItemById = (id: string): FoodItem | undefined =>
-  foodItems.find((f) => f.id === id);
-
 export const getProductById = (id: string): Product | undefined =>
   products.find((p) => p.id === id);
-
-export const getFoodCategoryById = (id: string): FoodCategory | undefined =>
-  foodCategories.find((c) => c.id === id);
-
-export const getShopCategoryById = (id: string): ShopCategory | undefined =>
-  shopCategories.find((c) => c.id === id);
 
 export const getBannersByModule = (module: 'food' | 'shop'): Banner[] =>
   banners.filter((b) => b.module === module);

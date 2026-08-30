@@ -10,6 +10,3 @@ export const formatCount = (n: number): string => (n >= 1000 ? `${(n / 1000).toF
 
 export const discountPercent = (mrp: number, price: number): number =>
   mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
-
-export const pluralize = (n: number, singular: string, plural: string): string =>
-  `${n} ${n === 1 ? singular : plural}`;

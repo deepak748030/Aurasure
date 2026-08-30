@@ -3,7 +3,7 @@
 // full color parsing library is needed.
 
 /** Parses `#rgb`, `#rrggbb`, `#rrggbbaa`, `rgb()` and `rgba()` into 0-255 channels. */
-export function parseHex(color: string): [number, number, number] | null {
+function parseHex(color: string): [number, number, number] | null {
   const c = color.trim();
   if (c.startsWith('#')) {
     const hex = c.slice(1);
@@ -33,7 +33,7 @@ export function parseHex(color: string): [number, number, number] | null {
 }
 
 /** WCAG relative luminance, 0 (black) → 1 (white). */
-export function luminance(color: string): number {
+function luminance(color: string): number {
   const rgb = parseHex(color);
   if (!rgb) return 1;
   const channel = (v: number): number => {

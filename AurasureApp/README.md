@@ -39,7 +39,7 @@ flowchart TD
 
 ```bash
 git clone https://github.com/deepak748030/Aurasure.git
-cd Aurasure
+cd Aurasure/AurasureApp        # the Expo project lives in this folder
 npm install
 npx expo start          # then press a / i, or scan the QR in Expo Go
 ```
@@ -63,11 +63,12 @@ of blocking the app.
 
 ```
 src/
-├─ App.tsx                  providers + splash/font bootstrap, Android nav-bar button style
-├─ assets.ts                10 generated local PNGs (+ one commented placeholder)
+├─ App.tsx                  providers + splash/font bootstrap
+├─ assets.ts                9 local images: 8 WebP + the PNG logo (splash / adaptive icon)
 ├─ components/
 │  ├─ ui/                   Screen, Card, Button, Input, TabBar, BottomSheet, Skeleton,
-│  │                        SmartImage, SearchBar, Chip, Badge, Rating, Price, IconBox, …
+│  │                        SmartImage, SearchBar, Chip, Badge, Rating, Price, IconBox,
+│  │                        SystemBarHost (status bar + nav bar colour owner), …
 │  ├─ common/               BannerCard (full-bleed), Grid (2/3 col)
 │  ├─ food/                 RestaurantCard, DishCard, FoodCategoryPills
 │  └─ shop/                 ProductCard, ShopCategoryCard
@@ -86,7 +87,9 @@ src/
 │  ├─ fonts.ts              Plus Jakarta Sans from the @expo/google-fonts CDN
 │  ├─ format.ts             ₹ money, ratings, minutes, distance
 │  ├─ haptics.ts            guarded expo-haptics presets
-│  └─ layout.ts             tab bar / header constants
+│  ├─ systemBars.ts         per-screen app-bar surface → notification bar colour + contrast
+│  ├─ color.ts              luminance helper behind that contrast choice
+│  └─ layout.ts             tab bar constants
 ├─ navigation/              AppNavigator, typed routes, deep-link helpers
 ├─ screens/                 12 screens (gate, food, shop, likes, cart, checkout,
 │                           orders, search, menu)
@@ -106,7 +109,7 @@ platform elevation can creep in. Separation comes from tint (`surface` white on 
 | Token | Value | Notes |
 | --- | --- | --- |
 | `layout.contentHorizontalPadding` | `4` | the only side gutter in the app (screens, rows, sheets, floating bars) |
-| `radius` | `2 / 4 / 6 / 8 / 10 / 12`, `pill` | small radii; `pill` reserved for badges, chips and circles |
+| `radius` | `4 / 8 / 12 / 16 / 20 / 26`, `pill` | fields, rows and cards use `md`-`xl`; every CTA and chip is `pill` |
 | `spacing` | `4 → 32`, `section: 24` | |
 | typography | `display … overline` | Plus Jakarta Sans, 5 weights |
 | module accents | Food coral `#FF6A3D`, Store indigo `#5B46E5` | active tab tint follows the module |
@@ -114,6 +117,10 @@ platform elevation can creep in. Separation comes from tint (`surface` white on 
 Other rules the code actually enforces:
 
 - **Banners are full-bleed** — `BannerCard` cancels the gutter with a negative margin and drops its side radius, so artwork touches both device edges (`fullBleed={false}` opts out).
+- **System bars belong to the app** — `Screen` paints an app-bar strip behind the transparent
+  status bar (`appBarColor`, defaults to the tab-bar plum; pass a hero colour to bleed it in) and
+  reports it to `lib/systemBars.ts`, so the notification bar always matches the screen and the
+  icon/clock contrast is derived from that colour instead of being hard-coded.
 - **Safe areas are handled once** — `Screen` wraps header + body in `SafeAreaView` (top/left/right); bottom spacing reads `BottomTabBarHeightContext` instead of hard-coding the bar height, so nothing pays the bottom inset twice and the floating cart bars sit where they should.
 - **Lists are tight** — horizontal rows use `gap: 0` containers with explicit per-item margins, grids use percentage widths, and rows inside a card are split by hairline dividers rather than by nesting cards.
 
@@ -121,7 +128,7 @@ Other rules the code actually enforces:
 
 `src/lib/icons.tsx` exposes one `<Icon name size color filled style />` component over
 **MaterialCommunityIcons** (ships with Expo — no extra native module, no font download).
-The 106-key registry is `[solid, outline]` per icon: the outline twin renders by default,
+The 109-key registry is `[solid, outline]` per icon: the outline twin renders by default,
 `filled` renders the solid glyph (focused tab, favourited item, rating star). `IconName`
 is a literal union, so an unknown icon name is a compile error.
 
@@ -147,9 +154,12 @@ is a literal union, so an unknown icon name is a compile error.
 ## Known limitations
 
 - Mock data only; no backend, no payments, no SMS, no order webhooks.
-- `SmartImage` renders a tinted icon placeholder for the 35 mock entries that have no image, and `shop_bag` is still a commented-out slot in `src/assets.ts` — drop real PNGs in and they light up.
+- `SmartImage` renders a tinted icon placeholder for the 35 mock entries that have no image — drop a file in `src/assets/images` and wire it in `src/assets.ts` and it lights up.
 - Fonts are fetched from a CDN on first run; offline the app falls back to system fonts.
-- Edge-to-edge is mandatory on Android 16, so `NavigationBar.setBackgroundColorAsync` is not used (it is a no-op there).
+- Edge-to-edge is mandatory on Android 16, so `NavigationBar.setBackgroundColorAsync` is not used (it is a no-op there); the app paints both strips itself.
+- Local art ships as WebP (quality 78, resized to what the UI draws at) with the logo kept as an
+  8-bit PNG, because `expo-splash-screen` and the Android adaptive icon need PNG. Total `assets/`
+  is ~0.5 MB, down from ~18 MB.
 
 ## Troubleshooting
 

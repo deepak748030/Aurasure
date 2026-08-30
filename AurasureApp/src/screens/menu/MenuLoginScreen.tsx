@@ -170,7 +170,7 @@ function ErrorNote({ text }: { text: string }): React.ReactElement {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
-  scroll: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 40 },
+  scroll: { flexGrow: 1, paddingHorizontal: 6, paddingBottom: 40 },
   hero: { marginTop: 26, alignItems: 'center' },
   badge: {
     width: 64,

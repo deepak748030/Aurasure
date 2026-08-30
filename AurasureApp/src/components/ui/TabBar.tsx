@@ -6,7 +6,7 @@ import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Icon } from '@/lib/icons';
 import { Text } from './Text';
 import { colors } from '@/theme/colors';
-import { radius, spacing } from '@/theme/tokens';
+import { layout, radius } from '@/theme/tokens';
 import { TAB_BAR_BOTTOM_PADDING, TAB_BAR_HEIGHT } from '@/lib/layout';
 import { haptic } from '@/lib/haptics';
 import { useApp } from '@/context/AppContext';
@@ -35,7 +35,7 @@ const CENTER_COLOR = '#A4006B';
 const IDLE_COLOR = '#6E6577';
 const ICON_SIZE = 23;
 
-export function TabBar({ state, navigation }: BottomTabBarProps): React.ReactElement {
+export function TabBar({ state, navigation }: BottomTabBarProps): React.ReactElement | null {
   const insets = useSafeAreaInsets();
   const [kbHeight, setKbHeight] = useState(0);
   const translateY = useRef(new Animated.Value(0)).current;
@@ -61,6 +61,16 @@ export function TabBar({ state, navigation }: BottomTabBarProps): React.ReactEle
   }, [kbHeight, translateY]);
 
   const active = module === 'food' ? colors.food[600] : colors.brand[600];
+
+  // The bar only belongs on the four main screens: Home, Favourite, Orders and
+  // Menu. It is hidden on the Cart tab (full-screen checkout flow) and on any
+  // pushed detail screen (Restaurant, Product, Search, Checkout, Order detail,
+  // Menu detail, Login) - those get their own back button and floating CTA.
+  const focusedRoute = state.routes[state.index];
+  const nested = focusedRoute?.state;
+  const onRootScreen = nested == null || nested.index === 0;
+  const onMainTab = focusedRoute?.name !== 'Cart';
+  if (!focusedRoute || !onRootScreen || !onMainTab) return null;
 
   return (
     <Animated.View
@@ -148,7 +158,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: TAB_BAR_HEIGHT,
     alignItems: 'center',
-    paddingHorizontal: spacing.xs,
+    // Matches the 6px screen gutter so the tab row lines up with every screen.
+    paddingHorizontal: layout.contentHorizontalPadding,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     backgroundColor: '#F5EAF3',

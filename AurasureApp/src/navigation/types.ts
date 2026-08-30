@@ -40,7 +40,9 @@ export type OrdersStackParamList = {
 };
 
 export type MenuStackParamList = {
-  Menu: undefined;
+  // Named "More" (not "Menu") so it never collides with the "Menu" tab above
+  // it - duplicate names in nested navigators confuse navigation state.
+  More: undefined;
   MenuDetail: { key: MenuDetailKey };
   Login: undefined;
 };

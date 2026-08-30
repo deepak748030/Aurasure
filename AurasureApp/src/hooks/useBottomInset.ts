@@ -3,15 +3,15 @@ import { BottomTabBarHeightContext } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
- * True when the caller renders inside the bottom tab navigator.
- *
- * The tab bar is laid out *in flow* by react-navigation (the screen container
- * is a sibling that flex-grows above it), so a screen inside the tabs already
- * ends above the bar. Reading the height from context instead of hard-coding
- * TAB_BAR_HEIGHT keeps that true even if the bar grows.
+ * True when the caller renders inside the bottom tab navigator *and* the tab
+ * bar is actually visible. The tab bar is laid out in flow by react-navigation
+ * (the screen container is a sibling that flex-grows above it), and the
+ * context carries its measured height - 0 when the bar renders nothing (e.g.
+ * the Cart tab or pushed detail screens hide it). Screens read this so they
+ * only skip the device bottom inset while a real bar is on screen.
  */
 export function useIsInsideTabs(): boolean {
-  return useContext(BottomTabBarHeightContext) != null;
+  return (useContext(BottomTabBarHeightContext) ?? 0) > 0;
 }
 
 /**

@@ -6,6 +6,8 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Text } from '../../components/ui/Text';
 import { Icon } from '@/lib/icons';
+import { Button } from '../../components/ui/Button';
+import { BottomSheet } from '../../components/ui/BottomSheet';
 import { colors } from '@/theme/colors';
 import { radius } from '@/theme/tokens';
 import { haptic } from '@/lib/haptics';
@@ -15,8 +17,9 @@ import type { IconName } from '@/types';
 import type { MenuDetailKey, MenuStackParamList } from '../../navigation/types';
 
 // Page background of the More screen; also what the status bar sits on once the
-// gradient hero has scrolled away.
-const PAGE_BG = '#F3F1F5';
+// gradient hero has scrolled away. Matches the tab bar surface exactly so the
+// screen and the tab bar read as one piece with no seam.
+const PAGE_BG = '#F5EAF3';
 
 interface MenuRow {
   label: string;
@@ -74,6 +77,7 @@ export function MenuScreen(): React.ReactElement {
   const isLoggedIn = !!phone;
   const displayName = isLoggedIn ? name ?? 'User' : 'Guest User';
   const insets = useSafeAreaInsets();
+  const [confirmLogout, setConfirmLogout] = useState(false);
   // The hero runs all the way under the status bar, so the notification bar
   // picks up the app's deep plum (and white icons) instead of a system grey.
   // Once the hero has scrolled out, the strip behind the status bar is the
@@ -89,6 +93,12 @@ export function MenuScreen(): React.ReactElement {
   };
 
   const doLogout = (): void => {
+    haptic.medium();
+    setConfirmLogout(true);
+  };
+
+  const confirmLogoutAction = (): void => {
+    setConfirmLogout(false);
     haptic.medium();
     logout();
   };
@@ -153,10 +163,11 @@ export function MenuScreen(): React.ReactElement {
         <View style={styles.content}>
           {SECTIONS.map((section) => (
             <View key={section.title}>
-              <Text variant="overline" color="#A9A2AD" style={styles.sectionTitle}>
-                {section.title.toUpperCase()}
-              </Text>
               <View style={styles.card}>
+                {/* Section label lives inside the card, grouped-list style. */}
+                <Text variant="overline" color="#A9A2AD" style={styles.cardTitle}>
+                  {section.title.toUpperCase()}
+                </Text>
                 {section.rows.map((row, i) => (
                   <Pressable
                     key={row.label}
@@ -173,7 +184,7 @@ export function MenuScreen(): React.ReactElement {
                     <View style={[styles.rowIcon, { backgroundColor: row.tint }]}>
                       <Icon name={row.icon} size={20} color={row.color} filled />
                     </View>
-                    <Text variant="subtitle" weight="semibold" color={colors.text} style={{ flex: 1, marginLeft: 14 }}>
+                    <Text variant="subtitle" weight="semibold" color={colors.text} style={{ flex: 1, marginLeft: 12 }}>
                       {row.label}
                     </Text>
                     <Icon name="chevronRight" size={20} color="#B5A8B5" />
@@ -196,18 +207,50 @@ export function MenuScreen(): React.ReactElement {
           </Pressable>
         </View>
       </ScrollView>
+
+      {/* Logout always asks for confirmation first - accidental taps on the
+          hero card or the Sign Out row never wipe the session silently. */}
+      <BottomSheet visible={confirmLogout} onClose={() => setConfirmLogout(false)} title="Log out?">
+        <View style={styles.confirmBody}>
+          <View style={styles.confirmIcon}>
+            <Icon name="logout" size={24} color={colors.danger} />
+          </View>
+          <Text variant="body" color={colors.textSecondary} style={{ textAlign: 'center', lineHeight: 21 }}>
+            Are you sure you want to log out? Your saved likes and session will be cleared, and you'll need to sign in again.
+          </Text>
+          <Button
+            title="Yes, Log Out"
+            variant="danger"
+            leftIcon="logout"
+            size="lg"
+            fullWidth
+            style={{ marginTop: 20 }}
+            onPress={confirmLogoutAction}
+          />
+          <Button
+            title="Cancel"
+            variant="secondary"
+            size="lg"
+            fullWidth
+            style={{ marginTop: 10 }}
+            onPress={() => setConfirmLogout(false)}
+          />
+        </View>
+      </BottomSheet>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  // No side padding on the root: the gradient hero bleeds edge-to-edge, and
+  // the content below owns its own 10px gutter.
   root: { flex: 1, backgroundColor: PAGE_BG },
-  scrollContent: { paddingBottom: 32 },
+  scrollContent: { paddingBottom: 18 },
   hero: {
     paddingHorizontal: 18,
-    paddingBottom: 38,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    paddingBottom: 34,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
   },
   profileRow: {
     flexDirection: 'row',
@@ -248,22 +291,23 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
   },
-  content: { paddingHorizontal: 16, marginTop: 12 },
-  sectionTitle: { marginTop: 16, marginBottom: 8, marginLeft: 4 },
+  // The 10px gutter belongs to the content column only - the hero above it is
+  // full bleed, so the cards span the content width and stay a touch narrower
+  // than the rest of the app.
+  content: { paddingHorizontal: 10, marginTop: 10 },
+  cardTitle: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 2 },
   card: {
     backgroundColor: colors.surface,
     borderRadius: 26,
-    paddingHorizontal: 14,
     paddingVertical: 6,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 15,
-    marginHorizontal: -10,
-    paddingHorizontal: 10,
-    minHeight: 60,
-    borderRadius: radius.pill,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    minHeight: 62,
+    borderRadius: 22,
   },
   rowTop: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#F0EAF0' },
   rowIcon: {
@@ -308,5 +352,19 @@ const styles = StyleSheet.create({
   },
   signOutIcon: {
     backgroundColor: '#FAD3D3',
+  },
+  confirmBody: {
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingBottom: 10,
+  },
+  confirmIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#FDECEC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
   },
 });

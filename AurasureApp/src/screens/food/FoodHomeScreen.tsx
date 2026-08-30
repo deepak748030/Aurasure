@@ -7,6 +7,7 @@ import { SectionHeader } from '../../components/ui/SectionHeader';
 import { BannerCard } from '../../components/common/BannerCard';
 import { Grid } from '../../components/common/Grid';
 import { FoodCategoryPills } from '../../components/food/FoodCategoryPills';
+import { layout } from '@/theme/tokens';
 import { RestaurantCard, RestaurantCardSkeleton } from '../../components/food/RestaurantCard';
 import { DishCard, DishCardSkeleton } from '../../components/food/DishCard';
 import { BestsellerCard, BestsellerCardSkeleton } from '../../components/food/BestsellerCard';
@@ -96,7 +97,7 @@ export function FoodHomeScreen({ navigation }: Props): React.ReactElement {
           keyExtractor={(i) => `${i}`}
           renderItem={() => <BestsellerCardSkeleton />}
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingRight: 24 }}
+          contentContainerStyle={{ paddingRight: layout.contentHorizontalPadding }}
           ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
         />
       ) : (
@@ -106,7 +107,7 @@ export function FoodHomeScreen({ navigation }: Props): React.ReactElement {
           keyExtractor={(d) => d.id}
           renderItem={({ item }) => <BestsellerCard item={item} onPress={openDish} />}
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingRight: 24 }}
+          contentContainerStyle={{ paddingRight: layout.contentHorizontalPadding }}
           ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
         />
       )}

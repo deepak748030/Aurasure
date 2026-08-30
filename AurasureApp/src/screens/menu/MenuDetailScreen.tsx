@@ -74,6 +74,7 @@ const LEGAL: Record<'terms' | 'privacy' | 'refund', string[]> = {
 
 export function MenuDetailScreen({ route, navigation }: Props): React.ReactElement {
   const meta = META[route.params.key];
+  const insets = useSafeAreaInsets();
   useScreenBars(meta.gradient[0], { navigationBar: colors.appBar });
   const openChat = (): void => haptic.success();
 
@@ -88,7 +89,7 @@ export function MenuDetailScreen({ route, navigation }: Props): React.ReactEleme
         overScrollMode="never"
         bounces={false}
       >
-        <LinearGradient colors={meta.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+        <LinearGradient colors={meta.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.hero, { paddingTop: insets.top + 14 }]}>
           <Pressable onPress={() => navigation.goBack()} hitSlop={10} style={styles.backBtn}>
             <Icon name="chevronLeft" size={22} color={colors.white} />
           </Pressable>
@@ -505,10 +506,9 @@ function FullWidthButton({ label }: { label: string }): React.ReactElement {
 /* ---------------------------- styles ---------------------------- */
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.background, paddingHorizontal: 10 },
+  root: { flex: 1, backgroundColor: colors.background },
   hero: {
-    paddingHorizontal: 12,
-    paddingTop: 40,
+    paddingHorizontal: 16,
     paddingBottom: 26,
     borderBottomLeftRadius: 26,
     borderBottomRightRadius: 26,
@@ -531,8 +531,9 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 12,
   },
-  // Side spacing comes from the 10px root gutter - no double padding here.
-  content: { marginTop: 16 },
+  // Side spacing comes from the 10px content gutter - the hero above is full
+  // bleed, and the body never double-pads.
+  content: { paddingHorizontal: 10, marginTop: 16 },
   avatarWrap: { alignItems: 'center', paddingVertical: 10 },
   avatar: {
     width: 72,

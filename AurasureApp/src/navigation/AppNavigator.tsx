@@ -18,6 +18,8 @@ import { CheckoutScreen } from '../screens/checkout/CheckoutScreen';
 import { OrdersScreen } from '../screens/orders/OrdersScreen';
 import { OrderDetailScreen } from '../screens/orders/OrderDetailScreen';
 import { MenuScreen } from '../screens/menu/MenuScreen';
+import { MenuDetailScreen } from '../screens/menu/MenuDetailScreen';
+import { MenuLoginScreen } from '../screens/menu/MenuLoginScreen';
 
 import { useApp } from '@/context/AppContext';
 import type {
@@ -92,6 +94,8 @@ function MenuNavigator(): React.ReactElement {
   return (
     <MenuStack.Navigator screenOptions={screenOptions}>
       <MenuStack.Screen name="Menu" component={MenuScreen} />
+      <MenuStack.Screen name="MenuDetail" component={MenuDetailScreen} />
+      <MenuStack.Screen name="Login" component={MenuLoginScreen} />
     </MenuStack.Navigator>
   );
 }

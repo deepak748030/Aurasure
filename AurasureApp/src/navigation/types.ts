@@ -41,7 +41,26 @@ export type OrdersStackParamList = {
 
 export type MenuStackParamList = {
   Menu: undefined;
+  MenuDetail: { key: MenuDetailKey };
+  Login: undefined;
 };
+
+/** Every sub-row on the More (Menu) screen, used to render its detail screen. */
+export type MenuDetailKey =
+  | 'editProfile'
+  | 'myAddress'
+  | 'settings'
+  | 'coupon'
+  | 'loyalty'
+  | 'wallet'
+  | 'refer'
+  | 'delivery'
+  | 'vendor'
+  | 'liveChat'
+  | 'help'
+  | 'terms'
+  | 'privacy'
+  | 'refund';
 
 /** `Gate` is the onboarding flow (location -> module -> login). */
 export type RootStackParamList = {

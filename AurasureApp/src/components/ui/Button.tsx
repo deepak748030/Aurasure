@@ -14,10 +14,11 @@ type Size = 'sm' | 'md' | 'lg';
 // Pill shapes at every size, matching the Sign In CTA on the More screen
 // (borderRadius 999 + generous vertical padding) instead of the old 6px
 // "almost square" look.
+// lg height bumped so the pill radius (height/2) reads rounder on wide CTAs.
 const SIZE: Record<Size, { height: number; pad: number; variant: 'button' | 'title' | 'subtitle'; icon: number }> = {
   sm: { height: 42, pad: 18, variant: 'subtitle', icon: 16 },
   md: { height: 50, pad: 22, variant: 'button', icon: 18 },
-  lg: { height: 56, pad: 26, variant: 'button', icon: 20 },
+  lg: { height: 62, pad: 26, variant: 'button', icon: 20 },
 };
 
 const GRADIENT: Record<Variant, [string, string]> = {

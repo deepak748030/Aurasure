@@ -374,14 +374,14 @@ function MapPickStep({
 
 /* ------------------------------------------------------------------ step 2 */
 
-const MODULE_OPTIONS: { key: ModuleKey; label: string; gradient: [string, string] }[] = [
-  { key: 'food', label: 'Food', gradient: ['#A4006B', '#F5D9E9'] },
-  { key: 'shop', label: 'Pharmacy', gradient: ['#9C005E', '#F4D7E7'] },
-  { key: 'shop', label: 'Ecommerce', gradient: ['#990559', '#F2D5E3'] },
-  { key: 'shop', label: 'Parcel', gradient: ['#960058', '#F4D7E7'] },
-  { key: 'shop', label: 'Cosmetic', gradient: ['#920355', '#F2D5E3'] },
-  { key: 'shop', label: 'Flower', gradient: ['#8F0054', '#F5D9E9'] },
-  { key: 'shop', label: 'AuraGo', gradient: ['#8C0052', '#F4D7E7'] },
+const MODULE_OPTIONS: { key: ModuleKey; label: string; icon: IconName; gradient: [string, string] }[] = [
+  { key: 'food', label: 'Food', icon: 'utensils', gradient: ['#A4006B', '#F5D9E9'] },
+  { key: 'shop', label: 'Pharmacy', icon: 'pill', gradient: ['#9C005E', '#F4D7E7'] },
+  { key: 'shop', label: 'Ecommerce', icon: 'cart', gradient: ['#990559', '#F2D5E3'] },
+  { key: 'shop', label: 'Parcel', icon: 'package', gradient: ['#960058', '#F4D7E7'] },
+  { key: 'shop', label: 'Cosmetic', icon: 'gem', gradient: ['#920355', '#F2D5E3'] },
+  { key: 'shop', label: 'Flower', icon: 'leaf', gradient: ['#8F0054', '#F5D9E9'] },
+  { key: 'shop', label: 'AuraGo', icon: 'zap', gradient: ['#8C0052', '#F4D7E7'] },
 ];
 
 function ModuleStep(): React.ReactElement {
@@ -417,11 +417,9 @@ function ModuleStep(): React.ReactElement {
               style={({ pressed }) => [styles.moduleTileWrap, { opacity: pressed ? 0.92 : 1 }]}
             >
               <LinearGradient colors={m.gradient} start={{ x: 0.4, y: 0 }} end={{ x: 0.7, y: 1 }} style={styles.moduleTile}>
-                {m.label === 'Pharmacy' ? (
-                  <Icon name="pill" size={40} color="#7B004A" style={{ marginBottom: 14 }} />
-                ) : (
-                  <SmartImage source={{ kind: 'asset', source: Images.logo }} contentFit="contain" style={styles.moduleTileLogo} />
-                )}
+                {/* Module glyph, not the logo image - the logo carries its own
+                    background and would look boxed on the gradient tiles. */}
+                <Icon name={m.icon} size={40} color="#7B004A" filled style={{ marginBottom: 14 }} />
                 <Text variant="h3" weight="bold" color="#42001F">
                   {m.label}
                 </Text>
@@ -430,45 +428,6 @@ function ModuleStep(): React.ReactElement {
           ))}
         </View>
       </ScrollView>
-      <FakeTabBar />
-    </View>
-  );
-}
-
-const FAKE_TABS = [
-  { key: 'Home', label: 'Home', icon: 'home' as IconName },
-  { key: 'Likes', label: 'Favourite', icon: 'heart' as IconName },
-  { key: 'Cart', label: '', icon: 'cart' as IconName },
-  { key: 'Orders', label: 'Orders', icon: 'orders' as IconName },
-  { key: 'Menu', label: 'Menu', icon: 'menu' as IconName },
-];
-
-const MODULE_TAB_BG = '#F5EAF3';
-const MODULE_CENTER_COLOR = '#A4006B';
-
-function FakeTabBar(): React.ReactElement {
-  return (
-    <View style={styles.fakeTabRow}>
-      {FAKE_TABS.map((t, i) => {
-        const isCenter = t.key === 'Cart';
-        const active = t.key === 'Home';
-        return (
-          <Pressable key={t.key} style={styles.fakeTab}>
-            {isCenter ? (
-              <LinearGradient colors={[MODULE_CENTER_COLOR, '#6E003F']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.fakeCart}>
-                <Icon name={t.icon} size={28} color={colors.white} filled />
-              </LinearGradient>
-            ) : (
-              <Icon name={t.icon} size={22} color={active ? MODULE_CENTER_COLOR : colors.textTertiary} filled={active} />
-            )}
-            {t.label ? (
-              <Text variant="caption" weight={active ? 'bold' : 'medium'} color={active ? MODULE_CENTER_COLOR : colors.textTertiary} style={{ marginTop: 3 }}>
-                {t.label}
-              </Text>
-            ) : null}
-          </Pressable>
-        );
-      })}
     </View>
   );
 }
@@ -938,7 +897,7 @@ const styles = StyleSheet.create({
   // -- module picker --
   moduleRoot: { flex: 1, backgroundColor: colors.background },
   moduleScrollView: { flex: 1 },
-  moduleScroll: { flexGrow: 1, paddingHorizontal: 6, paddingTop: 22, paddingBottom: 22 },
+  moduleScroll: { flexGrow: 1, paddingHorizontal: 6, paddingTop: 22, paddingBottom: 28 },
   moduleTop: { flexDirection: 'row', alignItems: 'center' },
   moduleTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   moduleAddressRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
@@ -958,27 +917,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 10,
-  },
-  moduleTileLogo: { width: 88, height: 48, marginBottom: 12 },
-  fakeTabRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: MODULE_TAB_BG,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-  },
-  fakeTab: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  fakeCart: {
-    width: 66,
-    height: 66,
-    borderRadius: 33,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: -40,
-    borderWidth: 4,
-    borderColor: MODULE_TAB_BG,
   },
 
   // -- otp screen --

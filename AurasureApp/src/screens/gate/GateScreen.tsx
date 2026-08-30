@@ -983,16 +983,17 @@ const styles = StyleSheet.create({
   // centered container so it is clearly smaller than the primary CTA.
   locationActions: {
     marginTop: 26,
-    marginHorizontal: -24,
+    marginHorizontal: -44,
     paddingHorizontal: 4,
     alignItems: 'stretch',
+    // backgroundColor: 'red'
   },
   // Narrow wrapper that constrains Set From Map to a smaller width and centers
   // it below the wide Use Current Location button.
   locationMapWrap: {
     alignSelf: 'center',
-    width: '62%',
-    marginTop: 12,
+    width: '87%',
+    marginTop: 10,
   },
   locationMapBtn: {
     width: '100%',

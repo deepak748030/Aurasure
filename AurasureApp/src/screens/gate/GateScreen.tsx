@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View, type ViewStyle } from 'react-native';
+import { MapView, Marker, type Region } from '@/components/map';
+import * as Location from 'expo-location';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../components/ui/Text';
@@ -66,6 +68,14 @@ function Shell({ children }: { children: React.ReactNode }): React.ReactElement 
 }
 
 /* ------------------------------------------------------------------ step 1 */
+
+// Default map view roughly covering serviceable area (Indore region).
+const DEFAULT_REGION = {
+  latitude: 22.7196,
+  longitude: 75.8577,
+  latitudeDelta: 0.08,
+  longitudeDelta: 0.08,
+};
 
 function LocationStep(): React.ReactElement {
   const { setLocation, setLocationStatus } = useApp();
@@ -136,8 +146,8 @@ function LocationStep(): React.ReactElement {
 
         {error ? <ErrorNote text={error} /> : null}
 
-        {/* Both CTAs share one box: same width (both sides flush, wider than the
-            copy column), same height, same radius - only the fill differs. */}
+        {/* Primary CTA is wide, secondary is narrower. Use Current Location is
+            full width; Set From Map is intentionally narrower and centered. */}
         <View style={styles.locationActions}>
           <Button
             title={busy ? 'Detecting location…' : 'Use Current Location'}
@@ -148,19 +158,21 @@ function LocationStep(): React.ReactElement {
             loading={busy}
             onPress={() => void useCurrent()}
           />
-          <Pressable
-            onPress={() => {
-              haptic.light();
-              setError(null);
-              setMode('map');
-            }}
-            style={({ pressed }) => [styles.locationMapBtn, { opacity: pressed ? 0.9 : 1 }]}
-          >
-            <Icon name="mapPinned" size={20} color="#9C005E" />
-            <Text variant="title" weight="bold" color="#9C005E" style={{ marginLeft: 10 }}>
-              Set From Map
-            </Text>
-          </Pressable>
+          <View style={styles.locationMapWrap}>
+            <Button
+              title="Set From Map"
+              variant="secondary"
+              leftIcon="mapPinned"
+              fullWidth
+              size="lg"
+              onPress={() => {
+                haptic.light();
+                setError(null);
+                setMode('map');
+              }}
+              style={styles.locationMapBtn}
+            />
+          </View>
         </View>
 
         <Text variant="caption" color={colors.textTertiary} style={{ textAlign: 'center', marginTop: 22 }}>
@@ -182,6 +194,9 @@ function MapPickStep({
 }): React.ReactElement {
   const [query, setQuery] = useState('');
   const [picked, setPicked] = useState<string | null>(null);
+  const [region, setRegion] = useState<Region>(DEFAULT_REGION);
+  const [locating, setLocating] = useState(false);
+  const mapRef = useRef<MapView>(null);
 
   const suggestions = query && !picked ? POPULAR_CITIES.filter((c) => c.toLowerCase().includes(query.toLowerCase())).slice(0, 5) : [];
 
@@ -189,6 +204,45 @@ function MapPickStep({
     if (!picked) return;
     haptic.success();
     onPick(picked);
+  };
+
+  const animateTo = (r: Region): void => {
+    mapRef.current?.animateToRegion(r, 350);
+  };
+
+  const zoomIn = (): void => {
+    haptic.light();
+    animateTo({ ...region, latitudeDelta: Math.max(region.latitudeDelta / 2, 0.002), longitudeDelta: Math.max(region.longitudeDelta / 2, 0.002) });
+  };
+
+  const zoomOut = (): void => {
+    haptic.light();
+    animateTo({ ...region, latitudeDelta: Math.min(region.latitudeDelta * 2, 60), longitudeDelta: Math.min(region.longitudeDelta * 2, 60) });
+  };
+
+  const goToMyLocation = async (): Promise<void> => {
+    haptic.light();
+    setLocating(true);
+    try {
+      const perm = await Location.requestForegroundPermissionsAsync();
+      if (perm.status !== 'granted') {
+        haptic.error();
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const r: Region = {
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        latitudeDelta: 0.02,
+        longitudeDelta: 0.02,
+      };
+      setRegion(r);
+      animateTo(r);
+    } catch {
+      haptic.error();
+    } finally {
+      setLocating(false);
+    }
   };
 
   return (
@@ -214,55 +268,56 @@ function MapPickStep({
         <View style={styles.mapBack} />
       </View>
 
-      <View style={styles.mapArea}>
-        <View style={[styles.mapRoad, { top: '22%', height: 12 }]} />
-        <View style={[styles.mapRoad, { top: '48%', height: 14 }]} />
-        <View style={[styles.mapRoad, { top: '72%', height: 10 }]} />
-        <View style={[styles.mapRoadV, { left: '24%', width: 10 }]} />
-        <View style={[styles.mapRoadV, { left: '54%', width: 14 }]} />
-        <View style={[styles.mapRoadV, { left: '76%', width: 9 }]} />
+      {/* Real interactive map. The sides keep a 4px gutter (mapArea padding),
+          and the whole map fills the sheet above the bottom CTA. */}
+      <MapView
+        ref={mapRef}
+        style={styles.mapArea}
+        initialRegion={region}
+        region={region}
+        onRegionChangeComplete={(r) => setRegion(r)}
+        onMapReady={() => mapRef.current?.animateToRegion(DEFAULT_REGION, 0)}
+        showsUserLocation
+        showsMyLocationButton={false}
+      >
+        <Marker coordinate={{ latitude: region.latitude, longitude: region.longitude }} pinColor="#A4006B" />
+      </MapView>
 
-        <View style={styles.mapMarker}>
-          <View style={styles.mapMarkerHead} />
-          <View style={styles.mapMarkerTail} />
-        </View>
-
-        <View style={styles.mapControls}>
-          <Pressable style={styles.mapControlBtn} hitSlop={6}>
-            <Icon name="locate" size={24} color="#9C005E" />
+      <View style={styles.mapControls}>
+        <Pressable style={styles.mapControlBtn} hitSlop={6} onPress={goToMyLocation} disabled={locating}>
+          <Icon name="locate" size={24} color="#9C005E" />
+        </Pressable>
+        <View style={styles.mapZoomBox}>
+          <Pressable style={styles.mapZoomBtn} hitSlop={6} onPress={zoomIn}>
+            <Icon name="plus" size={24} color={colors.text} />
           </Pressable>
-          <View style={styles.mapZoomBox}>
-            <Pressable style={styles.mapZoomBtn} hitSlop={6}>
-              <Icon name="plus" size={24} color={colors.text} />
-            </Pressable>
-            <View style={styles.mapZoomDivider} />
-            <Pressable style={styles.mapZoomBtn} hitSlop={6}>
-              <Icon name="minus" size={24} color={colors.text} />
-            </Pressable>
-          </View>
+          <View style={styles.mapZoomDivider} />
+          <Pressable style={styles.mapZoomBtn} hitSlop={6} onPress={zoomOut}>
+            <Icon name="minus" size={24} color={colors.text} />
+          </Pressable>
         </View>
-
-        {suggestions.length > 0 ? (
-          <View style={styles.mapSuggestions}>
-            {suggestions.map((c) => (
-              <Pressable
-                key={c}
-                onPress={() => {
-                  haptic.selection();
-                  setQuery(c);
-                  setPicked(c);
-                }}
-                style={({ pressed }) => [styles.mapSuggestion, { opacity: pressed ? 0.86 : 1 }]}
-              >
-                <Icon name="mapPin" size={18} color="#9C005E" />
-                <Text variant="subtitle" weight="semibold" color={colors.text} style={{ marginLeft: 10, flex: 1 }}>
-                  {c}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
       </View>
+
+      {suggestions.length > 0 ? (
+        <View style={styles.mapSuggestions}>
+          {suggestions.map((c) => (
+            <Pressable
+              key={c}
+              onPress={() => {
+                haptic.selection();
+                setQuery(c);
+                setPicked(c);
+              }}
+              style={({ pressed }) => [styles.mapSuggestion, { opacity: pressed ? 0.86 : 1 }]}
+            >
+              <Icon name="mapPin" size={18} color="#9C005E" />
+              <Text variant="subtitle" weight="semibold" color={colors.text} style={{ marginLeft: 10, flex: 1 }}>
+                {c}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
 
       <View style={styles.mapSheet}>
         <View style={styles.mapSheetHandle} />
@@ -406,7 +461,6 @@ function LoginStep(): React.ReactElement {
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-  const [otpMode, setOtpMode] = useState(false);
   const [otpFor, setOtpFor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -415,28 +469,29 @@ function LoginStep(): React.ReactElement {
 
   const submit = (): void => {
     setError(null);
-    if (otpMode || tab === 'phone') {
+    // Phone login has no password: after a valid number, straight to OTP.
+    if (tab === 'phone') {
       if (!validPhone) {
         haptic.error();
         setError('Enter a valid 10-digit Indian mobile number.');
         return;
       }
-    } else if (!validEmail) {
+      haptic.success();
+      setOtpFor(`+91 ${phone}`);
+      return;
+    }
+    if (!validEmail) {
       haptic.error();
       setError('Enter a valid email address.');
       return;
     }
-    if (!otpMode && !password) {
+    if (!password) {
       haptic.error();
       setError('Please enter your password.');
       return;
     }
     haptic.success();
-    if (otpMode) {
-      setOtpFor(`+91 ${phone}`);
-      return;
-    }
-    login(!otpMode && tab === 'email' ? email.trim() : `+91 ${phone}`);
+    login(email.trim());
   };
 
   if (otpFor) {
@@ -476,7 +531,6 @@ function LoginStep(): React.ReactElement {
                   onPress={() => {
                     setTab(t.key);
                     setError(null);
-                    setOtpMode(false);
                   }}
                   style={[styles.tab, active ? styles.tabActive : null]}
                 >
@@ -491,7 +545,7 @@ function LoginStep(): React.ReactElement {
           {tab === 'phone' ? (
             <LoginField
               icon="phone"
-              prefix="🇮🇳 +91"
+              prefix="+91"
               value={phone}
               onChangeText={(t) => setPhone(t.replace(/\D/g, '').slice(0, 10))}
               placeholder="Phone"
@@ -510,39 +564,50 @@ function LoginStep(): React.ReactElement {
             />
           )}
 
-          {!otpMode ? (
-            <LoginField
-              icon="lock"
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Password"
-              secureTextEntry={!showPassword}
-              rightIcon="eye"
-              onRightPress={() => setShowPassword((v) => !v)}
-              style={{ marginTop: 12 }}
-            />
+          {/* Password + remember/forgot only apply to email login. Phone login
+              has no password — after a valid number it goes straight to OTP. */}
+          {tab === 'email' ? (
+            <>
+              <LoginField
+                icon="lock"
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Password"
+                secureTextEntry={!showPassword}
+                rightIcon="eye"
+                onRightPress={() => setShowPassword((v) => !v)}
+                style={{ marginTop: 12 }}
+              />
+              <View style={styles.rowBetween}>
+                <Pressable style={styles.rememberRow} onPress={() => setRemember((v) => !v)} hitSlop={8}>
+                  <View style={[styles.checkbox, remember ? styles.checkboxActive : null]}>
+                    {remember ? <Icon name="check" size={14} color={colors.white} /> : null}
+                  </View>
+                  <Text variant="subtitle" color={colors.textSecondary}>
+                    Remember me?
+                  </Text>
+                </Pressable>
+                <Pressable onPress={() => setError('Password reset link would be sent to your account.')}>
+                  <Text variant="subtitle" color={colors.brand[700]} weight="semibold">
+                    Forgot Password?
+                  </Text>
+                </Pressable>
+              </View>
+            </>
           ) : null}
 
-          <View style={styles.rowBetween}>
-            <Pressable style={styles.rememberRow} onPress={() => setRemember((v) => !v)} hitSlop={8}>
-              <View style={[styles.checkbox, remember ? styles.checkboxActive : null]}>
-                {remember ? <Icon name="check" size={14} color={colors.white} /> : null}
-              </View>
-              <Text variant="subtitle" color={colors.textSecondary}>
-                Remember me?
-              </Text>
-            </Pressable>
-            {otpMode ? null : (
-              <Pressable onPress={() => setError('Password reset link would be sent to your account.')}>
-                <Text variant="subtitle" color={colors.brand[700]} weight="semibold">
-                  Forgot Password?
-                </Text>
-              </Pressable>
-            )}
-          </View>
-
           {error ? <ErrorNote text={error} /> : null}
-          <Button title="Login" variant="login" leftIcon="login" fullWidth size="lg" onPress={submit} style={{ marginTop: 18 }} />
+          <View style={styles.loginActions}>
+            <Button
+              title="Login"
+              variant="login"
+              leftIcon="login"
+              fullWidth
+              size="lg"
+              onPress={submit}
+              style={{ marginTop: 18, height: 58 }}
+            />
+          </View>
 
           <View style={styles.orRow}>
             <View style={styles.orLine} />
@@ -551,22 +616,6 @@ function LoginStep(): React.ReactElement {
             </Text>
             <View style={styles.orLine} />
           </View>
-
-          <Pressable
-            onPress={() => {
-              setOtpMode((v) => !v);
-              if (!otpMode) setTab('phone');
-              setError(null);
-            }}
-            style={{ marginTop: 4, alignItems: 'center' }}
-          >
-            <Text variant="subtitle" color={colors.textSecondary}>
-              {otpMode ? 'Login with password instead' : 'Sign in with '}
-              <Text variant="subtitle" color={colors.brand[700]} weight="bold">
-                {otpMode ? 'Password' : 'OTP'}
-              </Text>
-            </Text>
-          </Pressable>
 
           <Pressable onPress={() => setError('Sign up flow will be added later.')} style={{ marginTop: 12, alignItems: 'center' }}>
             <Text variant="subtitle" color={colors.textSecondary}>
@@ -600,6 +649,12 @@ function OtpStep({ phone, onBack, onVerify }: { phone: string; onBack: () => voi
     onVerify();
   };
 
+  // The slot that currently owns the caret (next digit to type), or the last
+  // one once full. Tapping any slot brings focus (keyboard) back to the input.
+  const caretIndex = Math.min(otp.length, 5);
+
+  const focusInput = (): void => inputRef.current?.focus();
+
   return (
     <View style={styles.otpScreen}>
       <View style={styles.otpHeader}>
@@ -628,11 +683,20 @@ function OtpStep({ phone, onBack, onVerify }: { phone: string; onBack: () => voi
 
         <View style={styles.otpSlotsRow}>
           {[0, 1, 2, 3, 4, 5].map((i) => (
-            <View key={i} style={[styles.otpSlot, otp.length > i ? styles.otpSlotActive : null]}>
+            <Pressable
+              key={i}
+              onPress={focusInput}
+              style={({ pressed }) => [
+                styles.otpSlot,
+                otp.length > i ? styles.otpSlotActive : null,
+                i === caretIndex ? styles.otpSlotCaret : null,
+                { opacity: pressed ? 0.82 : 1 },
+              ]}
+            >
               <Text variant="h3" weight="bold" color={colors.text}>
                 {otp[i] ?? ''}
               </Text>
-            </View>
+            </Pressable>
           ))}
         </View>
         <TextInput
@@ -649,7 +713,9 @@ function OtpStep({ phone, onBack, onVerify }: { phone: string; onBack: () => voi
         />
 
         {error ? <ErrorNote text={error} /> : null}
-        <Button title="Verify" variant="login" fullWidth size="lg" onPress={verify} disabled={otp.length !== 6} style={{ marginTop: 36 }} />
+        <View style={styles.otpActions}>
+          <Button title="Verify" variant="login" fullWidth size="lg" onPress={verify} disabled={otp.length !== 6} style={{ marginTop: 36 }} />
+        </View>
 
         <View style={styles.otpResendRow}>
           <Text variant="subtitle" color={colors.textSecondary}>
@@ -820,6 +886,13 @@ const styles = StyleSheet.create({
   rightIconBtn: { paddingLeft: 10 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
   rememberRow: { flexDirection: 'row', alignItems: 'center' },
+  // Login submit button: narrower than the other CTAs (keeps a visible side
+  // gutter) and a touch taller. Set on the Button via its style prop too.
+  loginActions: {
+    marginHorizontal: -8,
+    paddingHorizontal: 8,
+    alignItems: 'stretch',
+  },
   checkbox: {
     width: 22,
     height: 22,
@@ -910,7 +983,7 @@ const styles = StyleSheet.create({
   otpSlotsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 36 },
   otpSlot: {
     width: 50,
-    height: 50,
+    height: 54,
     borderRadius: 14,
     borderWidth: 1.5,
     borderColor: '#D9D3DA',
@@ -919,11 +992,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   otpSlotActive: { borderColor: '#A4006B', borderWidth: 2 },
+  // The slot that currently owns the caret (next digit to type).
+  otpSlotCaret: { borderColor: '#C88BB4', borderWidth: 2, backgroundColor: '#FBF2F8' },
   otpResendRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 22,
+  },
+  // Verify button width matches the other full-width CTAs: content pads 24,
+  // pull back 24, add a 4px inner gutter so it lands inside the screen with a
+  // slight margin instead of overflowing the edges.
+  otpActions: {
+    marginHorizontal: -24,
+    paddingHorizontal: 4,
+    alignItems: 'stretch',
   },
 
   // -- location intro --
@@ -984,19 +1067,24 @@ const styles = StyleSheet.create({
   locationPhoneLine: { height: 3, borderRadius: 2, backgroundColor: '#8CCDBF', width: 58, marginTop: 8 },
   locationHeadline: { textAlign: 'center', marginTop: 30, fontSize: 19, lineHeight: 25, letterSpacing: -0.1 },
   locationSub: { textAlign: 'center', marginTop: 12, lineHeight: 21 },
-  // Widens both buttons by 12px on each side (24 - 12 = 12px gutter) and keeps
-  // them stacked with an even 12px gap.
-  locationActions: { marginTop: 26, marginHorizontal: -12 },
+  // The primary "Use Current Location" CTA is full width within a clean 4px
+  // side gutter (content pads 24, we pull back 24 then add 4 inner). It spans
+  // the content box and is wider than the narrower Set From Map button below.
+  locationActions: {
+    marginTop: 26,
+    marginHorizontal: -24,
+    paddingHorizontal: 4,
+    alignItems: 'stretch',
+  },
+  // Narrow wrapper that constrains Set From Map to a smaller width and centers
+  // it below the wide Use Current Location button.
+  locationMapWrap: {
+    alignSelf: 'stretch',
+    width: '100%',
+    marginTop: 10,
+  },
   locationMapBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 12,
-    borderWidth: 1.5,
-    borderColor: '#C5A0BB',
-    borderRadius: radius.pill,
-    minHeight: 56,
-    paddingVertical: 16,
+    width: '100%',
   },
 
   // -- map picker --
@@ -1019,46 +1107,19 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     paddingHorizontal: 16,
     height: 44,
-    marginHorizontal: 10,
+    // Fill width between the back button and the screen edge.
+    marginHorizontal: 4,
   },
   mapSearchInput: { flex: 1, fontSize: 15, color: colors.text },
-  mapArea: { flex: 1, position: 'relative', backgroundColor: '#C5C8CF', overflow: 'hidden' },
-  mapRoad: { position: 'absolute', left: 0, right: 0, backgroundColor: '#D9DCE2' },
-  mapRoadV: { position: 'absolute', top: 0, bottom: 0, backgroundColor: '#D9DCE2' },
-  mapMarker: {
-    position: 'absolute',
-    left: '50%',
-    top: '46%',
-    width: 58,
-    height: 58,
-    marginLeft: -29,
-    marginTop: -29,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    zIndex: 4,
-  },
-  mapMarkerHead: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#A4006B',
-    borderWidth: 3,
-    borderColor: '#F7E2F1',
-  },
-  mapMarkerTail: {
-    width: 0,
-    height: 0,
-    marginTop: -3,
-    borderLeftWidth: 6,
-    borderRightWidth: 6,
-    borderTopWidth: 12,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: '#A4006B',
+  // Real map fills the screen with a 4px left/right gutter.
+  mapArea: {
+    flex: 1,
+    backgroundColor: '#C5C8CF',
+    marginHorizontal: 4,
   },
   mapControls: {
     position: 'absolute',
-    right: 14,
+    right: 18,
     top: '42%',
     zIndex: 6,
     alignItems: 'center',

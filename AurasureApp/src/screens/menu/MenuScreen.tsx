@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Text } from '../../components/ui/Text';
 import { Icon } from '@/lib/icons';
 import { colors } from '@/theme/colors';
@@ -10,6 +12,7 @@ import { haptic } from '@/lib/haptics';
 import { useScreenBars } from '@/lib/systemBars';
 import { useApp } from '@/context/AppContext';
 import type { IconName } from '@/types';
+import type { MenuDetailKey, MenuStackParamList } from '../../navigation/types';
 
 // Page background of the More screen; also what the status bar sits on once the
 // gradient hero has scrolled away.
@@ -20,7 +23,7 @@ interface MenuRow {
   icon: IconName;
   tint: string;
   color: string;
-  onPress?: () => void;
+  route: MenuDetailKey;
 }
 
 interface MenuSection {
@@ -32,42 +35,44 @@ const SECTIONS: MenuSection[] = [
   {
     title: 'General',
     rows: [
-      { label: 'Edit Profile', icon: 'user', tint: '#E4F1FC', color: '#2E87D6' },
-      { label: 'My Address', icon: 'mapPin', tint: '#FDE9DE', color: '#E07B3B' },
-      { label: 'Settings', icon: 'settings', tint: '#EEEEF0', color: '#6D6D7A' },
+      { label: 'Edit Profile', icon: 'user', tint: '#E4F1FC', color: '#2E87D6', route: 'editProfile' },
+      { label: 'My Address', icon: 'mapPin', tint: '#FDE9DE', color: '#E07B3B', route: 'myAddress' },
+      { label: 'Settings', icon: 'settings', tint: '#EEEEF0', color: '#6D6D7A', route: 'settings' },
     ],
   },
   {
     title: 'Promotional Activity',
     rows: [
-      { label: 'Coupon', icon: 'ticket', tint: '#FFF3D6', color: '#DD9A0B' },
-      { label: 'Loyalty Points', icon: 'star', tint: '#FFF5DE', color: '#E5A710' },
-      { label: 'My Wallet', icon: 'wallet', tint: '#FFF3D6', color: '#D98E12' },
+      { label: 'Coupon', icon: 'ticket', tint: '#FFF3D6', color: '#DD9A0B', route: 'coupon' },
+      { label: 'Loyalty Points', icon: 'star', tint: '#FFF5DE', color: '#E5A710', route: 'loyalty' },
+      { label: 'My Wallet', icon: 'wallet', tint: '#FFF3D6', color: '#D98E12', route: 'wallet' },
     ],
   },
   {
     title: 'Earnings',
     rows: [
-      { label: 'Refer & Earn', icon: 'share', tint: '#E5F7E5', color: '#2C9B4D' },
-      { label: 'Join as a Delivery Man', icon: 'truck', tint: '#E2F1FF', color: '#2E87D6' },
-      { label: 'Open Vendor', icon: 'store', tint: '#FCE7E4', color: '#D9573F' },
+      { label: 'Refer & Earn', icon: 'share', tint: '#E5F7E5', color: '#2C9B4D', route: 'refer' },
+      { label: 'Join as a Delivery Man', icon: 'truck', tint: '#E2F1FF', color: '#2E87D6', route: 'delivery' },
+      { label: 'Open Vendor', icon: 'store', tint: '#FCE7E4', color: '#D9573F', route: 'vendor' },
     ],
   },
   {
     title: 'Help & Support',
     rows: [
-      { label: 'Live Chat', icon: 'message', tint: '#E5F7E5', color: '#2C9B4D' },
-      { label: 'Help & Support', icon: 'phone', tint: '#E4F1FC', color: '#2E87D6' },
-      { label: 'Terms & Conditions', icon: 'info', tint: '#F0E8FF', color: '#8C5ADB' },
-      { label: 'Privacy Policy', icon: 'shield', tint: '#FBE3E8', color: '#D9573F' },
-      { label: 'Refund Policy', icon: 'refresh', tint: '#E5F7E5', color: '#2C9B4D' },
+      { label: 'Live Chat', icon: 'message', tint: '#E5F7E5', color: '#2C9B4D', route: 'liveChat' },
+      { label: 'Help & Support', icon: 'phone', tint: '#E4F1FC', color: '#2E87D6', route: 'help' },
+      { label: 'Terms & Conditions', icon: 'info', tint: '#F0E8FF', color: '#8C5ADB', route: 'terms' },
+      { label: 'Privacy Policy', icon: 'shield', tint: '#FBE3E8', color: '#D9573F', route: 'privacy' },
+      { label: 'Refund Policy', icon: 'refresh', tint: '#E5F7E5', color: '#2C9B4D', route: 'refund' },
     ],
   },
 ];
 
 export function MenuScreen(): React.ReactElement {
-  const { phone, name, login } = useApp();
-  const displayName = name && phone ? name : 'Guest User';
+  const { phone, name, logout } = useApp();
+  const navigation = useNavigation<NativeStackNavigationProp<MenuStackParamList>>();
+  const isLoggedIn = !!phone;
+  const displayName = isLoggedIn ? name ?? 'User' : 'Guest User';
   const insets = useSafeAreaInsets();
   // The hero runs all the way under the status bar, so the notification bar
   // picks up the app's deep plum (and white icons) instead of a system grey.
@@ -78,12 +83,27 @@ export function MenuScreen(): React.ReactElement {
   const surface = heroGone ? PAGE_BG : colors.appBarHero;
   useScreenBars(surface, { navigationBar: colors.appBar });
 
+  const goAuth = (): void => {
+    haptic.light();
+    navigation.navigate('Login');
+  };
+
+  const doLogout = (): void => {
+    haptic.medium();
+    logout();
+  };
+
   return (
     <SafeAreaView style={styles.root} edges={['left', 'right']}>
       <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        style={{ flex: 1, backgroundColor: PAGE_BG }}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        // Disable the overscroll bounce so the hero never pulls down to reveal a
+        // gap above it when scrolling back to the top.
+        overScrollMode="never"
+        bounces={false}
+        alwaysBounceVertical={false}
         scrollEventThrottle={16}
         onScroll={(e) => {
           const threshold = Math.max(0, heroHeight - insets.top - 12);
@@ -102,29 +122,30 @@ export function MenuScreen(): React.ReactElement {
             <View style={styles.avatar}>
               <Icon name="user" size={30} color="#5B3A7E" />
             </View>
-            <Text variant="h2" weight="extrabold" color={colors.white} style={{ flex: 1, marginLeft: 14 }}>
-              {displayName}
-            </Text>
+            <View style={{ flex: 1, marginLeft: 14 }}>
+              <Text variant="h2" weight="extrabold" color={colors.white}>
+                {displayName}
+              </Text>
+              {isLoggedIn ? (
+                <Text variant="caption" color="rgba(255,255,255,0.85)">
+                  {phone}
+                </Text>
+              ) : null}
+            </View>
           </View>
 
           <View style={styles.loginCard}>
             <View style={styles.loginIconBox}>
-              <Icon name="user" size={24} color={colors.white} />
+              <Icon name={isLoggedIn ? 'user' : 'login'} size={24} color={colors.white} />
             </View>
             <Text variant="subtitle" color={colors.white} style={{ flex: 1, marginHorizontal: 12 }}>
-              For more personalised & smooth experience.
+              {isLoggedIn ? 'You are signed in. Everything is personalised.' : 'For more personalised & smooth experience.'}
             </Text>
-            <Pressable
-              onPress={() => {
-                haptic.light();
-                login('+91 9876543210', 'Guest User');
-              }}
-              style={styles.loginBtn}
-            >
+            <Pressable onPress={isLoggedIn ? doLogout : goAuth} style={styles.loginBtn}>
               <Text variant="caption" weight="bold" color="#8B0057">
-                Log in/ Sign up
+                {isLoggedIn ? 'Log out' : 'Log in/ Sign up'}
               </Text>
-              <Icon name="arrowRight" size={14} color="#8B0057" style={{ marginLeft: 4 }} />
+              <Icon name={isLoggedIn ? 'logout' : 'arrowRight'} size={14} color="#8B0057" style={{ marginLeft: 4 }} />
             </Pressable>
           </View>
         </LinearGradient>
@@ -139,7 +160,10 @@ export function MenuScreen(): React.ReactElement {
                 {section.rows.map((row, i) => (
                   <Pressable
                     key={row.label}
-                    onPress={() => haptic.light()}
+                    onPress={() => {
+                      haptic.light();
+                      navigation.navigate('MenuDetail', { key: row.route });
+                    }}
                     style={({ pressed }) => [
                       styles.row,
                       { opacity: pressed ? 0.92 : 1, backgroundColor: pressed ? '#FBF5FA' : 'transparent' },
@@ -160,17 +184,14 @@ export function MenuScreen(): React.ReactElement {
           ))}
 
           <Pressable
-            onPress={() => {
-              haptic.light();
-              login('+91 9876543210', 'Guest User');
-            }}
-            style={({ pressed }) => [styles.signIn, { opacity: pressed ? 0.92 : 1 }]}
+            onPress={isLoggedIn ? doLogout : goAuth}
+            style={({ pressed }) => [isLoggedIn ? styles.signOut : styles.signIn, { opacity: pressed ? 0.92 : 1 }]}
           >
-            <View style={styles.signInIcon}>
-              <Icon name="login" size={18} color="#9C005E" />
+            <View style={[styles.signInIcon, isLoggedIn ? styles.signOutIcon : null]}>
+              <Icon name={isLoggedIn ? 'logout' : 'login'} size={18} color={isLoggedIn ? colors.danger : '#9C005E'} />
             </View>
-            <Text variant="title" weight="bold" color="#9C005E">
-              Sign In
+            <Text variant="title" weight="bold" color={isLoggedIn ? colors.danger : '#9C005E'}>
+              {isLoggedIn ? 'Sign Out' : 'Sign In'}
             </Text>
           </Pressable>
         </View>
@@ -181,6 +202,7 @@ export function MenuScreen(): React.ReactElement {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: PAGE_BG },
+  scrollContent: { paddingBottom: 32 },
   hero: {
     paddingHorizontal: 18,
     paddingBottom: 38,
@@ -238,7 +260,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 15,
-    // Bleeds into the card padding so the pressed pill reaches the card edge.
     marginHorizontal: -10,
     paddingHorizontal: 10,
     minHeight: 60,
@@ -264,6 +285,18 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     marginTop: 24,
   },
+  signOut: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    backgroundColor: '#FDECEC',
+    borderWidth: 1,
+    borderColor: '#F3B9B9',
+    borderRadius: radius.pill,
+    paddingVertical: 16,
+    marginTop: 24,
+  },
   signInIcon: {
     width: 30,
     height: 30,
@@ -272,5 +305,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
+  },
+  signOutIcon: {
+    backgroundColor: '#FAD3D3',
   },
 });

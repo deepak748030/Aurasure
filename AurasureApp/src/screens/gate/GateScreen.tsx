@@ -136,8 +136,10 @@ function LocationStep(): React.ReactElement {
 
         {error ? <ErrorNote text={error} /> : null}
 
-        {/* Both CTAs share one box: same width (both sides flush, wider than the
-            copy column), same height, same radius - only the fill differs. */}
+        {/* Both CTAs use the same Button component (same size/fullWidth), so
+            their widths are identical by construction. Only the variant/fill
+            differs: solid 'login' for current-location, outline 'secondary'
+            for set-from-map. */}
         <View style={styles.locationActions}>
           <Button
             title={busy ? 'Detecting location…' : 'Use Current Location'}
@@ -147,21 +149,20 @@ function LocationStep(): React.ReactElement {
             size="lg"
             loading={busy}
             onPress={() => void useCurrent()}
-            style={{ width: '100%' }}
           />
-          <Pressable
+          <Button
+            title="Set From Map"
+            variant="secondary"
+            leftIcon="mapPinned"
+            fullWidth
+            size="lg"
             onPress={() => {
               haptic.light();
               setError(null);
               setMode('map');
             }}
-            style={({ pressed }) => [styles.locationMapBtn, { opacity: pressed ? 0.9 : 1 }]}
-          >
-            <Icon name="mapPinned" size={20} color="#9C005E" />
-            <Text variant="title" weight="bold" color="#9C005E" style={{ marginLeft: 10 }}>
-              Set From Map
-            </Text>
-          </Pressable>
+            style={{ marginTop: 12 }}
+          />
         </View>
 
         <Text variant="caption" color={colors.textTertiary} style={{ textAlign: 'center', marginTop: 22 }}>
@@ -985,31 +986,14 @@ const styles = StyleSheet.create({
   locationPhoneLine: { height: 3, borderRadius: 2, backgroundColor: '#8CCDBF', width: 58, marginTop: 8 },
   locationHeadline: { textAlign: 'center', marginTop: 30, fontSize: 19, lineHeight: 25, letterSpacing: -0.1 },
   locationSub: { textAlign: 'center', marginTop: 12, lineHeight: 21 },
-  // Both CTAs live in one box so they share the exact same width. We pull the
-  // box back 20px each side (content pads 24 -> net 4px left/right gutter). The
-  // solid Button already uses alignSelf: 'stretch'; adding an explicit
-  // alignSelf stretch + width 100% to the outline button forces both children
-  // to fill the same content width, so they can never diverge.
+  // Both CTAs are the same Button component inside this shared box, so they
+  // share the exact same width (both fullWidth, size lg). We pull the box back
+  // 20px each side (content pads 24 -> net 4px left/right gutter), and stretch
+  // children so they always fill the same content width on every platform.
   locationActions: {
     marginTop: 26,
     marginHorizontal: -20,
-    // Explicitly stretch both children so the solid Button and the outline
-    // Set From Map Pressable always fill the exact same content width, on every
-    // platform, regardless of text length. Net left/right gutter is 4px.
     alignItems: 'stretch',
-  },
-  locationMapBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 12,
-    alignSelf: 'stretch',
-    width: '100%',
-    borderWidth: 1.5,
-    borderColor: '#C5A0BB',
-    borderRadius: radius.pill,
-    minHeight: 62,
-    paddingVertical: 16,
   },
 
   // -- map picker --

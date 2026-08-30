@@ -111,7 +111,7 @@ export function Button({
           {!isFlat && !disabled && (
             <LinearGradient
               colors={GRADIENT[variant]}
-              style={StyleSheet.absoluteFill}
+              style={[StyleSheet.absoluteFill, { borderRadius: radius.pill }]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             />

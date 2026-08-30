@@ -13,9 +13,9 @@ type Size = 'sm' | 'md' | 'lg';
 
 // Pill shapes at every size (borderRadius 999 + generous vertical padding).
 const SIZE: Record<Size, { height: number; pad: number; variant: 'button' | 'title' | 'subtitle'; icon: number }> = {
-  sm: { height: 42, pad: 18, variant: 'subtitle', icon: 16 },
-  md: { height: 50, pad: 22, variant: 'button', icon: 18 },
-  lg: { height: 62, pad: 26, variant: 'button', icon: 20 },
+  sm: { height: 42, pad: 0, variant: 'subtitle', icon: 16 },
+  md: { height: 50, pad: 0, variant: 'button', icon: 18 },
+  lg: { height: 62, pad: 0, variant: 'button', icon: 20 },
 };
 
 const GRADIENT: Record<Variant, [string, string]> = {

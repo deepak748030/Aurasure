@@ -978,9 +978,9 @@ const styles = StyleSheet.create({
   locationPhoneLine: { height: 3, borderRadius: 2, backgroundColor: '#8CCDBF', width: 58, marginTop: 8 },
   locationHeadline: { textAlign: 'center', marginTop: 30, fontSize: 19, lineHeight: 25, letterSpacing: -0.1 },
   locationSub: { textAlign: 'center', marginTop: 12, lineHeight: 21 },
-  // The primary "Use Current Location" CTA is full width. "Set From Map" is
-  // intentionally narrower (see locationMapWrap) and centered, so the two CTAs
-  // have different widths: wide solid button, narrower outline button.
+  // The primary "Use Current Location" CTA is full width (spans the whole box,
+  // which reaches the screen edges). "Set From Map" is wrapped in a narrower,
+  // centered container so it is clearly smaller than the primary CTA.
   locationActions: {
     marginTop: 26,
     marginHorizontal: -24,
@@ -991,7 +991,7 @@ const styles = StyleSheet.create({
   // it below the wide Use Current Location button.
   locationMapWrap: {
     alignSelf: 'center',
-    width: '70%',
+    width: '62%',
     marginTop: 12,
   },
   locationMapBtn: {

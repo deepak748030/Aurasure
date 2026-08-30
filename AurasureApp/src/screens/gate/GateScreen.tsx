@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View, type ViewStyle } from 'react-native';
+import MapView, { Marker } from 'react-native-maps';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../components/ui/Text';
@@ -66,6 +67,14 @@ function Shell({ children }: { children: React.ReactNode }): React.ReactElement 
 }
 
 /* ------------------------------------------------------------------ step 1 */
+
+// Default map view roughly covering serviceable area (Indore region).
+const DEFAULT_REGION = {
+  latitude: 22.7196,
+  longitude: 75.8577,
+  latitudeDelta: 0.08,
+  longitudeDelta: 0.08,
+};
 
 function LocationStep(): React.ReactElement {
   const { setLocation, setLocationStatus } = useApp();
@@ -184,6 +193,7 @@ function MapPickStep({
 }): React.ReactElement {
   const [query, setQuery] = useState('');
   const [picked, setPicked] = useState<string | null>(null);
+  const [region, setRegion] = useState(DEFAULT_REGION);
 
   const suggestions = query && !picked ? POPULAR_CITIES.filter((c) => c.toLowerCase().includes(query.toLowerCase())).slice(0, 5) : [];
 
@@ -216,55 +226,54 @@ function MapPickStep({
         <View style={styles.mapBack} />
       </View>
 
-      <View style={styles.mapArea}>
-        <View style={[styles.mapRoad, { top: '22%', height: 12 }]} />
-        <View style={[styles.mapRoad, { top: '48%', height: 14 }]} />
-        <View style={[styles.mapRoad, { top: '72%', height: 10 }]} />
-        <View style={[styles.mapRoadV, { left: '24%', width: 10 }]} />
-        <View style={[styles.mapRoadV, { left: '54%', width: 14 }]} />
-        <View style={[styles.mapRoadV, { left: '76%', width: 9 }]} />
+      {/* Real interactive map. The sides keep a 4px gutter (mapArea padding),
+          and the whole map fills the sheet above the bottom CTA. */}
+      <MapView
+        style={styles.mapArea}
+        initialRegion={region}
+        region={region}
+        onRegionChangeComplete={(r) => setRegion(r)}
+        showsUserLocation
+        showsMyLocationButton={false}
+      >
+        <Marker coordinate={{ latitude: region.latitude, longitude: region.longitude }} pinColor="#A4006B" />
+      </MapView>
 
-        <View style={styles.mapMarker}>
-          <View style={styles.mapMarkerHead} />
-          <View style={styles.mapMarkerTail} />
-        </View>
-
-        <View style={styles.mapControls}>
-          <Pressable style={styles.mapControlBtn} hitSlop={6}>
-            <Icon name="locate" size={24} color="#9C005E" />
+      <View style={styles.mapControls}>
+        <Pressable style={styles.mapControlBtn} hitSlop={6}>
+          <Icon name="locate" size={24} color="#9C005E" />
+        </Pressable>
+        <View style={styles.mapZoomBox}>
+          <Pressable style={styles.mapZoomBtn} hitSlop={6}>
+            <Icon name="plus" size={24} color={colors.text} />
           </Pressable>
-          <View style={styles.mapZoomBox}>
-            <Pressable style={styles.mapZoomBtn} hitSlop={6}>
-              <Icon name="plus" size={24} color={colors.text} />
-            </Pressable>
-            <View style={styles.mapZoomDivider} />
-            <Pressable style={styles.mapZoomBtn} hitSlop={6}>
-              <Icon name="minus" size={24} color={colors.text} />
-            </Pressable>
-          </View>
+          <View style={styles.mapZoomDivider} />
+          <Pressable style={styles.mapZoomBtn} hitSlop={6}>
+            <Icon name="minus" size={24} color={colors.text} />
+          </Pressable>
         </View>
-
-        {suggestions.length > 0 ? (
-          <View style={styles.mapSuggestions}>
-            {suggestions.map((c) => (
-              <Pressable
-                key={c}
-                onPress={() => {
-                  haptic.selection();
-                  setQuery(c);
-                  setPicked(c);
-                }}
-                style={({ pressed }) => [styles.mapSuggestion, { opacity: pressed ? 0.86 : 1 }]}
-              >
-                <Icon name="mapPin" size={18} color="#9C005E" />
-                <Text variant="subtitle" weight="semibold" color={colors.text} style={{ marginLeft: 10, flex: 1 }}>
-                  {c}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
       </View>
+
+      {suggestions.length > 0 ? (
+        <View style={styles.mapSuggestions}>
+          {suggestions.map((c) => (
+            <Pressable
+              key={c}
+              onPress={() => {
+                haptic.selection();
+                setQuery(c);
+                setPicked(c);
+              }}
+              style={({ pressed }) => [styles.mapSuggestion, { opacity: pressed ? 0.86 : 1 }]}
+            >
+              <Icon name="mapPin" size={18} color="#9C005E" />
+              <Text variant="subtitle" weight="semibold" color={colors.text} style={{ marginLeft: 10, flex: 1 }}>
+                {c}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
 
       <View style={styles.mapSheet}>
         <View style={styles.mapSheetHandle} />
@@ -544,15 +553,17 @@ function LoginStep(): React.ReactElement {
           ) : null}
 
           {error ? <ErrorNote text={error} /> : null}
-          <Button
-            title="Login"
-            variant="login"
-            leftIcon="login"
-            fullWidth
-            size="lg"
-            onPress={submit}
-            style={{ marginTop: 18, height: 52, marginHorizontal: -16 }}
-          />
+          <View style={styles.loginActions}>
+            <Button
+              title="Login"
+              variant="login"
+              leftIcon="login"
+              fullWidth
+              size="lg"
+              onPress={submit}
+              style={{ marginTop: 18, height: 52 }}
+            />
+          </View>
 
           <View style={styles.orRow}>
             <View style={styles.orLine} />
@@ -643,7 +654,9 @@ function OtpStep({ phone, onBack, onVerify }: { phone: string; onBack: () => voi
         />
 
         {error ? <ErrorNote text={error} /> : null}
-        <Button title="Verify" variant="login" fullWidth size="lg" onPress={verify} disabled={otp.length !== 6} style={{ marginTop: 36 }} />
+        <View style={styles.otpActions}>
+          <Button title="Verify" variant="login" fullWidth size="lg" onPress={verify} disabled={otp.length !== 6} style={{ marginTop: 36 }} />
+        </View>
 
         <View style={styles.otpResendRow}>
           <Text variant="subtitle" color={colors.textSecondary}>
@@ -814,6 +827,13 @@ const styles = StyleSheet.create({
   rightIconBtn: { paddingLeft: 10 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
   rememberRow: { flexDirection: 'row', alignItems: 'center' },
+  // Matches the location CTA width: cancel the 24px content padding, add 4px
+  // inner gutter so the full-width button spans the same box on every screen.
+  loginActions: {
+    marginHorizontal: -44,
+    paddingHorizontal: 4,
+    alignItems: 'stretch',
+  },
   checkbox: {
     width: 22,
     height: 22,
@@ -919,6 +939,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 22,
   },
+  // Same box width as login/location CTAs: cancel 24px content padding, keep a
+  // 4px inner gutter so the Verify button spans identically on every screen.
+  otpActions: {
+    marginHorizontal: -44,
+    paddingHorizontal: 4,
+    alignItems: 'stretch',
+  },
 
   // -- location intro --
   locationRoot: { flex: 1, backgroundColor: colors.surface },
@@ -1019,46 +1046,19 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     paddingHorizontal: 16,
     height: 44,
-    marginHorizontal: 10,
+    // Fill width between the back button and the screen edge.
+    marginHorizontal: 4,
   },
   mapSearchInput: { flex: 1, fontSize: 15, color: colors.text },
-  mapArea: { flex: 1, position: 'relative', backgroundColor: '#C5C8CF', overflow: 'hidden' },
-  mapRoad: { position: 'absolute', left: 0, right: 0, backgroundColor: '#D9DCE2' },
-  mapRoadV: { position: 'absolute', top: 0, bottom: 0, backgroundColor: '#D9DCE2' },
-  mapMarker: {
-    position: 'absolute',
-    left: '50%',
-    top: '46%',
-    width: 58,
-    height: 58,
-    marginLeft: -29,
-    marginTop: -29,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    zIndex: 4,
-  },
-  mapMarkerHead: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#A4006B',
-    borderWidth: 3,
-    borderColor: '#F7E2F1',
-  },
-  mapMarkerTail: {
-    width: 0,
-    height: 0,
-    marginTop: -3,
-    borderLeftWidth: 6,
-    borderRightWidth: 6,
-    borderTopWidth: 12,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: '#A4006B',
+  // Real map fills the screen with a 4px left/right gutter.
+  mapArea: {
+    flex: 1,
+    backgroundColor: '#C5C8CF',
+    marginHorizontal: 4,
   },
   mapControls: {
     position: 'absolute',
-    right: 14,
+    right: 18,
     top: '42%',
     zIndex: 6,
     alignItems: 'center',

@@ -990,7 +990,14 @@ const styles = StyleSheet.create({
   // solid Button already uses alignSelf: 'stretch'; adding an explicit
   // alignSelf stretch + width 100% to the outline button forces both children
   // to fill the same content width, so they can never diverge.
-  locationActions: { marginTop: 26, marginHorizontal: -20 },
+  locationActions: {
+    marginTop: 26,
+    marginHorizontal: -20,
+    // Explicitly stretch both children so the solid Button and the outline
+    // Set From Map Pressable always fill the exact same content width, on every
+    // platform, regardless of text length. Net left/right gutter is 4px.
+    alignItems: 'stretch',
+  },
   locationMapBtn: {
     flexDirection: 'row',
     alignItems: 'center',

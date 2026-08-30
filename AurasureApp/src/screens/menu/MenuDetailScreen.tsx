@@ -89,21 +89,22 @@ export function MenuDetailScreen({ route, navigation }: Props): React.ReactEleme
         overScrollMode="never"
         bounces={false}
       >
-        <LinearGradient colors={meta.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.hero, { paddingTop: insets.top + 14 }]}>
-          <Pressable onPress={() => navigation.goBack()} hitSlop={10} style={styles.backBtn}>
-            <Icon name="chevronLeft" size={22} color={colors.white} />
-          </Pressable>
-          <View style={styles.heroIcon}>
-            <Icon name={meta.icon} size={26} color={meta.color} filled />
+        <LinearGradient colors={meta.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.hero, { paddingTop: insets.top + 6 }]}>
+          <View style={styles.heroBar}>
+            <Pressable onPress={() => navigation.goBack()} hitSlop={10} style={styles.backBtn}>
+              <Icon name="chevronLeft" size={22} color={colors.white} />
+            </Pressable>
+            <View style={styles.heroText}>
+              <Text variant="h3" weight="bold" color={colors.white} numberOfLines={1}>
+                {meta.title}
+              </Text>
+              {meta.subtitle ? (
+                <Text variant="caption" color="rgba(255,255,255,0.8)" numberOfLines={1}>
+                  {meta.subtitle}
+                </Text>
+              ) : null}
+            </View>
           </View>
-          <Text variant="h2" weight="extrabold" color={colors.white}>
-            {meta.title}
-          </Text>
-          {meta.subtitle ? (
-            <Text variant="caption" color="rgba(255,255,255,0.85)" style={{ marginTop: 4 }}>
-              {meta.subtitle}
-            </Text>
-          ) : null}
         </LinearGradient>
 
         <View style={styles.content}>{body}</View>
@@ -156,15 +157,20 @@ function EditProfileBody(): React.ReactElement {
   const [display, setDisplay] = useState(name ?? '');
   return (
     <>
-      <Card>
-        <View style={styles.avatarWrap}>
+      <Card style={styles.profileCard}>
+        <View>
           <View style={styles.avatar}>
-            <Icon name="user" size={32} color="#5B3A7E" />
+            <Icon name="user" size={26} color="#5B3A7E" />
           </View>
+          <View style={styles.avatarBadge}>
+            <Icon name="edit" size={11} color={colors.white} />
+          </View>
+        </View>
+        <View style={{ flex: 1, marginLeft: 14 }}>
           <Text variant="title" weight="bold" color={colors.text}>
             {phone ? name ?? 'Guest User' : 'Sign in to edit'}
           </Text>
-          <Text variant="caption" color={colors.textSecondary}>
+          <Text variant="caption" color={colors.textSecondary} style={{ marginTop: 2 }}>
             {phone ?? 'Not signed in'}
           </Text>
         </View>
@@ -172,11 +178,15 @@ function EditProfileBody(): React.ReactElement {
       <Card style={{ marginTop: 14 }}>
         <Field label="Full name" value={display} onChangeText={setDisplay} icon="user" />
         <Field label="Phone" value={phone ?? ''} onChangeText={() => undefined} icon="phone" disabled />
-        <View style={styles.row}>
-          <View style={styles.rowIcon}><Icon name="mail" size={18} color="#8B5AD6" filled /></View>
-          <View style={{ flex: 1 }}>
-            <Text variant="caption" color={colors.textTertiary} style={styles.overline}>Email</Text>
-            <Text variant="subtitle" color={colors.textSecondary}>Add email for receipts</Text>
+        <View style={[styles.fieldWrap, styles.fieldWrapBorder]}>
+          <Text variant="caption" color={colors.textTertiary} style={styles.fieldLabel}>
+            EMAIL
+          </Text>
+          <View style={styles.fieldInputRow}>
+            <Icon name="mail" size={18} color={colors.textSecondary} style={styles.fieldIcon} />
+            <Text variant="body" color={colors.textSecondary}>
+              Add email for receipts
+            </Text>
           </View>
         </View>
       </Card>
@@ -195,10 +205,10 @@ function SettingsBody(): React.ReactElement {
   };
   return (
     <Card>
-      <ToggleRow label="Push notifications" desc="Order updates & offers" value={state.push} onChange={() => toggle('push')} />
-      <ToggleRow label="Email notifications" desc="Receipts & promotional emails" value={state.email} onChange={() => toggle('email')} />
-      <ToggleRow label="Dark mode" desc="Comes soon" value={state.dark} onChange={() => toggle('dark')} />
-      <ToggleRow label="Location" desc="Show serviceable stores near you" value={state.location} onChange={() => toggle('location')} last />
+      <ToggleRow label="Push notifications" desc="Order updates & offers" value={state.push} onChange={() => toggle('push')} icon="bell" tint="#FDE9F3" />
+      <ToggleRow label="Email notifications" desc="Receipts & promotional emails" value={state.email} onChange={() => toggle('email')} icon="mail" tint="#E4F1FC" />
+      <ToggleRow label="Dark mode" desc="Comes soon" value={state.dark} onChange={() => toggle('dark')} icon="zap" tint="#F0E8FF" />
+      <ToggleRow label="Location" desc="Show serviceable stores near you" value={state.location} onChange={() => toggle('location')} icon="mapPin" tint="#E5F7E5" last />
     </Card>
   );
 }
@@ -415,10 +425,12 @@ function LegalBody({ keyName, meta }: { keyName: 'terms' | 'privacy' | 'refund';
 
 function Field({ label, value, onChangeText, icon, disabled }: { label: string; value: string; onChangeText: (t: string) => void; icon: IconName; disabled?: boolean }): React.ReactElement {
   return (
-    <View style={styles.field}>
-      <Icon name={icon} size={18} color={colors.textSecondary} style={styles.fieldIcon} />
-      <View style={{ flex: 1 }}>
-        <Text variant="caption" color={colors.textTertiary} style={styles.overline}>{label}</Text>
+    <View style={[styles.fieldWrap, styles.fieldWrapBorder]}>
+      <Text variant="caption" color={colors.textTertiary} style={styles.fieldLabel}>
+        {label.toUpperCase()}
+      </Text>
+      <View style={styles.fieldInputRow}>
+        <Icon name={icon} size={18} color={colors.textSecondary} style={styles.fieldIcon} />
         <TextInput
           value={value}
           onChangeText={onChangeText}
@@ -432,10 +444,10 @@ function Field({ label, value, onChangeText, icon, disabled }: { label: string; 
   );
 }
 
-function ToggleRow({ label, desc, value, onChange, last }: { label: string; desc: string; value: boolean; onChange: () => void; last?: boolean }): React.ReactElement {
+function ToggleRow({ label, desc, value, onChange, last, icon, tint }: { label: string; desc: string; value: boolean; onChange: () => void; last?: boolean; icon: IconName; tint: string }): React.ReactElement {
   return (
     <View style={[styles.row, !last ? styles.rowTop : null]}>
-      <View style={styles.rowIcon}><Icon name="settings" size={18} color="#6D6D7A" filled /></View>
+      <View style={[styles.rowIcon, { backgroundColor: tint }]}><Icon name={icon} size={18} color="#6D6D7A" filled /></View>
       <View style={{ flex: 1 }}>
         <Text variant="subtitle" weight="semibold" color={colors.text}>{label}</Text>
         <Text variant="caption" color={colors.textSecondary} style={{ marginTop: 1 }}>{desc}</Text>
@@ -476,11 +488,13 @@ function ActivityRow({ title, sub, amount, positive }: { title: string; sub: str
 
 function InfoHero({ icon, title, desc }: { icon: IconName; title: string; desc: string }): React.ReactElement {
   return (
-    <Card>
-      <View style={styles.referHero}>
-        <View style={styles.rowIcon}><Icon name={icon} size={22} color="#9C005E" filled /></View>
-        <Text variant="h3" weight="bold" color={colors.text} style={{ marginTop: 10, textAlign: 'center' }}>{title}</Text>
-        <Text variant="caption" color={colors.textSecondary} style={{ marginTop: 4, textAlign: 'center' }}>{desc}</Text>
+    <Card style={styles.infoHeroCard}>
+      <View style={styles.infoHeroIcon}>
+        <Icon name={icon} size={22} color="#9C005E" filled />
+      </View>
+      <View style={{ flex: 1, marginLeft: 12 }}>
+        <Text variant="title" weight="bold" color={colors.text}>{title}</Text>
+        <Text variant="caption" color={colors.textSecondary} style={{ marginTop: 2 }}>{desc}</Text>
       </View>
     </Card>
   );
@@ -508,10 +522,17 @@ function FullWidthButton({ label }: { label: string }): React.ReactElement {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   hero: {
-    paddingHorizontal: 16,
-    paddingBottom: 26,
-    borderBottomLeftRadius: 26,
-    borderBottomRightRadius: 26,
+    paddingHorizontal: 14,
+    paddingBottom: 14,
+    borderBottomLeftRadius: 22,
+    borderBottomRightRadius: 22,
+  },
+  // Slim app-bar style header: back button + title inline on one row, no
+  // oversized icon block under it.
+  heroBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 48,
   },
   backBtn: {
     width: 38,
@@ -521,39 +542,56 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 16,
-    marginBottom: 12,
-  },
+  heroText: { flex: 1, marginLeft: 12 },
   // Side spacing comes from the 10px content gutter - the hero above is full
   // bleed, and the body never double-pads.
-  content: { paddingHorizontal: 10, marginTop: 16 },
-  avatarWrap: { alignItems: 'center', paddingVertical: 10 },
+  content: { paddingHorizontal: 10, marginTop: 14 },
+  // Profile card: avatar + identity side by side, like a contact sheet.
+  profileCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
   avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: '#F6E9F4',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
   },
-  field: {
-    flexDirection: 'row',
+  avatarBadge: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#9C005E',
+    borderWidth: 2,
+    borderColor: colors.surface,
     alignItems: 'center',
-    paddingVertical: 10,
+    justifyContent: 'center',
+  },
+  // Stacked field: label on top, input row below - much easier to scan than
+  // squeezed single-line fields.
+  fieldWrap: { paddingVertical: 12 },
+  fieldWrapBorder: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: '#F0EAF0',
   },
-  fieldIcon: { marginRight: 12 },
+  fieldLabel: { marginBottom: 8, letterSpacing: 0.6 },
+  fieldInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    minHeight: 48,
+  },
+  fieldIcon: { marginRight: 10 },
   overline: { letterSpacing: 0.4 },
-  input: { fontSize: 16, color: colors.text, paddingVertical: 2 },
+  input: { flex: 1, fontSize: 16, color: colors.text, paddingVertical: 2 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -592,8 +630,21 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
   },
-  sectionLabel: { marginTop: 20, marginBottom: 8, marginLeft: 4 },
+  sectionLabel: { marginTop: 22, marginBottom: 10, marginLeft: 4 },
   referHero: { alignItems: 'center', paddingVertical: 8 },
+  infoHeroCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  infoHeroIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 15,
+    backgroundColor: colors.brand[50],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   codeBox: {
     marginTop: 18,
     flexDirection: 'row',

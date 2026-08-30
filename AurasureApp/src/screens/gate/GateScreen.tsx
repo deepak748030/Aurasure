@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View, type ViewStyle } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import MapView, { Marker, type Region } from 'react-native-maps';
+import * as Location from 'expo-location';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../components/ui/Text';
@@ -193,7 +194,9 @@ function MapPickStep({
 }): React.ReactElement {
   const [query, setQuery] = useState('');
   const [picked, setPicked] = useState<string | null>(null);
-  const [region, setRegion] = useState(DEFAULT_REGION);
+  const [region, setRegion] = useState<Region>(DEFAULT_REGION);
+  const [locating, setLocating] = useState(false);
+  const mapRef = useRef<MapView>(null);
 
   const suggestions = query && !picked ? POPULAR_CITIES.filter((c) => c.toLowerCase().includes(query.toLowerCase())).slice(0, 5) : [];
 
@@ -201,6 +204,45 @@ function MapPickStep({
     if (!picked) return;
     haptic.success();
     onPick(picked);
+  };
+
+  const animateTo = (r: Region): void => {
+    mapRef.current?.animateToRegion(r, 350);
+  };
+
+  const zoomIn = (): void => {
+    haptic.light();
+    animateTo({ ...region, latitudeDelta: Math.max(region.latitudeDelta / 2, 0.002), longitudeDelta: Math.max(region.longitudeDelta / 2, 0.002) });
+  };
+
+  const zoomOut = (): void => {
+    haptic.light();
+    animateTo({ ...region, latitudeDelta: Math.min(region.latitudeDelta * 2, 60), longitudeDelta: Math.min(region.longitudeDelta * 2, 60) });
+  };
+
+  const goToMyLocation = async (): Promise<void> => {
+    haptic.light();
+    setLocating(true);
+    try {
+      const perm = await Location.requestForegroundPermissionsAsync();
+      if (perm.status !== 'granted') {
+        haptic.error();
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const r: Region = {
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        latitudeDelta: 0.02,
+        longitudeDelta: 0.02,
+      };
+      setRegion(r);
+      animateTo(r);
+    } catch {
+      haptic.error();
+    } finally {
+      setLocating(false);
+    }
   };
 
   return (
@@ -229,10 +271,12 @@ function MapPickStep({
       {/* Real interactive map. The sides keep a 4px gutter (mapArea padding),
           and the whole map fills the sheet above the bottom CTA. */}
       <MapView
+        ref={mapRef}
         style={styles.mapArea}
         initialRegion={region}
         region={region}
         onRegionChangeComplete={(r) => setRegion(r)}
+        onMapReady={() => mapRef.current?.animateToRegion(DEFAULT_REGION, 0)}
         showsUserLocation
         showsMyLocationButton={false}
       >
@@ -240,15 +284,15 @@ function MapPickStep({
       </MapView>
 
       <View style={styles.mapControls}>
-        <Pressable style={styles.mapControlBtn} hitSlop={6}>
+        <Pressable style={styles.mapControlBtn} hitSlop={6} onPress={goToMyLocation} disabled={locating}>
           <Icon name="locate" size={24} color="#9C005E" />
         </Pressable>
         <View style={styles.mapZoomBox}>
-          <Pressable style={styles.mapZoomBtn} hitSlop={6}>
+          <Pressable style={styles.mapZoomBtn} hitSlop={6} onPress={zoomIn}>
             <Icon name="plus" size={24} color={colors.text} />
           </Pressable>
           <View style={styles.mapZoomDivider} />
-          <Pressable style={styles.mapZoomBtn} hitSlop={6}>
+          <Pressable style={styles.mapZoomBtn} hitSlop={6} onPress={zoomOut}>
             <Icon name="minus" size={24} color={colors.text} />
           </Pressable>
         </View>

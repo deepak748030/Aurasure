@@ -1079,8 +1079,8 @@ const styles = StyleSheet.create({
   // Narrow wrapper that constrains Set From Map to a smaller width and centers
   // it below the wide Use Current Location button.
   locationMapWrap: {
-    alignSelf: 'center',
-    width: '87%',
+    alignSelf: 'stretch',
+    width: '100%',
     marginTop: 10,
   },
   locationMapBtn: {

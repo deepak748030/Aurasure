@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Keyboard, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Icon } from '@/lib/icons';
 import { Text } from './Text';
@@ -22,11 +23,13 @@ interface TabDef {
 /** Same five tabs for both modules - Home is the only screen that swaps. */
 const TABS: TabDef[] = [
   { key: 'Home', label: 'Home', icon: 'home' },
-  { key: 'Likes', label: 'Likes', icon: 'heart' },
-  { key: 'Cart', label: 'Cart', icon: 'cart' },
+  { key: 'Likes', label: 'Favourite', icon: 'heart' },
+  { key: 'Cart', label: '', icon: 'cart' },
   { key: 'Orders', label: 'Orders', icon: 'receipt' },
   { key: 'Menu', label: 'Menu', icon: 'menu' },
 ];
+
+const CENTER_COLOR = '#A4006B';
 
 export function TabBar({ state, navigation }: BottomTabBarProps): React.ReactElement {
   const insets = useSafeAreaInsets();
@@ -75,10 +78,38 @@ export function TabBar({ state, navigation }: BottomTabBarProps): React.ReactEle
             }
           };
           const badge = def.key === 'Cart' ? count : 0;
+
+          if (def.key === 'Cart') {
+            return (
+              <Pressable key={route.key} onPress={onPress} style={styles.centerTab} accessibilityRole="button" accessibilityState={{ selected: isFocused }}>
+                <LinearGradient colors={[CENTER_COLOR, '#6E003F']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.centerButton}>
+                  <Icon name={def.icon} size={28} color={colors.white} filled />
+                  {badge > 0 ? (
+                    <View style={styles.centerBadge}>
+                      <Text variant="caption" weight="bold" color={colors.white} style={{ fontSize: 9, lineHeight: 12 }}>
+                        {badge > 99 ? '99+' : badge}
+                      </Text>
+                    </View>
+                  ) : null}
+                </LinearGradient>
+                {isFocused ? (
+                  <Text variant="caption" weight="bold" color={CENTER_COLOR} style={{ marginTop: 4 }}>
+                    Cart
+                  </Text>
+                ) : null}
+              </Pressable>
+            );
+          }
+
           return (
             <Pressable key={route.key} onPress={onPress} style={styles.tab} accessibilityRole="button" accessibilityState={{ selected: isFocused }}>
               <View style={styles.iconBox}>
-                <Icon name={def.icon} size={22} color={isFocused ? active : colors.textTertiary} filled={isFocused} />
+                <Icon
+                  name={def.icon}
+                  size={22}
+                  color={isFocused ? CENTER_COLOR : colors.textTertiary}
+                  filled={isFocused}
+                />
                 {badge > 0 ? (
                   <View style={styles.badge}>
                     <Text variant="caption" weight="bold" color={colors.white} style={{ fontSize: 9, lineHeight: 12 }}>
@@ -89,13 +120,13 @@ export function TabBar({ state, navigation }: BottomTabBarProps): React.ReactEle
               </View>
               <Text
                 variant="caption"
-                color={isFocused ? active : colors.textTertiary}
+                color={isFocused ? CENTER_COLOR : colors.textTertiary}
                 weight={isFocused ? 'bold' : 'medium'}
                 style={{ marginTop: 2 }}
               >
                 {def.label}
               </Text>
-              <View style={[styles.indicator, { backgroundColor: isFocused ? active : 'transparent' }]} />
+              <View style={[styles.indicator, { backgroundColor: isFocused ? CENTER_COLOR : 'transparent' }]} />
             </Pressable>
           );
         })}
@@ -105,17 +136,18 @@ export function TabBar({ state, navigation }: BottomTabBarProps): React.ReactEle
 }
 
 const styles = StyleSheet.create({
-  // Flat bar: solid surface with a hairline rule on top - no blur, no shadow.
+  // Purple tab bar with a raised center cart button, matching the live app.
   container: {
-    backgroundColor: colors.surface,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+    backgroundColor: '#F5EAF3',
   },
   row: {
     flexDirection: 'row',
     height: TAB_BAR_HEIGHT,
     alignItems: 'center',
     paddingHorizontal: spacing.xs,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    backgroundColor: '#F5EAF3',
   },
   tab: {
     flex: 1,
@@ -136,9 +168,9 @@ const styles = StyleSheet.create({
     height: 16,
     paddingHorizontal: 3,
     borderRadius: radius.pill,
-    backgroundColor: colors.food[600],
+    backgroundColor: CENTER_COLOR,
     borderWidth: 2,
-    borderColor: colors.surface,
+    borderColor: '#F5EAF3',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -147,5 +179,34 @@ const styles = StyleSheet.create({
     height: 3,
     borderRadius: radius.xs,
     marginTop: 4,
+  },
+  centerTab: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  centerButton: {
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    marginTop: -40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 4,
+    borderColor: '#F5EAF3',
+  },
+  centerBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: radius.pill,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: CENTER_COLOR,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

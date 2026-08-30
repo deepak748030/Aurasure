@@ -28,6 +28,8 @@ interface AppState {
   gate: GateStep;
   /** Back to the module picker without losing the session (Menu tab action). */
   switchModule: (m: ModuleKey) => void;
+  /** Go back one gate step (login -> module) keeping the chosen location. */
+  back: () => void;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -47,6 +49,8 @@ export function AppProvider({ children }: { children: React.ReactNode }): React.
   }, []);
 
   const switchModule = useCallback((m: ModuleKey) => setModuleState(m), []);
+
+  const back = useCallback(() => setPickedModule(false), []);
 
   const setLocation = useCallback((next: string) => {
     setCity(next);
@@ -108,8 +112,9 @@ export function AppProvider({ children }: { children: React.ReactNode }): React.
       likesFor,
       gate,
       switchModule,
+      back,
     }),
-    [module, setModule, city, locationStatus, setLocation, login, logout, isLiked, toggleLike, likesFor, gate, switchModule],
+    [module, setModule, city, locationStatus, setLocation, login, logout, isLiked, toggleLike, likesFor, gate, switchModule, back],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

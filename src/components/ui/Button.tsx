@@ -8,7 +8,7 @@ import { radius } from '@/theme/tokens';
 import { haptic } from '@/lib/haptics';
 import type { IconName } from '@/types';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'login';
 type Size = 'sm' | 'md' | 'lg';
 
 const SIZE: Record<Size, { height: number; pad: number; variant: 'button' | 'title' | 'subtitle'; icon: number }> = {
@@ -19,6 +19,7 @@ const SIZE: Record<Size, { height: number; pad: number; variant: 'button' | 'tit
 
 const GRADIENT: Record<Variant, [string, string]> = {
   primary: colors.brandGradient,
+  login: ['#A4006B', '#72003F'],
   success: ['#16A34A', '#0E9F88'],
   danger: ['#EF4444', '#DC2626'],
   secondary: [colors.surfaceAlt, colors.surfaceAlt],
@@ -27,6 +28,7 @@ const GRADIENT: Record<Variant, [string, string]> = {
 
 const TEXT_COLOR: Record<Variant, string> = {
   primary: colors.white,
+  login: colors.white,
   success: colors.white,
   danger: colors.white,
   secondary: colors.text,

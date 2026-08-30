@@ -35,7 +35,7 @@ const CENTER_COLOR = '#A4006B';
 const IDLE_COLOR = '#6E6577';
 const ICON_SIZE = 23;
 
-export function TabBar({ state, navigation }: BottomTabBarProps): React.ReactElement {
+export function TabBar({ state, navigation }: BottomTabBarProps): React.ReactElement | null {
   const insets = useSafeAreaInsets();
   const [kbHeight, setKbHeight] = useState(0);
   const translateY = useRef(new Animated.Value(0)).current;
@@ -61,6 +61,16 @@ export function TabBar({ state, navigation }: BottomTabBarProps): React.ReactEle
   }, [kbHeight, translateY]);
 
   const active = module === 'food' ? colors.food[600] : colors.brand[600];
+
+  // The bar only belongs on the four main screens: Home, Favourite, Orders and
+  // Menu. It is hidden on the Cart tab (full-screen checkout flow) and on any
+  // pushed detail screen (Restaurant, Product, Search, Checkout, Order detail,
+  // Menu detail, Login) - those get their own back button and floating CTA.
+  const focusedRoute = state.routes[state.index];
+  const nested = focusedRoute?.state;
+  const onRootScreen = nested == null || nested.index === 0;
+  const onMainTab = focusedRoute?.name !== 'Cart';
+  if (!focusedRoute || !onRootScreen || !onMainTab) return null;
 
   return (
     <Animated.View

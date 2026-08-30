@@ -136,10 +136,8 @@ function LocationStep(): React.ReactElement {
 
         {error ? <ErrorNote text={error} /> : null}
 
-        {/* Both CTAs use the same Button component (same size/fullWidth), so
-            their widths are identical by construction. Only the variant/fill
-            differs: solid 'login' for current-location, outline 'secondary'
-            for set-from-map. */}
+        {/* Primary CTA is wide, secondary is narrower. Use Current Location is
+            full width; Set From Map is intentionally narrower and centered. */}
         <View style={styles.locationActions}>
           <Button
             title={busy ? 'Detecting location…' : 'Use Current Location'}
@@ -150,19 +148,21 @@ function LocationStep(): React.ReactElement {
             loading={busy}
             onPress={() => void useCurrent()}
           />
-          <Button
-            title="Set From Map"
-            variant="secondary"
-            leftIcon="mapPinned"
-            fullWidth
-            size="lg"
-            onPress={() => {
-              haptic.light();
-              setError(null);
-              setMode('map');
-            }}
-            style={{ marginTop: 12 }}
-          />
+          <View style={styles.locationMapWrap}>
+            <Button
+              title="Set From Map"
+              variant="secondary"
+              leftIcon="mapPinned"
+              fullWidth
+              size="lg"
+              onPress={() => {
+                haptic.light();
+                setError(null);
+                setMode('map');
+              }}
+              style={styles.locationMapBtn}
+            />
+          </View>
         </View>
 
         <Text variant="caption" color={colors.textTertiary} style={{ textAlign: 'center', marginTop: 22 }}>
@@ -978,15 +978,24 @@ const styles = StyleSheet.create({
   locationPhoneLine: { height: 3, borderRadius: 2, backgroundColor: '#8CCDBF', width: 58, marginTop: 8 },
   locationHeadline: { textAlign: 'center', marginTop: 30, fontSize: 19, lineHeight: 25, letterSpacing: -0.1 },
   locationSub: { textAlign: 'center', marginTop: 12, lineHeight: 21 },
-  // Both CTAs are the same fullWidth Button component inside this box, so they
-  // always get the exact same width (width: '100%' each). We widen the box to
-  // the screen edge (cancel the content's 24px padding) and give the two buttons
-  // a 4px left/right gutter via inner padding, keeping edges even and small.
+  // The primary "Use Current Location" CTA is full width. "Set From Map" is
+  // intentionally narrower (see locationMapWrap) and centered, so the two CTAs
+  // have different widths: wide solid button, narrower outline button.
   locationActions: {
     marginTop: 26,
     marginHorizontal: -24,
     paddingHorizontal: 4,
     alignItems: 'stretch',
+  },
+  // Narrow wrapper that constrains Set From Map to a smaller width and centers
+  // it below the wide Use Current Location button.
+  locationMapWrap: {
+    alignSelf: 'center',
+    width: '70%',
+    marginTop: 12,
+  },
+  locationMapBtn: {
+    width: '100%',
   },
 
   // -- map picker --

@@ -986,13 +986,14 @@ const styles = StyleSheet.create({
   locationPhoneLine: { height: 3, borderRadius: 2, backgroundColor: '#8CCDBF', width: 58, marginTop: 8 },
   locationHeadline: { textAlign: 'center', marginTop: 30, fontSize: 19, lineHeight: 25, letterSpacing: -0.1 },
   locationSub: { textAlign: 'center', marginTop: 12, lineHeight: 21 },
-  // Both CTAs are the same Button component inside this shared box, so they
-  // share the exact same width (both fullWidth, size lg). We pull the box back
-  // 20px each side (content pads 24 -> net 4px left/right gutter), and stretch
-  // children so they always fill the same content width on every platform.
+  // Both CTAs are the same fullWidth Button component inside this box, so they
+  // always get the exact same width (width: '100%' each). We widen the box to
+  // the screen edge (cancel the content's 24px padding) and give the two buttons
+  // a 4px left/right gutter via inner padding, keeping edges even and small.
   locationActions: {
     marginTop: 26,
-    marginHorizontal: -20,
+    marginHorizontal: -24,
+    paddingHorizontal: 4,
     alignItems: 'stretch',
   },
 

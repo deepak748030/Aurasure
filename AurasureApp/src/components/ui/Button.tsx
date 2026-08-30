@@ -11,10 +11,7 @@ import type { IconName } from '@/types';
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'login';
 type Size = 'sm' | 'md' | 'lg';
 
-// Pill shapes at every size, matching the Sign In CTA on the More screen
-// (borderRadius 999 + generous vertical padding) instead of the old 6px
-// "almost square" look.
-// lg height bumped so the pill radius (height/2) reads rounder on wide CTAs.
+// Pill shapes at every size (borderRadius 999 + generous vertical padding).
 const SIZE: Record<Size, { height: number; pad: number; variant: 'button' | 'title' | 'subtitle'; icon: number }> = {
   sm: { height: 42, pad: 18, variant: 'subtitle', icon: 16 },
   md: { height: 50, pad: 22, variant: 'button', icon: 18 },
@@ -87,24 +84,24 @@ export function Button({
       disabled={disabled || loading}
       style={({ pressed }) => [
         styles.base,
+        // A single width source: when fullWidth, the button occupies 100% of its
+        // parent's width. This is the only thing that decides width, so any two
+        // fullWidth buttons in the same container always match exactly — even
+        // when their label/icon lengths or fills (border vs no border) differ.
         {
+          width: fullWidth ? '100%' : undefined,
+          alignSelf: fullWidth ? 'stretch' : 'flex-start',
           height: s.height,
           paddingHorizontal: s.pad,
           borderRadius: radius.pill,
           opacity: disabled || loading ? 0.5 : pressed ? 0.94 : 1,
-          // fullWidth stretches across the row it sits in. Some platforms need
-          // an explicit width instead of relying on alignSelf stretch alone
-          // (a child inside a box that doesn't stretch can be sized to its
-          // content), so we also set width 100%. A minWidth of 0 keeps a
-          // full-width button from ever being pushed out by content.
-          alignSelf: fullWidth ? 'stretch' : 'flex-start',
-          width: fullWidth ? '100%' : undefined,
-          minWidth: fullWidth ? 0 : 120,
           // Gradient variants fall back to their first stop when disabled,
           // since the gradient layer is skipped for the dimmed state.
           backgroundColor: flat ? flat.bg : disabled ? GRADIENT[variant][0] : 'transparent',
           borderWidth: flat ? 1 : 0,
           borderColor: flat ? flat.border : 'transparent',
+          // Keep a full-width button from ever being clipped by long content.
+          minWidth: fullWidth ? 0 : 120,
         },
         style,
       ]}
@@ -129,21 +126,11 @@ export function Button({
               </View>
             ) : (
               <>
-                {leftIcon ? (
-                  <Icon name={leftIcon} size={s.icon} color={textColor} style={styles.leftIcon} />
-                ) : null}
-                <Text
-                  variant={s.variant}
-                  color={textColor}
-                  weight="bold"
-                  numberOfLines={1}
-                  style={styles.label}
-                >
+                {leftIcon ? <Icon name={leftIcon} size={s.icon} color={textColor} style={styles.leftIcon} /> : null}
+                <Text variant={s.variant} color={textColor} weight="bold" numberOfLines={1} style={styles.label}>
                   {title}
                 </Text>
-                {rightIcon ? (
-                  <Icon name={rightIcon} size={s.icon} color={textColor} style={styles.rightIcon} />
-                ) : null}
+                {rightIcon ? <Icon name={rightIcon} size={s.icon} color={textColor} style={styles.rightIcon} /> : null}
               </>
             )}
           </View>

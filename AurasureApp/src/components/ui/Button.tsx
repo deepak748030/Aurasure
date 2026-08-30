@@ -92,11 +92,14 @@ export function Button({
           paddingHorizontal: s.pad,
           borderRadius: radius.pill,
           opacity: disabled || loading ? 0.5 : pressed ? 0.94 : 1,
-          // fullWidth stretches across the row it sits in. Inside a horizontal
-          // row `stretch` only affects the cross axis, so callers keep using
-          // flex/width there - the explicit height above still wins.
+          // fullWidth stretches across the row it sits in. Some platforms need
+          // an explicit width instead of relying on alignSelf stretch alone
+          // (a child inside a box that doesn't stretch can be sized to its
+          // content), so we also set width 100%. A minWidth of 0 keeps a
+          // full-width button from ever being pushed out by content.
           alignSelf: fullWidth ? 'stretch' : 'flex-start',
-          minWidth: fullWidth ? undefined : 120,
+          width: fullWidth ? '100%' : undefined,
+          minWidth: fullWidth ? 0 : 120,
           // Gradient variants fall back to their first stop when disabled,
           // since the gradient layer is skipped for the dimmed state.
           backgroundColor: flat ? flat.bg : disabled ? GRADIENT[variant][0] : 'transparent',

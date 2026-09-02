@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1180" viewBox="0 0 1680 1180">
+<defs>
+  <marker id="ah-5B46E5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#5B46E5"/></marker>
+  <marker id="ah-C2410C" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#C2410C"/></marker>
+  <marker id="ah-98A1B3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#98A1B3"/></marker>
+</defs>
+<rect width="1680" height="1180" fill="#F6F7FB"/>
+<text x="56" y="62" font-family="Manrope" font-weight="800" font-size="32" letter-spacing="0" fill="#141033" text-anchor="start">Aurasure · System Architecture</text>
+<text x="56" y="90" font-family="Manrope" font-weight="500" font-size="15" letter-spacing="0" fill="#5B6478" text-anchor="start">Four client surfaces, one Express API, one MongoDB. Solid = shipped today · dashed = to be built.</text>
+<rect x="1236" y="40" width="20" height="14" rx="4" fill="#EEF1FF" stroke="#C9D0FF" stroke-width="2"/>
+<text x="1264" y="52" font-family="Manrope" font-weight="700" font-size="13" letter-spacing="0" fill="#5B6478" text-anchor="start">exists</text>
+<rect x="1336" y="40" width="20" height="14" rx="4" fill="#FFF4ED" stroke="#FFC2AD" stroke-width="2" stroke-dasharray="5 4"/>
+<text x="1364" y="52" font-family="Manrope" font-weight="700" font-size="13" letter-spacing="0" fill="#5B6478" text-anchor="start">to build</text>
+<path d="M 1440 47 L 1476 47" stroke="#98A1B3" stroke-width="2" stroke-dasharray="6 5"/>
+<text x="1484" y="52" font-family="Manrope" font-weight="700" font-size="13" letter-spacing="0" fill="#5B6478" text-anchor="start">3rd party</text>
+<rect x="56" y="128" width="372" height="148" rx="14" fill="#EEF1FF" stroke="#C9D0FF" stroke-width="2"/>
+<text x="74" y="158" font-family="Manrope" font-weight="800" font-size="17" letter-spacing="0" fill="#141033" text-anchor="start">Customer App</text>
+<rect x="366.4" y="141" width="47.6" height="22" rx="11" fill="#5B46E5" opacity="0.12"/>
+<text x="390.2" y="156" font-family="Manrope" font-weight="800" font-size="11" letter-spacing="0.6" fill="#5B46E5" text-anchor="middle">LIVE</text>
+<text x="74" y="180" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">AurasureApp/ · Expo RN 54</text>
+<text x="74" y="200" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">browse · cart · order · track</text>
+<text x="74" y="220" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">role: customer</text>
+<rect x="464" y="128" width="372" height="148" rx="14" fill="#FFF4ED" stroke="#FFC2AD" stroke-width="2" stroke-dasharray="7 5"/>
+<text x="482" y="158" font-family="Manrope" font-weight="800" font-size="17" letter-spacing="0" fill="#C2410C" text-anchor="start">Vendor App</text>
+<rect x="774.4" y="141" width="47.6" height="22" rx="11" fill="#C2410C" opacity="0.12"/>
+<text x="798.2" y="156" font-family="Manrope" font-weight="800" font-size="11" letter-spacing="0.6" fill="#C2410C" text-anchor="middle">NEXT</text>
+<text x="482" y="180" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">VendorApp/ · Expo RN</text>
+<text x="482" y="200" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">accept · prepare · ready · payouts</text>
+<text x="482" y="220" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">roles: vendor, vendor_staff</text>
+<rect x="872" y="128" width="372" height="148" rx="14" fill="#FFF4ED" stroke="#FFC2AD" stroke-width="2" stroke-dasharray="7 5"/>
+<text x="890" y="158" font-family="Manrope" font-weight="800" font-size="17" letter-spacing="0" fill="#C2410C" text-anchor="start">Delivery Partner App</text>
+<text x="890" y="180" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">RiderApp/ · Expo RN + dev client</text>
+<text x="890" y="200" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">duty · offer · pickup · drop OTP</text>
+<text x="890" y="220" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">role: rider</text>
+<rect x="1280" y="128" width="372" height="148" rx="14" fill="#FFF4ED" stroke="#FFC2AD" stroke-width="2" stroke-dasharray="7 5"/>
+<text x="1298" y="158" font-family="Manrope" font-weight="800" font-size="17" letter-spacing="0" fill="#C2410C" text-anchor="start">Admin Panel</text>
+<text x="1298" y="180" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">admin-web/ · Next.js</text>
+<text x="1298" y="200" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">live ops · KYC · finance · audit</text>
+<text x="1298" y="220" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">roles: admin, support, finance</text>
+<text x="1298" y="240" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">in-app console today → read-only</text>
+<rect x="56" y="350" width="1568" height="300" rx="18" fill="#FFFFFF" stroke="#E7E9F1" stroke-width="2"/>
+<text x="80" y="384" font-family="Manrope" font-weight="800" font-size="21" letter-spacing="0" fill="#141033" text-anchor="start">Aurasure API</text>
+<text x="232" y="384" font-family="Manrope" font-weight="500" font-size="14" letter-spacing="0" fill="#5B6478" text-anchor="start">server/  ·  Node + Express + Mongoose  ·  /api/v1</text>
+<rect x="1380" y="366" width="220" height="26" rx="13" fill="#EEF1FF"/>
+<text x="1490" y="384" font-family="Manrope" font-weight="700" font-size="12" letter-spacing="0" fill="#5B46E5" text-anchor="middle">single deployable, role-scoped</text>
+<rect x="80" y="408" width="340" height="106" rx="12" fill="#EEF1FF" stroke="#C9D0FF" stroke-width="2"/>
+<text x="98" y="438" font-family="Manrope" font-weight="800" font-size="15" letter-spacing="0" fill="#141033" text-anchor="start">Edge + Auth</text>
+<text x="98" y="460" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">helmet · cors · rate-limit</text>
+<text x="98" y="480" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">authenticate() → req.user</text>
+<text x="98" y="500" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">requireRole(...roles)</text>
+<rect x="444" y="408" width="340" height="106" rx="12" fill="#FFF4ED" stroke="#FFC2AD" stroke-width="2" stroke-dasharray="7 5"/>
+<text x="462" y="438" font-family="Manrope" font-weight="800" font-size="15" letter-spacing="0" fill="#C2410C" text-anchor="start">Scope guard</text>
+<text x="462" y="460" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">requireVendorScope()</text>
+<text x="462" y="480" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">requireRiderScope()</text>
+<text x="462" y="500" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">never trust body.vendorId</text>
+<rect x="808" y="408" width="400" height="106" rx="12" fill="#FFF4ED" stroke="#FFC2AD" stroke-width="2" stroke-dasharray="7 5"/>
+<text x="826" y="438" font-family="Manrope" font-weight="800" font-size="15" letter-spacing="0" fill="#C2410C" text-anchor="start">Domain services</text>
+<text x="826" y="460" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">Order · Fulfilment · Dispatch</text>
+<text x="826" y="480" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">Ledger (commission, payouts)</text>
+<text x="826" y="500" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">Notify (push · SMS · socket)</text>
+<rect x="1232" y="408" width="372" height="106" rx="12" fill="#FFF4ED" stroke="#FFC2AD" stroke-width="2" stroke-dasharray="7 5"/>
+<text x="1250" y="438" font-family="Manrope" font-weight="800" font-size="15" letter-spacing="0" fill="#C2410C" text-anchor="start">Realtime gateway</text>
+<text x="1250" y="460" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">Socket.IO + Redis adapter</text>
+<text x="1250" y="480" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">rooms: order · vendor · rider · admin</text>
+<text x="1250" y="500" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">REST poll always as fallback</text>
+<rect x="80" y="530" width="1524" height="90" rx="12" fill="#F6F7FB" stroke="#E7E9F1" stroke-width="2"/>
+<text x="100" y="556" font-family="Manrope" font-weight="800" font-size="14" letter-spacing="0" fill="#5B6478" text-anchor="start">Route namespaces</text>
+<rect x="100" y="570" width="448" height="34" rx="17" fill="#EEF1FF" stroke="#C9D0FF" stroke-width="2"/>
+<text x="324" y="592" font-family="Manrope" font-weight="700" font-size="13" letter-spacing="0" fill="#5B46E5" text-anchor="middle">/auth  /users  /food  /shop  /banners  /search  /orders</text>
+<rect x="564" y="570" width="90.8" height="34" rx="17" fill="#EEF1FF" stroke="#C9D0FF" stroke-width="2"/>
+<text x="609.4" y="592" font-family="Manrope" font-weight="700" font-size="13" letter-spacing="0" fill="#5B46E5" text-anchor="middle">/admin/*</text>
+<rect x="670.8" y="570" width="98.39999999999999" height="34" rx="17" fill="#FFF4ED" stroke="#FFC2AD" stroke-width="2" stroke-dasharray="6 4"/>
+<text x="720" y="592" font-family="Manrope" font-weight="700" font-size="13" letter-spacing="0" fill="#C2410C" text-anchor="middle">/vendor/*</text>
+<rect x="785.1999999999999" y="570" width="90.8" height="34" rx="17" fill="#FFF4ED" stroke="#FFC2AD" stroke-width="2" stroke-dasharray="6 4"/>
+<text x="830.5999999999999" y="592" font-family="Manrope" font-weight="700" font-size="13" letter-spacing="0" fill="#C2410C" text-anchor="middle">/rider/*</text>
+<path d="M 242 282 L 242 342" stroke="#5B46E5" stroke-width="2" fill="none" marker-end="url(#ah-5B46E5)"/>
+<rect x="250" y="301" width="93.19999999999999" height="21" rx="6" fill="#F6F7FB" opacity="0.95"/>
+<text x="296.6" y="316" font-family="Manrope" font-weight="700" font-size="11.5" letter-spacing="0" fill="#5B46E5" text-anchor="middle">JWT customer</text>
+<path d="M 650 282 L 650 342" stroke="#C2410C" stroke-width="2" fill="none" marker-end="url(#ah-C2410C)" stroke-dasharray="6 5"/>
+<rect x="658" y="301" width="80" height="21" rx="6" fill="#F6F7FB" opacity="0.95"/>
+<text x="698" y="316" font-family="Manrope" font-weight="700" font-size="11.5" letter-spacing="0" fill="#C2410C" text-anchor="middle">JWT vendor</text>
+<path d="M 1058 282 L 1058 342" stroke="#C2410C" stroke-width="2" fill="none" marker-end="url(#ah-C2410C)" stroke-dasharray="6 5"/>
+<rect x="1066" y="301" width="73.4" height="21" rx="6" fill="#F6F7FB" opacity="0.95"/>
+<text x="1102.7" y="316" font-family="Manrope" font-weight="700" font-size="11.5" letter-spacing="0" fill="#C2410C" text-anchor="middle">JWT rider</text>
+<path d="M 1466 282 L 1466 342" stroke="#C2410C" stroke-width="2" fill="none" marker-end="url(#ah-C2410C)" stroke-dasharray="6 5"/>
+<rect x="1474" y="301" width="73.4" height="21" rx="6" fill="#F6F7FB" opacity="0.95"/>
+<text x="1510.7" y="316" font-family="Manrope" font-weight="700" font-size="11.5" letter-spacing="0" fill="#C2410C" text-anchor="middle">JWT admin</text>
+<rect x="56" y="700" width="336" height="190" rx="14" fill="#EEF1FF" stroke="#C9D0FF" stroke-width="2"/>
+<text x="74" y="730" font-family="Manrope" font-weight="800" font-size="17" letter-spacing="0" fill="#141033" text-anchor="start">MongoDB  ·  today</text>
+<text x="74" y="752" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">User · Order · Restaurant</text>
+<text x="74" y="772" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">FoodItem · ShopStore · Product</text>
+<text x="74" y="792" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">Category · Vibe · Banner</text>
+<rect x="412" y="700" width="400" height="190" rx="14" fill="#FFF4ED" stroke="#FFC2AD" stroke-width="2" stroke-dasharray="7 5"/>
+<text x="430" y="730" font-family="Manrope" font-weight="800" font-size="17" letter-spacing="0" fill="#C2410C" text-anchor="start">MongoDB  ·  new collections</text>
+<text x="430" y="752" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">Vendor · Outlet · Rider</text>
+<text x="430" y="772" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">DeliveryTask · TaskOffer · Zone</text>
+<text x="430" y="792" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">Payout · LedgerEntry · OrderEvent</text>
+<rect x="832" y="700" width="300" height="190" rx="14" fill="#FFF4ED" stroke="#FFC2AD" stroke-width="2" stroke-dasharray="7 5"/>
+<text x="850" y="730" font-family="Manrope" font-weight="800" font-size="17" letter-spacing="0" fill="#C2410C" text-anchor="start">Redis</text>
+<text x="850" y="752" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">dispatch offer locks</text>
+<text x="850" y="772" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">rider geo index · socket adapter</text>
+<text x="850" y="792" font-family="Manrope" font-weight="500" font-size="13.5" letter-spacing="0" fill="#5B6478" text-anchor="start">job queue (BullMQ)</text>
+<path d="M 224 650 L 224 666 L 224 666 L 224 692" stroke="#5B46E5" stroke-width="2" fill="none" marker-end="url(#ah-5B46E5)"/>
+<path d="M 612 650 L 612 666 L 612 666 L 612 692" stroke="#C2410C" stroke-width="2" fill="none" marker-end="url(#ah-C2410C)" stroke-dasharray="6 5"/>
+<path d="M 982 650 L 982 666 L 982 666 L 982 692" stroke="#C2410C" stroke-width="2" fill="none" marker-end="url(#ah-C2410C)" stroke-dasharray="6 5"/>
+<rect x="1176" y="700" width="448" height="300" rx="16" fill="#FFFFFF" stroke="#E7E9F1" stroke-width="2" stroke-dasharray="8 6"/>
+<text x="1196" y="732" font-family="Manrope" font-weight="800" font-size="17" letter-spacing="0" fill="#141033" text-anchor="start">Third-party integrations</text>
+<text x="1196" y="766" font-family="Manrope" font-weight="800" font-size="14" letter-spacing="0" fill="#5B6478" text-anchor="start">Payment gateway</text>
+<text x="1196" y="784" font-family="Manrope" font-weight="500" font-size="12.5" letter-spacing="0" fill="#98A1B3" text-anchor="start">Razorpay / PhonePe · capture · webhook</text>
+<text x="1196" y="800" font-family="Manrope" font-weight="500" font-size="12.5" letter-spacing="0" fill="#98A1B3" text-anchor="start">refunds · vendor + rider payouts</text>
+<text x="1196" y="824" font-family="Manrope" font-weight="800" font-size="14" letter-spacing="0" fill="#5B6478" text-anchor="start">SMS / OTP</text>
+<text x="1196" y="842" font-family="Manrope" font-weight="500" font-size="12.5" letter-spacing="0" fill="#98A1B3" text-anchor="start">vendor + rider login, critical alerts</text>
+<text x="1196" y="870" font-family="Manrope" font-weight="800" font-size="14" letter-spacing="0" fill="#5B6478" text-anchor="start">Push · Expo → FCM / APNs</text>
+<text x="1196" y="888" font-family="Manrope" font-weight="500" font-size="12.5" letter-spacing="0" fill="#98A1B3" text-anchor="start">loud new-order alert · rider offer</text>
+<text x="1196" y="904" font-family="Manrope" font-weight="500" font-size="12.5" letter-spacing="0" fill="#98A1B3" text-anchor="start">customer status updates</text>
+<text x="1196" y="928" font-family="Manrope" font-weight="800" font-size="14" letter-spacing="0" fill="#5B6478" text-anchor="start">Maps + object storage</text>
+<text x="1196" y="946" font-family="Manrope" font-weight="500" font-size="12.5" letter-spacing="0" fill="#98A1B3" text-anchor="start">directions · geocoding · live pin</text>
+<text x="1196" y="962" font-family="Manrope" font-weight="500" font-size="12.5" letter-spacing="0" fill="#98A1B3" text-anchor="start">S3 + CDN for KYC docs and photos</text>
+<path d="M 1400 656 L 1400 692" stroke="#98A1B3" stroke-width="2" fill="none" marker-end="url(#ah-98A1B3)" stroke-dasharray="6 5"/>
+<rect x="56" y="1024" width="1568" height="118" rx="16" fill="#FFFFFF" stroke="#E7E9F1" stroke-width="2"/>
+<text x="80" y="1056" font-family="Manrope" font-weight="800" font-size="16" letter-spacing="0" fill="#141033" text-anchor="start">Order flow across the four surfaces</text>
+<text x="80" y="1078" font-family="Manrope" font-weight="500" font-size="12.5" letter-spacing="0" fill="#98A1B3" text-anchor="start">full state machines in docs/03-order-lifecycle.md</text>
+<rect x="470" y="1058" width="148" height="52" rx="12" fill="#EEF1FF" stroke="#C9D0FF" stroke-width="2"/>
+<text x="544" y="1080" font-family="Manrope" font-weight="800" font-size="13" letter-spacing="0" fill="#5B46E5" text-anchor="middle">Customer</text>
+<text x="544" y="1098" font-family="Manrope" font-weight="500" font-size="11.5" letter-spacing="0" fill="#5B6478" text-anchor="middle">places order</text>
+<path d="M 621 1084 L 633 1084" stroke="#98A1B3" stroke-width="2" fill="none" marker-end="url(#ah-98A1B3)"/>
+<rect x="636" y="1058" width="148" height="52" rx="12" fill="#EEF1FF" stroke="#C9D0FF" stroke-width="2"/>
+<text x="710" y="1080" font-family="Manrope" font-weight="800" font-size="13" letter-spacing="0" fill="#5B46E5" text-anchor="middle">Vendor</text>
+<text x="710" y="1098" font-family="Manrope" font-weight="500" font-size="11.5" letter-spacing="0" fill="#5B6478" text-anchor="middle">accepts + preps</text>
+<path d="M 787 1084 L 799 1084" stroke="#98A1B3" stroke-width="2" fill="none" marker-end="url(#ah-98A1B3)"/>
+<rect x="802" y="1058" width="148" height="52" rx="12" fill="#EEF1FF" stroke="#C9D0FF" stroke-width="2"/>
+<text x="876" y="1080" font-family="Manrope" font-weight="800" font-size="13" letter-spacing="0" fill="#5B46E5" text-anchor="middle">Vendor</text>
+<text x="876" y="1098" font-family="Manrope" font-weight="500" font-size="11.5" letter-spacing="0" fill="#5B6478" text-anchor="middle">marks ready</text>
+<path d="M 953 1084 L 965 1084" stroke="#98A1B3" stroke-width="2" fill="none" marker-end="url(#ah-98A1B3)"/>
+<rect x="968" y="1058" width="148" height="52" rx="12" fill="#EEF1FF" stroke="#C9D0FF" stroke-width="2"/>
+<text x="1042" y="1080" font-family="Manrope" font-weight="800" font-size="13" letter-spacing="0" fill="#5B46E5" text-anchor="middle">Dispatch</text>
+<text x="1042" y="1098" font-family="Manrope" font-weight="500" font-size="11.5" letter-spacing="0" fill="#5B6478" text-anchor="middle">offers to riders</text>
+<path d="M 1119 1084 L 1131 1084" stroke="#98A1B3" stroke-width="2" fill="none" marker-end="url(#ah-98A1B3)"/>
+<rect x="1134" y="1058" width="148" height="52" rx="12" fill="#EEF1FF" stroke="#C9D0FF" stroke-width="2"/>
+<text x="1208" y="1080" font-family="Manrope" font-weight="800" font-size="13" letter-spacing="0" fill="#5B46E5" text-anchor="middle">Rider</text>
+<text x="1208" y="1098" font-family="Manrope" font-weight="500" font-size="11.5" letter-spacing="0" fill="#5B6478" text-anchor="middle">pickup OTP</text>
+<path d="M 1285 1084 L 1297 1084" stroke="#98A1B3" stroke-width="2" fill="none" marker-end="url(#ah-98A1B3)"/>
+<rect x="1300" y="1058" width="148" height="52" rx="12" fill="#EEF1FF" stroke="#C9D0FF" stroke-width="2"/>
+<text x="1374" y="1080" font-family="Manrope" font-weight="800" font-size="13" letter-spacing="0" fill="#5B46E5" text-anchor="middle">Rider</text>
+<text x="1374" y="1098" font-family="Manrope" font-weight="500" font-size="11.5" letter-spacing="0" fill="#5B6478" text-anchor="middle">drop OTP</text>
+<path d="M 1451 1084 L 1463 1084" stroke="#98A1B3" stroke-width="2" fill="none" marker-end="url(#ah-98A1B3)"/>
+<rect x="1466" y="1058" width="148" height="52" rx="12" fill="#FFF4ED" stroke="#FFC2AD" stroke-width="2"/>
+<text x="1540" y="1080" font-family="Manrope" font-weight="800" font-size="13" letter-spacing="0" fill="#C2410C" text-anchor="middle">Ledger</text>
+<text x="1540" y="1098" font-family="Manrope" font-weight="500" font-size="11.5" letter-spacing="0" fill="#5B6478" text-anchor="middle">vendor + rider payout</text>
+</svg>

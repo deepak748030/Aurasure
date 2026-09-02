@@ -269,6 +269,26 @@ export function OrderDetailScreen({ route, navigation }: Props): React.ReactElem
             </View>
           </Card>
 
+          {(order.deliveryPartnerName || order.delivery?.riderName) && (order.status === 'out_for_delivery' || order.status === 'delivered') ? (
+            <Card variant="alt" style={{ marginTop: 14 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Icon name="bike" size={18} color="#9C005E" />
+                <View style={{ flex: 1 }}>
+                  <Text variant="subtitle" weight="bold" color={colors.text}>
+                    {order.deliveryPartnerName || order.delivery?.riderName}
+                  </Text>
+                  <Text variant="caption" color={colors.textSecondary}>
+                    {order.status === 'delivered' ? 'Delivered your order' : 'Your delivery partner'}
+                    {order.deliveryPartnerPhone || order.delivery?.riderPhone ? ` · ${order.deliveryPartnerPhone || order.delivery?.riderPhone}` : ''}
+                  </Text>
+                </View>
+                <Text variant="caption" color={colors.success}>
+                  {order.status === 'delivered' ? 'Delivered' : 'On the way'}
+                </Text>
+              </View>
+            </Card>
+          ) : null}
+
           {cancellable ? (
             <View style={{ marginTop: 14 }}>
               <Button

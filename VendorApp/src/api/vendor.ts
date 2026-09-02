@@ -47,6 +47,7 @@ export interface VendorOrder {
   payBy?: string;
   placedAt: string;
   instructions?: string;
+  delivery?: { taskId: string; state: string; pickupOtp: string; riderName: string; riderPhone: string };
 }
 
 export async function uploadVendorImage(file: Blob, name: string): Promise<{ url: string; image: { kind: 'uri'; uri: string } }> {

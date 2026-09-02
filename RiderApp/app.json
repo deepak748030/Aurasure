@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "Aurasure Rider",
+    "slug": "aurasure-rider",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "aurasurerider",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "entryPoint": "index.js",
+    "icon": "./assets/images/icon.png",
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFFFF"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.aurasure.rider",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Aurasure Rider uses your location while on a delivery to show pickup and drop points, and to keep the live-ops board accurate."
+      }
+    },
+    "android": {
+      "package": "com.aurasure.rider",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#5B46E5"
+      },
+      "navigationBarColor": "#F5EAF3",
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "experiments": { "tsconfigPaths": true },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 240,
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFFFF"
+        }
+      ]
+    ],
+    "backgroundColor": "#F5EAF3"
+  }
+}

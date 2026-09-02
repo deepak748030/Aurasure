@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import { api, apiRaw, type ListMeta, type RequestOptions } from './api';
 import type {
+  AuditEntry,
   CatalogRecord,
   CustomerDetail,
   CustomerRow,
@@ -41,6 +42,20 @@ export function useLookups() {
 
 export function useSystemInfo() {
   return useQuery({ queryKey: ['system'], queryFn: () => api<SystemInfo>('/admin/system') });
+}
+
+export function useAuditLog(query: { q?: string; page?: number; limit?: number } = {}, refetchMs?: number) {
+  return useQuery({
+    queryKey: ['audit', query],
+    queryFn: async () => {
+      const res = await apiRaw<{ entries: AuditEntry[] }>('/admin/audit', {
+        query: { q: query.q, page: query.page, limit: query.limit },
+      });
+      return { entries: res.data.entries ?? [], meta: res.meta as ListMeta | undefined };
+    },
+    refetchInterval: refetchMs,
+    placeholderData: (prev) => prev,
+  });
 }
 
 export interface OrderQuery {
@@ -102,6 +117,7 @@ export function useVendorMutations(id: string) {
     void qc.invalidateQueries({ queryKey: ['vendor', id] });
     void qc.invalidateQueries({ queryKey: ['vendors'] });
     void qc.invalidateQueries({ queryKey: ['stats'] });
+    void qc.invalidateQueries({ queryKey: ['audit'] });
   };
   const decide = useMutation({
     mutationFn: (body: { status: string; note?: string }) =>
@@ -114,6 +130,105 @@ export function useVendorMutations(id: string) {
     onSuccess: invalidate,
   });
   return { decide, verifyDoc };
+}
+
+export function useRiders(query: { status?: string; dutyState?: string; q?: string; page?: number } = {}) {
+  return useQuery({
+    queryKey: ['riders', query],
+    queryFn: async () => {
+      const res = await apiRaw<{ riders: import('./types').Rider[]; pending: number }>('/admin/riders', {
+        query: { ...query },
+      });
+      return { riders: res.data.riders, pending: res.data.pending, meta: res.meta };
+    },
+  });
+}
+
+export function useRider(id: string) {
+  return useQuery({
+    queryKey: ['rider', id],
+    queryFn: () =>
+      api<{
+        rider: import('./types').Rider;
+        user: { id: string; name: string; phone: string; email?: string } | null;
+        tasks: import('./types').DeliveryTaskRow[];
+        requiredDocuments: { key: string; label: string }[];
+      }>(`/admin/riders/${id}`),
+    enabled: Boolean(id),
+  });
+}
+
+export function useRiderMutations(id: string) {
+  const qc = useQueryClient();
+  const invalidate = () => {
+    void qc.invalidateQueries({ queryKey: ['rider', id] });
+    void qc.invalidateQueries({ queryKey: ['riders'] });
+    void qc.invalidateQueries({ queryKey: ['stats'] });
+    void qc.invalidateQueries({ queryKey: ['audit'] });
+  };
+  const decide = useMutation({
+    mutationFn: (body: { status: string; note?: string }) =>
+      api(`/admin/riders/${id}`, { method: 'PATCH', body }),
+    onSuccess: invalidate,
+  });
+  const verifyDoc = useMutation({
+    mutationFn: (body: { key: string; verified: boolean; note?: string }) =>
+      api(`/admin/riders/${id}/documents`, { method: 'PATCH', body }),
+    onSuccess: invalidate,
+  });
+  return { decide, verifyDoc };
+}
+
+export function useDeliveryTasks(query: { state?: string; page?: number; limit?: number } = {}, refetchMs?: number) {
+  return useQuery({
+    queryKey: ['delivery-tasks', query],
+    queryFn: async () => {
+      const res = await apiRaw<{ tasks: import('./types').DeliveryTaskRow[] }>('/admin/delivery/tasks', {
+        query: { ...query },
+      });
+      return { tasks: res.data.tasks ?? [], meta: res.meta as ListMeta | undefined };
+    },
+    refetchInterval: refetchMs,
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useDeliveryTask(id: string) {
+  return useQuery({
+    queryKey: ['delivery-task', id],
+    queryFn: () => api<{ task: import('./types').DeliveryTaskRow }>(`/admin/delivery/tasks/${id}`),
+    enabled: Boolean(id),
+  });
+}
+
+export function useAssignableRiders() {
+  return useQuery({
+    queryKey: ['assignable-riders'],
+    queryFn: () => api<{ riders: import('./types').AssignableRider[] }>('/admin/delivery/riders'),
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useAssignDelivery() {
+  const qc = useQueryClient();
+  const invalidate = () => {
+    void qc.invalidateQueries({ queryKey: ['delivery-tasks'] });
+    void qc.invalidateQueries({ queryKey: ['delivery-task'] });
+    void qc.invalidateQueries({ queryKey: ['assignable-riders'] });
+    void qc.invalidateQueries({ queryKey: ['orders'] });
+    void qc.invalidateQueries({ queryKey: ['audit'] });
+  };
+  const assignTask = useMutation({
+    mutationFn: ({ id, riderId }: { id: string; riderId: string }) =>
+      api(`/admin/delivery/tasks/${id}/assign`, { method: 'POST', body: { riderId } }),
+    onSuccess: invalidate,
+  });
+  const assignOrder = useMutation({
+    mutationFn: ({ id, riderId }: { id: string; riderId: string }) =>
+      api(`/admin/orders/${id}/assign-rider`, { method: 'POST', body: { riderId } }),
+    onSuccess: invalidate,
+  });
+  return { assignTask, assignOrder };
 }
 
 export function usePartners() {
@@ -179,6 +294,7 @@ export function useResourceMutation(path: string) {
     void qc.invalidateQueries({ queryKey: ['resource', path] });
     void qc.invalidateQueries({ queryKey: ['stats'] });
     void qc.invalidateQueries({ queryKey: ['lookups'] });
+    void qc.invalidateQueries({ queryKey: ['audit'] });
   };
 
   const create = useMutation({
@@ -212,6 +328,7 @@ export function useOrderStatusMutation() {
       void qc.invalidateQueries({ queryKey: ['order', variables.id] });
       void qc.invalidateQueries({ queryKey: ['stats'] });
       void qc.invalidateQueries({ queryKey: ['report'] });
+      void qc.invalidateQueries({ queryKey: ['audit'] });
     },
   });
 }
@@ -224,6 +341,7 @@ export function usePartnerDecision() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['partners'] });
       void qc.invalidateQueries({ queryKey: ['stats'] });
+      void qc.invalidateQueries({ queryKey: ['audit'] });
     },
   });
 }
@@ -233,6 +351,8 @@ export function useCustomerMutations(id: string) {
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ['customer', id] });
     void qc.invalidateQueries({ queryKey: ['customers'] });
+    void qc.invalidateQueries({ queryKey: ['stats'] });
+    void qc.invalidateQueries({ queryKey: ['audit'] });
   };
 
   const wallet = useMutation({

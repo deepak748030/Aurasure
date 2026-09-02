@@ -17,6 +17,7 @@ import {
   ClipboardList,
   ShoppingCart,
   Ticket,
+  Bike,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -25,7 +26,7 @@ export interface NavItem {
   icon: LucideIcon;
   /** Match child routes too (e.g. /orders/ord_1). */
   exact?: boolean;
-  badge?: 'liveOrders' | 'pendingPartners' | 'pendingVendors';
+  badge?: 'liveOrders' | 'pendingPartners' | 'pendingVendors' | 'pendingRiders';
 }
 
 export interface NavSection {
@@ -52,6 +53,7 @@ export const NAV: NavSection[] = [
       { label: 'All orders', href: '/orders', icon: ShoppingBag },
       { label: 'Food orders', href: '/orders?module=food', icon: UtensilsCrossed },
       { label: 'Shop orders', href: '/orders?module=shop', icon: ShoppingCart },
+      { label: 'Delivery tasks', href: '/delivery', icon: Bike },
     ],
   },
   {
@@ -83,6 +85,7 @@ export const NAV: NavSection[] = [
     items: [
       { label: 'Customers', href: '/customers', icon: Users },
       { label: 'Vendors (KYC)', href: '/vendors', icon: Store, badge: 'pendingVendors' },
+      { label: 'Delivery partners (KYC)', href: '/riders', icon: Bike, badge: 'pendingRiders' },
       { label: 'Partner applications', href: '/partners', icon: UserCheck, badge: 'pendingPartners' },
     ],
   },

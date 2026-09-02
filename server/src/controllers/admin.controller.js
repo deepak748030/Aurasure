@@ -8,6 +8,10 @@
 
 const Order = require('../models/Order');
 const User = require('../models/User');
+const Vendor = require('../models/Vendor');
+const DeliveryPartner = require('../models/DeliveryPartner');
+const DeliveryTask = require('../models/DeliveryTask');
+const AdminAudit = require('../models/AdminAudit');
 const FoodCategory = require('../models/FoodCategory');
 const Restaurant = require('../models/Restaurant');
 const FoodItem = require('../models/FoodItem');
@@ -20,6 +24,8 @@ const asyncHandler = require('../utils/asyncHandler');
 const { ok, paginate, listMeta } = require('../utils/response');
 const { applyOrderCancellation } = require('./order.controller');
 const { creditVendorPayout } = require('../utils/payout');
+const { createDeliveryTaskForOrder, completeDeliveryTask } = require('../utils/delivery');
+const { writeAudit } = require('../utils/audit');
 
 const LIVE_STATUSES = ['placed', 'confirmed', 'preparing', 'out_for_delivery'];
 const TERMINAL_STATUSES = ['delivered', 'cancelled'];
@@ -37,7 +43,19 @@ function publicOrder(order) {
 
 /** GET /api/v1/admin/stats - headline numbers for the console overview. */
 const getStats = asyncHandler(async (req, res) => {
-  const [users, restaurants, foodItems, shops, products, totalOrders, foodCategories, shopCategories, banners] = await Promise.all([
+  const [
+    users,
+    restaurants,
+    foodItems,
+    shops,
+    products,
+    totalOrders,
+    foodCategories,
+    shopCategories,
+    banners,
+    deliveryPartners,
+    ridersOnline,
+  ] = await Promise.all([
     User.countDocuments(),
     Restaurant.countDocuments(),
     FoodItem.countDocuments(),
@@ -47,6 +65,8 @@ const getStats = asyncHandler(async (req, res) => {
     FoodCategory.countDocuments(),
     ShopCategory.countDocuments(),
     Banner.countDocuments(),
+    DeliveryPartner.countDocuments(),
+    DeliveryPartner.countDocuments({ dutyState: { $in: ['online', 'on_task'] } }),
   ]);
 
   const [money] = await Order.aggregate([
@@ -71,6 +91,7 @@ const getStats = asyncHandler(async (req, res) => {
 
   const pendingPartners = await User.countDocuments({ 'partnerApplication.status': 'submitted' });
   const pendingVendors = await Vendor.countDocuments({ status: { $in: ['submitted', 'under_review'] } });
+  const pendingRiders = await DeliveryPartner.countDocuments({ status: { $in: ['submitted', 'under_review'] } });
   const partnerTally = await User.aggregate([
     { $match: { 'partnerApplication': { $ne: null } } },
     { $group: { _id: '$partnerApplication.kind', count: { $sum: 1 } } },
@@ -94,6 +115,9 @@ const getStats = asyncHandler(async (req, res) => {
     walletCollected: money ? money.walletCollected : 0,
     pendingPartners,
     pendingVendors,
+    pendingRiders,
+    deliveryPartners,
+    ridersOnline,
     partnerKinds: byKind,
   });
 });
@@ -124,6 +148,36 @@ const listOrders = asyncHandler(async (req, res) => {
 
   return ok(res, { orders }, listMeta(total, page, limit));
 });
+
+/** GET /api/v1/admin/audit - server-side admin audit trail. */
+const listAudit = asyncHandler(async (req, res) => {
+  const { action, target, q, from, to } = req.query;
+  const { page, limit, skip } = paginate(req.query, { defaultLimit: 50, maxLimit: 100 });
+  const query = {};
+  if (action) query.action = action;
+  if (target) query.$or = [{ targetId: target }, { targetCode: target }];
+  const text = q ? String(q).trim() : '';
+  if (text) {
+    const rx = new RegExp(escapeRegex(text), 'i');
+    const or = [{ actorName: rx }, { action: rx }, { targetCode: rx }, { targetType: rx }];
+    if (query.$or) query.$or = [...query.$or, ...or];
+    else query.$or = or;
+  }
+  if (from || to) {
+    const range = {};
+    if (from) range.$gte = new Date(from);
+    if (to) range.$lte = new Date(to);
+    query.createdAt = range;
+  }
+  const total = await AdminAudit.countDocuments(query);
+  const entries = await AdminAudit.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit);
+  return ok(res, { entries }, listMeta(total, page, limit));
+});
+
+/** Escape a value for safe regex use in query filters. */
+function escapeRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 /**
  * PATCH /api/v1/admin/orders/:id/status { status }
@@ -156,6 +210,15 @@ const setOrderStatus = asyncHandler(async (req, res) => {
     out.user = { name: user.name, phone: user.phone };
     out.wallet = user.wallet;
     out.loyaltyPoints = user.loyaltyPoints;
+    await writeAudit({
+      actor: req.user,
+      action: 'order.cancel',
+      targetType: 'order',
+      targetId: order.id,
+      targetCode: order.code,
+      detail: `Cancelled by admin · refunded ₹${order.walletPaid || 0}`,
+      req,
+    });
     return ok(res, { order: out });
   }
 
@@ -182,9 +245,36 @@ const setOrderStatus = asyncHandler(async (req, res) => {
   }
   if (status === 'delivered') {
     order.etaMinutes = 0;
+    order.deliveredAt = new Date();
     await creditVendorPayout(order);
   }
   await order.save();
+  if (status === 'out_for_delivery') {
+    // Publish a delivery task for the rider app (idempotent).
+    await createDeliveryTaskForOrder(order);
+  }
+  if (status === 'delivered') {
+    const task = await DeliveryTask.findOne({ orderId: order._id });
+    if (task && !['delivered', 'failed', 'cancelled'].includes(task.state)) {
+      if (task.riderId) {
+        const rider = await DeliveryPartner.findOne({ id: task.riderId });
+        await completeDeliveryTask(task, { rider, note: task.note || 'Completed by operations' });
+      } else {
+        task.state = 'delivered';
+        task.note = task.note || 'Completed by operations';
+        await task.save();
+      }
+    }
+  }
+  await writeAudit({
+    actor: req.user,
+    action: 'order.status',
+    targetType: 'order',
+    targetId: order.id,
+    targetCode: order.code,
+    detail: `${order.status} → ${status}`,
+    req,
+  });
   return ok(res, { order: publicOrder(order) });
 });
 
@@ -231,6 +321,16 @@ const decidePartner = asyncHandler(async (req, res) => {
   if (req.body.note) user.partnerApplication.note = String(req.body.note).trim().slice(0, 300);
   await user.save();
 
+  await writeAudit({
+    actor: req.user,
+    action: status === 'approved' ? 'partner.approve' : 'partner.reject',
+    targetType: 'partner_application',
+    targetId: user.id,
+    targetCode: `${user.name} · ${user.phone}`,
+    detail: String(req.body.note || ''),
+    req,
+  });
+
   return ok(res, {
     application: {
       userId: user.id,
@@ -245,4 +345,4 @@ const decidePartner = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { getStats, listOrders, setOrderStatus, listPartners, decidePartner };
+module.exports = { getStats, listOrders, setOrderStatus, listPartners, decidePartner, listAudit };

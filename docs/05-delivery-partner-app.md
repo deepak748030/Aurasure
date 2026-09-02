@@ -189,3 +189,20 @@ late.
 3. **COD limit and deposit channel** — UPI-only, or physical hubs?
 4. **Zones on day one** — one city one zone (simplest) or polygon zones from the start?
 5. **Who owns the customer relationship on failure** — rider decides return/dispose, or always ops?
+
+## Implementation notes (RiderApp)
+
+The living implementation lives in `RiderApp/` and is built on the same
+navigation/theme/API stack as VendorApp. It ships:
+
+- phone + password register/login (one phone = one role; the server refuses a
+  customer/vendor/admin number from the rider registration).
+- 4-step KYC onboarding → submit → pending screen.
+- `RiderProvider` + `/rider` API client covering duty, offers, accept/reject,
+  pickup/drop OTP, deliver/fail, earnings, payouts, COD deposit, SOS, issues
+  and uploads.
+- Home offers, Task history, Earnings and Profile tabs, plus an ActiveTask
+  stack screen for the accepted→at_pickup→picked_up→at_drop→delivered flow.
+- Server-side `DeliveryTask` lifecycle and `DeliveryPartner` KYC/duty/COD
+  state; admin can review riders at `/riders` and every dispatch at
+  `/delivery`.

@@ -54,6 +54,7 @@ export interface Order {
   couponCode?: string | null;
   instructions?: string;
   user?: { id?: string; name: string; phone: string; email?: string; wallet?: number; loyaltyPoints?: number } | null;
+  deliveryTask?: DeliveryTaskRow | null;
 }
 
 export interface Stats {
@@ -72,6 +73,9 @@ export interface Stats {
   walletCollected: number;
   pendingPartners: number;
   pendingVendors?: number;
+  pendingRiders?: number;
+  deliveryPartners?: number;
+  ridersOnline?: number;
   partnerKinds: Record<string, number>;
 }
 
@@ -123,6 +127,117 @@ export interface Vendor {
   outletId: string | null;
   payoutBalance: number;
   issues?: { id: string; title: string; body: string; status: string; createdAt: string }[];
+}
+
+export type RiderStatus =
+  | 'onboarding'
+  | 'submitted'
+  | 'under_review'
+  | 'needs_info'
+  | 'approved'
+  | 'rejected'
+  | 'suspended';
+
+export type RiderDutyState = 'offline' | 'online' | 'on_task' | 'break';
+
+export interface RiderDoc {
+  key: string;
+  label: string;
+  uri: string;
+  verified: boolean;
+  note: string;
+}
+
+export interface Rider {
+  id: string;
+  userId: string;
+  phone: string;
+  status: RiderStatus;
+  name: string;
+  email: string;
+  city: string;
+  pincode: string;
+  address: string;
+  vehicleType: 'bike' | 'scooter' | 'cycle' | 'ev' | '';
+  vehicleNumber: string;
+  pan: string;
+  aadhaar: string;
+  drivingLicense: string;
+  rcNumber: string;
+  trainingCompleted: boolean;
+  quizCompleted?: boolean;
+  bank?: { accountName: string; accountNumber: string; ifsc: string; bankName: string; upi: string };
+  documents: RiderDoc[];
+  reviewNote: string;
+  reviewedAt: string | null;
+  reviewedBy: string;
+  submittedAt: string | null;
+  dutyState: RiderDutyState;
+  codInHand: number;
+  maxCodLimit: number;
+  payoutBalance: number;
+  totalTrips: number;
+  totalEarnings: number;
+  currentDayTrips: number;
+  currentDayEarnings: number;
+  rating: number;
+  ratingCount: number;
+  offerCount: number;
+  acceptanceCount: number;
+  issues?: { id: string; title: string; body: string; status: string; createdAt: string }[];
+  incidents?: { id: string; type: string; note: string; createdAt: string }[];
+  codDeposits?: { id: string; amount: number; method: string; status: string; createdAt: string }[];
+}
+
+export interface DeliveryTaskRow {
+  id: string;
+  code: string;
+  orderCode: string;
+  module: Module;
+  state: string;
+  vendorName: string;
+  vendorPhone?: string;
+  pickup?: { name: string; phone: string; address: string; otp: string };
+  drop?: { name: string; phone: string; address: string; otp: string };
+  items?: { name: string; qty: number; price: number }[];
+  total: number;
+  codAmount: number;
+  deliveryFee?: number;
+  riderPayout: number;
+  riderId: string;
+  riderName: string;
+  riderPhone?: string;
+  podUrl?: string;
+  note?: string;
+  createdAt: string;
+  acceptedAt?: string | null;
+  deliveredAt: string | null;
+}
+
+export interface AssignableRider {
+  id: string;
+  name: string;
+  phone: string;
+  vehicleType: string;
+  vehicleNumber: string;
+  dutyState: string;
+  codInHand: number;
+  maxCodLimit: number;
+  currentDayTrips: number;
+  activeTask: DeliveryTaskRow | null;
+}
+
+export interface AuditEntry {
+  id: string;
+  actorId: string;
+  actorName: string;
+  action: string;
+  targetType: string;
+  targetId: string;
+  targetCode: string;
+  detail: string;
+  ip: string;
+  createdAt: string;
 }
 
 export interface PartnerApplication {

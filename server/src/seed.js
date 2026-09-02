@@ -27,7 +27,10 @@ const Promo = require('./models/Promo');
 const User = require('./models/User');
 const Order = require('./models/Order');
 const Vendor = require('./models/Vendor');
-const { emptyDocs } = require('./utils/vendorDocs');
+const DeliveryPartner = require('./models/DeliveryPartner');
+const DeliveryTask = require('./models/DeliveryTask');
+const { emptyDocs: emptyVendorDocs } = require('./utils/vendorDocs');
+const { emptyDocs: emptyRiderDocs } = require('./utils/riderDocs');
 
 const FRESH = process.env.SEED_FRESH === '1' || process.argv.includes('--fresh');
 
@@ -214,6 +217,185 @@ async function normalizeDemoOrders(userId) {
   return normalized;
 }
 
+/** Demo vendor account for the vendor app (phone 7777777777 / vendor@123). */
+async function seedDemoVendor() {
+  const phone = process.env.SEED_VENDOR_PHONE || '7777777777';
+  const password = process.env.SEED_VENDOR_PASSWORD || 'vendor@123';
+  let user = await User.findOne({ phone });
+  if (!user) {
+    const passwordHash = await bcrypt.hash(password, config.auth.bcryptRounds);
+    user = await User.create({ id: newId('usr'), name: 'Demo Kitchen', phone, passwordHash, role: 'vendor' });
+  } else if (user.role !== 'vendor') {
+    return null;
+  }
+  const existing = await Vendor.findOne({ phone });
+  if (existing) return existing;
+
+  const docs = emptyVendorDocs('food').map((doc) => ({
+    key: doc.key,
+    label: doc.label,
+    uri: `https://picsum.photos/seed/aur-${doc.key}/640/640`,
+    verified: false,
+    note: '',
+  }));
+
+  return Vendor.create({
+    id: newId('vnd'),
+    userId: user.id,
+    phone,
+    module: 'food',
+    status: 'submitted',
+    ownerName: user.name,
+    email: 'demo.kitchen@example.com',
+    outletName: 'Aura Demo Kitchen',
+    legalName: 'Aura Demo Foods Pvt Ltd',
+    description: 'Demo restaurant created by the seeder.',
+    address: 'Shop 4, Civil Lines',
+    landmark: 'Near City Hospital',
+    city: 'Raipur',
+    pin: '492001',
+    gstin: '22AABCD1234E1Z5',
+    pan: 'ABCDE1234E',
+    fssai: '12123456789012',
+    cuisines: ['North Indian', 'Mughlai'],
+    categoryIds: ['cat_biryani', 'cat_burgers'],
+    priceForTwo: 500,
+    minOrder: 150,
+    deliveryFee: 25,
+    deliveryMins: 30,
+    isVeg: false,
+    bank: {
+      accountName: 'Demo Kitchen',
+      accountNumber: '1234567890',
+      ifsc: 'HDFC0000001',
+      bankName: 'HDFC Bank',
+      upi: 'demokitchen@upi',
+    },
+    hours: { open: '10:00', close: '23:00' },
+    cover: { kind: 'uri', uri: 'https://picsum.photos/seed/aur-vendor/800/560' },
+    documents: docs,
+    submittedAt: new Date(),
+  });
+}
+
+/** Demo delivery partner for the rider app (phone 9999999991 / rider@123). */
+async function seedDemoRider() {
+  const phone = process.env.SEED_RIDER_PHONE || '9999999991';
+  const password = process.env.SEED_RIDER_PASSWORD || 'rider@123';
+  let user = await User.findOne({ phone });
+  if (!user) {
+    const passwordHash = await bcrypt.hash(password, config.auth.bcryptRounds);
+    user = await User.create({ id: newId('usr'), name: 'Demo Rider', phone, passwordHash, role: 'delivery' });
+  } else if (user.role !== 'delivery') {
+    return null;
+  }
+  const existing = await DeliveryPartner.findOne({ phone });
+  if (existing) return existing;
+
+  const docs = emptyRiderDocs().map((doc) => ({
+    key: doc.key,
+    label: doc.label,
+    uri: `https://picsum.photos/seed/aur-rdr-${doc.key}/640/640`,
+    verified: true,
+    note: '',
+  }));
+
+  return DeliveryPartner.create({
+    id: newId('rdr'),
+    userId: user.id,
+    phone,
+    name: user.name,
+    email: 'demo.rider@example.com',
+    city: 'Raipur',
+    pincode: '492001',
+    address: 'B-12, Telibandha',
+    vehicleType: 'bike',
+    vehicleNumber: 'CG04AK1234',
+    pan: 'ABCDE1235F',
+    aadhaar: '123456789012',
+    drivingLicense: 'DL-RAI-2024-004321',
+    rcNumber: 'MP04RC2024001',
+    trainingCompleted: true,
+    quizCompleted: true,
+    bank: {
+      accountName: 'Demo Rider',
+      accountNumber: '9876543210',
+      ifsc: 'SBIN0000001',
+      bankName: 'SBI',
+      upi: 'demorider@upi',
+    },
+    documents: docs,
+    status: 'approved',
+    reviewedAt: new Date(),
+    reviewedBy: 'seeder',
+    submittedAt: new Date(),
+    dutyState: 'offline',
+  });
+}
+
+/** One ready-to-deliver demo task so the Rider app has an offer immediately. */
+async function seedDemoDelivery(userId) {
+  const existing = await DeliveryTask.findOne({ code: 'DLV-AUR-FD-30000' });
+  if (existing) return existing;
+  let order = await Order.findOne({ code: 'AUR-FD-30000' });
+  if (!order) {
+    order = await Order.create({
+      id: newId('ord'),
+      code: 'AUR-FD-30000',
+      user: userId,
+      module: 'food',
+      status: 'out_for_delivery',
+      items: [
+        { id: newId('lin'), refId: 'f1', kind: 'food', name: 'Aurora Classic Burger', meta: '', unitPrice: 249, qty: 1, image: null },
+        { id: newId('lin'), refId: 'f2', kind: 'food', name: 'Truffle Margherita', meta: '', unitPrice: 329, qty: 1, image: null },
+      ],
+      itemTotal: 578,
+      deliveryFee: 25,
+      discount: 0,
+      total: 603,
+      payBy: 'cod',
+      walletPaid: 0,
+      loyaltyEarned: 30,
+      etaMinutes: 15,
+      address: 'Tech Park, 5th Floor, GE Road, Raipur 492001',
+      placedAt: new Date(),
+    });
+  }
+
+  const task = await DeliveryTask.create({
+    id: newId('task'),
+    code: 'DLV-AUR-FD-30000',
+    orderId: order._id,
+    orderCode: order.code,
+    module: 'food',
+    vendorId: null,
+    vendorName: 'Aura Demo Kitchen',
+    vendorPhone: '7777777777',
+    total: order.total,
+    codAmount: order.total,
+    deliveryFee: order.deliveryFee,
+    riderPayout: Math.max(order.deliveryFee, 25),
+    items: order.items.map((it) => ({ name: it.name, qty: it.qty, price: it.unitPrice })),
+    pickup: {
+      name: 'Aura Demo Kitchen',
+      phone: '7777777777',
+      address: 'Shop 4, Civil Lines, Raipur 492001',
+      otp: '1234',
+    },
+    drop: {
+      name: 'Aarav Sharma',
+      phone: '9876543210',
+      address: 'Tech Park, 5th Floor, GE Road, Raipur 492001',
+      otp: '4321',
+    },
+    state: 'available',
+  });
+
+  order.deliveryTaskId = task.id;
+  await order.save();
+  return task;
+}
+
 async function main() {
   console.log('[seed] connecting to', config.mongodb.uri);
   await connectDB();
@@ -230,6 +412,8 @@ async function main() {
       Product.deleteMany({}),
       Banner.deleteMany({}),
       Promo.deleteMany({}),
+      DeliveryPartner.deleteMany({}),
+      DeliveryTask.deleteMany({}),
     ]);
   }
 
@@ -247,6 +431,8 @@ async function main() {
   const adminUser = await seedAdminUser();
   const partnerApplicants = await seedPartnerApplicants();
   const demoVendor = await seedDemoVendor();
+  const demoRider = await seedDemoRider();
+  const demoDelivery = await seedDemoDelivery(demoUser._id);
   const seededOrders = await seedDemoOrders(demoUser._id);
   const normalizedDemoOrders = await normalizeDemoOrders(demoUser._id);
 
@@ -254,6 +440,8 @@ async function main() {
   console.log('  admin user      → phone ' + adminUser.phone + ' / role ' + adminUser.role);
   if (partnerApplicants.length) console.log('  partner apps    ', partnerApplicants);
   if (demoVendor) console.log('  demo vendor     → phone', demoVendor.phone, '/ password vendor@123 / food');
+  if (demoRider) console.log('  demo rider      → phone', demoRider.phone, '/ password rider@123 / approved');
+  if (demoDelivery) console.log('  demo delivery   → ready task', demoDelivery.code, '/ pickup 1234 / drop 4321');
   if (seededOrders) console.log('  demo orders     ', seededOrders);
   if (normalizedDemoOrders) console.log('  demo orders     ', normalizedDemoOrders, 'normalised (wallet/loyalty back-fill)');
   console.log('  food categories ', foodCategories);

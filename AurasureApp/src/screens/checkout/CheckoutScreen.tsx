@@ -10,6 +10,9 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { BottomSheet } from '../../components/ui/BottomSheet';
 import { useCart } from '../../context/CartContext';
+import { useAppQuery } from '../../hooks/useAppQuery';
+import { addAddressToServer, fetchMe, placeOrder } from '@/api/account';
+import { isApiEnabled } from '@/api/config';
 import { userProfile } from '../../data/mock';
 import { colors } from '@/theme/colors';
 import { layout, radius, spacing } from '@/theme/tokens';
@@ -31,7 +34,7 @@ interface PayOption {
 }
 
 const PAYMENTS: PayOption[] = [
-  { id: 'wallet', label: 'Aurasure Wallet', icon: 'wallet', sub: `Balance ₹${formatINR(userProfile.wallet)}` },
+  { id: 'wallet', label: 'Aurasure Wallet', icon: 'wallet' },
   { id: 'upi', label: 'UPI', icon: 'smartphone' },
   { id: 'card', label: 'Credit / Debit Card', icon: 'creditCard' },
   { id: 'cod', label: 'Cash on Delivery', icon: 'rupee' },
@@ -42,13 +45,23 @@ type Props = NativeStackScreenProps<CartStackParamList, 'Checkout'>;
 export function CheckoutScreen({ navigation }: Props): React.ReactElement {
   const barBottom = useFloatingBarBottomInset(10);
   const { remove } = useCart();
-  const { items, subtotal } = useModuleCart();
-  const [addressId, setAddressId] = useState(userProfile.addresses.find((a) => a.isDefault)?.id ?? userProfile.addresses[0]?.id ?? '');
+  const { module, items, subtotal } = useModuleCart();
+  const { data: profileData } = useAppQuery(fetchMe, () => userProfile);
+  const [extraAddresses, setExtraAddresses] = useState<Address[]>([]);
+  const [addressId, setAddressId] = useState<string>(userProfile.addresses.find((a) => a.isDefault)?.id ?? '');
   const [payment, setPayment] = useState('wallet');
   const [coupon, setCoupon] = useState('');
   const [sheetOpen, setSheetOpen] = useState(false);
   const [addr, setAddr] = useState<{ label: string; line: string; city: string; pin: string }>({ label: '', line: '', city: '', pin: '' });
   const [done, setDone] = useState(false);
+  const [placing, setPlacing] = useState(false);
+  const [placeError, setPlaceError] = useState<string | null>(null);
+
+  const profile = profileData ?? userProfile;
+  const addresses: Address[] = [...profile.addresses, ...extraAddresses];
+  const selectedAddress = addresses.find((a) => a.id === addressId) ?? addresses.find((a) => a.isDefault) ?? addresses[0];
+  const wallet = profile.wallet;
+  const payOptions = PAYMENTS.map((p) => (p.id === 'wallet' ? { ...p, sub: `Balance ₹${formatINR(wallet)}` } : p));
 
   const delivery = subtotal > 149 || subtotal === 0 ? 0 : DELIVERY_FEE;
   const total = subtotal + delivery;
@@ -58,14 +71,70 @@ export function CheckoutScreen({ navigation }: Props): React.ReactElement {
     setAddressId(id);
   };
 
-  const placeOrder = (): void => {
+  const placeOrderNow = async (): Promise<void> => {
     if (items.length === 0) {
       navigation.goBack();
       return;
     }
+    if (!selectedAddress) {
+      setPlaceError('Please add a delivery address first.');
+      return;
+    }
+
+    setPlacing(true);
+    setPlaceError(null);
+    try {
+      if (isApiEnabled) {
+        await placeOrder({
+          module,
+          items,
+          deliveryFee: delivery,
+          discount: 0,
+          address: `${selectedAddress.label}, ${selectedAddress.line}, ${selectedAddress.city} ${selectedAddress.pin}`.trim(),
+          etaMinutes: module === 'food' ? 25 : 0,
+        });
+      }
+      haptic.success();
+      items.forEach((i) => remove(i.id));
+      setDone(true);
+    } catch (err) {
+      console.warn('[checkout] could not sync order with server:', err);
+      setPlaceError('Order could not be placed on the server. Check the API URL and try again.');
+    } finally {
+      setPlacing(false);
+    }
+  };
+
+  const saveAddress = async (): Promise<void> => {
+    if (!addr.label.trim() || !addr.line.trim() || !addr.city.trim() || !addr.pin.trim()) return;
+    const payload = {
+      label: addr.label.trim(),
+      line: addr.line.trim(),
+      city: addr.city.trim(),
+      pin: addr.pin.trim(),
+    };
+
+    if (isApiEnabled) {
+      try {
+        const saved = await addAddressToServer(payload);
+        setExtraAddresses((prev) => [...prev, saved]);
+        setAddressId(saved.id);
+        setSheetOpen(false);
+        haptic.success();
+        setAddr({ label: '', line: '', city: '', pin: '' });
+        return;
+      } catch (err) {
+        console.warn('[checkout] address not synced with server:', err);
+        setPlaceError('Address could not be saved on the server - kept locally for this session.');
+      }
+    }
+
+    const local: Address = { id: `local-${Date.now()}`, ...payload, isDefault: false };
+    setExtraAddresses((prev) => [...prev, local]);
+    setAddressId(local.id);
+    setSheetOpen(false);
     haptic.success();
-    items.forEach((i) => remove(i.id));
-    setDone(true);
+    setAddr({ label: '', line: '', city: '', pin: '' });
   };
 
   const finish = (tab: keyof MainTabsParamList): void => {
@@ -90,7 +159,12 @@ export function CheckoutScreen({ navigation }: Props): React.ReactElement {
               Delivery address
             </Text>
           </View>
-          {userProfile.addresses.map((a) => (
+          {addresses.length === 0 ? (
+            <Text variant="caption" color={colors.textSecondary} style={{ marginVertical: 8 }}>
+              No saved address yet - add one below.
+            </Text>
+          ) : null}
+          {addresses.map((a) => (
             <Pressable key={a.id} onPress={() => selectAddress(a.id)} style={[styles.addrRow, addressId === a.id && styles.addrActive]}>
               <View style={[styles.radio, addressId === a.id && styles.radioActive]}>
                 {addressId === a.id ? <View style={styles.radioDot} /> : null}
@@ -123,7 +197,7 @@ export function CheckoutScreen({ navigation }: Props): React.ReactElement {
               Payment method
             </Text>
           </View>
-          {PAYMENTS.map((p) => (
+          {payOptions.map((p) => (
             <Pressable key={p.id} onPress={() => { haptic.light(); setPayment(p.id); }} style={[styles.payRow, payment === p.id && styles.payActive]}>
               <View style={[styles.radio, payment === p.id && styles.radioActive]}>
                 {payment === p.id ? <View style={styles.radioDot} /> : null}
@@ -163,6 +237,25 @@ export function CheckoutScreen({ navigation }: Props): React.ReactElement {
         <View style={{ height: 8 }} />
       </Screen>
 
+      {placeError ? (
+        <View
+          style={{
+            position: 'absolute',
+            left: layout.contentHorizontalPadding,
+            right: layout.contentHorizontalPadding,
+            bottom: barBottom + 84,
+          }}
+        >
+          <Text
+            variant="caption"
+            color={colors.danger}
+            style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 8, textAlign: 'center' }}
+          >
+            {placeError}
+          </Text>
+        </View>
+      ) : null}
+
       <View style={[styles.footer, { bottom: barBottom }]}>
         <View style={styles.footerInner}>
           <View>
@@ -170,11 +263,12 @@ export function CheckoutScreen({ navigation }: Props): React.ReactElement {
             <Text variant="title" weight="bold" color={colors.white}>{formatINR(total)}</Text>
           </View>
           <Button
-            title="Place order"
-            onPress={placeOrder}
+            title={placing ? 'Placing…' : 'Place order'}
+            onPress={() => void placeOrderNow()}
             variant="secondary"
             leftIcon="lock"
             size="lg"
+            loading={placing}
             style={{ flex: 1, marginLeft: 16 }}
           />
         </View>
@@ -191,7 +285,7 @@ export function CheckoutScreen({ navigation }: Props): React.ReactElement {
             <Input label="PIN" value={addr.pin} onChangeText={(t) => setAddr((s) => ({ ...s, pin: t }))} placeholder="492001" keyboardType="number-pad" leftIcon="mapPin" />
           </View>
         </View>
-        <Button title="Save address" fullWidth style={{ marginTop: 4 }} onPress={() => setSheetOpen(false)} leftIcon="check" />
+        <Button title="Save address" fullWidth style={{ marginTop: 4 }} onPress={() => void saveAddress()} leftIcon="check" />
       </BottomSheet>
 
       <BottomSheet visible={done} onClose={() => finish('Orders')} title="Order placed!">

@@ -12,6 +12,17 @@ export interface FoodCategory {
   id: string;
   name: string;
   icon: IconName;
+  image?: ImageRef;
+}
+
+/** Curated "Just for You" collection tile (Litti Chokha, Veg Biryani...). */
+export interface FoodVibe {
+  id: string;
+  name: string;
+  tagline: string;
+  image: ImageRef;
+  from: string;
+  to: string;
 }
 
 export interface FoodItem {
@@ -26,6 +37,9 @@ export interface FoodItem {
   prepTime: number;
   isVeg: boolean;
   isBestseller?: boolean;
+  isPopular?: boolean;
+  isSpecial?: boolean;
+  vibeId?: string;
   tags: string[];
   image: ImageRef;
   categoryIds: string[];
@@ -44,7 +58,12 @@ export interface Restaurant {
   priceForTwo: number;
   promo?: string;
   isVeg: boolean;
+  isNew?: boolean;
+  isNewlyJoined?: boolean;
+  isClosed?: boolean;
+  isPopular?: boolean;
   offer?: string;
+  line?: string;
   cover: ImageRef;
   tags: string[];
   categoryIds: string[];
@@ -54,10 +73,34 @@ export interface ShopCategory {
   id: string;
   name: string;
   icon: IconName;
+  tagline?: string;
+  image?: ImageRef;
+}
+
+export interface ShopStore {
+  id: string;
+  name: string;
+  brand: string;
+  road: string;
+  house: string;
+  city: string;
+  pin: string;
+  rating: number;
+  reviews: number;
+  deliveryMins: number;
+  deliveryFee: number;
+  minOrder: number;
+  promo?: string;
+  isNiche?: boolean;
+  isPopular?: boolean;
+  tags: string[];
+  categoryIds: string[];
+  cover: ImageRef;
 }
 
 export interface Product {
   id: string;
+  storeId: string;
   name: string;
   brand: string;
   description: string;
@@ -69,12 +112,21 @@ export interface Product {
   isNew?: boolean;
   isTrending?: boolean;
   isBestseller?: boolean;
+  isSpecialOffer?: boolean;
+  deliveryMins: number;
   tags: string[];
   colors: string[];
   sizes?: string[];
   image: ImageRef;
   categoryId: string;
 }
+
+/** Where a banner should land when tapped. */
+export type BannerTarget =
+  | { kind: 'search' }
+  | { kind: 'product'; productId: string }
+  | { kind: 'category'; categoryId: string }
+  | { kind: 'store'; storeId: string };
 
 export interface Banner {
   id: string;
@@ -83,6 +135,7 @@ export interface Banner {
   subtitle: string;
   badge?: string;
   image: ImageRef;
+  target?: BannerTarget;
 }
 
 export type CartKind = 'food' | 'shop';

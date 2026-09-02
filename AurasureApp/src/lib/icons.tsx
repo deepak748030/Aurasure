@@ -88,6 +88,8 @@ const registry = {
   cupSoda: ['cup', 'cup-outline'],
   apple: ['food-apple', 'food-apple-outline'],
   shirt: ['tshirt-crew', 'tshirt-crew-outline'],
+  glasses: ['glasses', 'glasses'],
+  shoeSneaker: ['shoe-sneaker', 'shoe-sneaker'],
   watch: ['watch', 'watch'],
   smartphone: ['cellphone', 'cellphone'],
   pill: ['pill', 'pill'],

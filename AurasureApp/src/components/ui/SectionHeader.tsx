@@ -11,10 +11,12 @@ interface SectionHeaderProps {
   icon?: IconName;
   actionLabel?: string;
   onAction?: () => void;
+  /** Custom right-side node; takes precedence over actionLabel/onAction. */
+  action?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 }
 
-export function SectionHeader({ title, subtitle, icon, actionLabel, onAction, style }: SectionHeaderProps): React.ReactElement {
+export function SectionHeader({ title, subtitle, icon, actionLabel, onAction, action, style }: SectionHeaderProps): React.ReactElement {
   return (
     <View
       style={[
@@ -31,7 +33,7 @@ export function SectionHeader({ title, subtitle, icon, actionLabel, onAction, st
           {subtitle ? <Text variant="caption" color={colors.textSecondary}>{subtitle}</Text> : null}
         </View>
       </View>
-      {actionLabel ? (
+      {action ?? (actionLabel ? (
         <Pressable
           onPress={onAction}
           style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 4, paddingLeft: 10 }}
@@ -41,7 +43,7 @@ export function SectionHeader({ title, subtitle, icon, actionLabel, onAction, st
           </Text>
           <Icon name="chevronRight" size={14} color={colors.brand[700]} />
         </Pressable>
-      ) : null}
+      ) : null)}
     </View>
   );
 }

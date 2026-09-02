@@ -2,7 +2,10 @@
 
 A food-delivery **and** e-commerce super app in one Expo install. You pick a module on the way in — Food or E-commerce — and the whole app (home, search, likes, cart, orders) shows only that module's content, while the bottom tab bar stays identical in both.
 
-Everything runs on typed mock data: no backend, no network calls except the font CDN and the device location API.
+The app ships fully functional on typed **mock data** and can switch to the real
+**Aurasure API server** (`server/` in this repo) with one env var — see
+[Connecting the API](#connecting-the-api). JSON-based images from the server
+render through the same `SmartImage` component.
 
 [![Expo SDK](https://img.shields.io/badge/Expo-SDK%2054-1C93E5?logo=expo&logoColor=white)](https://docs.expo.dev)
 [![React Native](https://img.shields.io/badge/React%20Native-0.81.5-20232A?logo=react&logoColor=white)](https://reactnative.dev)
@@ -148,12 +151,45 @@ is a literal union, so an unknown icon name is a compile error.
 
 - `AppContext` — selected `module`, `city`, `locationStatus` (`unanswered → loading → granted|denied`), session (`phone`, `name`), per-module wishlist, and the derived `gate` step (`location → module → login → ready`). Logging out resets it, so the gate re-runs.
 - `CartContext` — `add / setQty / remove / clear` over a `CartItem[]` tagged `kind: 'food' | 'shop'`. `useModuleCart()` filters it so a screen never mixes the two carts, and finishing an order clears only the active module's lines.
-- `useMockQuery(producer, delay)` — every screen mounts with a ~900 ms skeleton pass and supports pull-to-refresh, so loading states are real code paths rather than decoration.
-- State is intentionally **in-memory**: reloading the app replays the gate. Persistence (AsyncStorage/MMKV + real auth) is the obvious next step.
+- `useAppQuery(fetcher, fallback, { deps })` — every screen mounts with a ~900 ms skeleton pass and supports pull-to-refresh. With no API URL it behaves exactly like the old `useMockQuery`; with a URL it fetches from the server and **falls back to the mock producer** on any failure, so screens never break.
+- State is intentionally **in-memory** (cart/wishlist/session): reloading the app replays the gate. Persistence (AsyncStorage/MMKV + real auth) is the obvious next step.
+
+## Connecting the API
+
+The app uses **mock data unless you give it a server URL** — perfect for demos,
+previews and offline work. Point it at the Aurasure backend (`server/` folder)
+and every screen fetches live data instead, **falling back to mock silently**
+if the server is unreachable or the database is still connecting.
+
+1. Start the backend (see `server/README.md`):
+   ```bash
+   cd ../server
+   cp .env.example .env      # default: port 5000
+   docker compose up -d mongo
+   npm run seed
+   npm start
+   ```
+2. Create the app's env file (already included in the repo, git-ignored):
+   ```bash
+   cp .env.example .env      # in AurasureApp/
+   ```
+3. Set the URL (leave empty to stay on mock data):
+   ```dotenv
+   EXPO_PUBLIC_API_URL=http://localhost:5000
+   EXPO_PUBLIC_API_PHONE=9876543210      # demo account from `npm run seed`
+   EXPO_PUBLIC_API_PASSWORD=aurasure123
+   ```
+4. Restart Metro (`npx expo start -c` or `npm run web`) so Expo picks up `.env`.
+
+What connects: homes (food + shop), restaurant/store/category/product pages,
+search, likes, profile greeting, checkout addresses, order placement and order
+history. Images come from the server as `{ kind: 'uri', uri }` refs and render
+with the existing `SmartImage`. Likes state and cart stay local by design;
+favorites synchronise to the server later.
 
 ## Known limitations
 
-- Mock data only; no backend, no payments, no SMS, no order webhooks.
+- Mock data only when no URL is configured (or the server is down); no payments, no SMS, no order webhooks.
 - `SmartImage` renders a tinted icon placeholder for the 35 mock entries that have no image — drop a file in `src/assets/images` and wire it in `src/assets.ts` and it lights up.
 - Fonts are fetched from a CDN on first run; offline the app falls back to system fonts.
 - Edge-to-edge is mandatory on Android 16, so `NavigationBar.setBackgroundColorAsync` is not used (it is a no-op there); the app paints both strips itself.

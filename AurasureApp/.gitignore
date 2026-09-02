@@ -12,3 +12,8 @@ npm-debug.*
 web-build/
 .DS_Store
 coverage/
+
+# Local environment (kept out of git; .env.example documents the vars)
+.env
+.env.local
+.env.*.local

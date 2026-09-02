@@ -7,7 +7,8 @@ import { Icon } from '@/lib/icons';
 import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
 import { SmartImage } from '../../components/ui/SmartImage';
-import { useMockQuery } from '../../hooks/useMockQuery';
+import { useAppQuery } from '../../hooks/useAppQuery';
+import { fetchOrder } from '@/api/account';
 import { orders } from '../../data/mock';
 import { colors } from '@/theme/colors';
 import { radius } from '@/theme/tokens';
@@ -29,7 +30,10 @@ const STEP_LABEL: Record<string, string> = {
 
 export function OrderDetailScreen({ route, navigation }: Props): React.ReactElement {
   const { orderId } = route.params;
-  const { data, loading, refreshing, refresh } = useMockQuery<Order | undefined>(() => orders.find((o) => o.id === orderId));
+  const { data, loading, refreshing, refresh } = useAppQuery<Order | undefined>(
+    () => fetchOrder(orderId),
+    () => orders.find((o) => o.id === orderId),
+  );
 
   const order = data;
   const currentIndex = order ? STEPS.indexOf(order.status) : -1;

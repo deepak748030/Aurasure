@@ -7,7 +7,8 @@ import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { useMockQuery } from '../../hooks/useMockQuery';
+import { useAppQuery } from '../../hooks/useAppQuery';
+import { fetchOrders } from '@/api/account';
 import { orders } from '../../data/mock';
 import { colors } from '@/theme/colors';
 import { radius } from '@/theme/tokens';
@@ -42,7 +43,11 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
 export function OrdersScreen({ navigation }: Props): React.ReactElement {
   const { module } = useApp();
   // Orders are shared history, but each module only shows its own.
-  const { data, loading, refreshing, refresh } = useMockQuery(() => orders.filter((o) => o.module === module));
+  const { data, loading, refreshing, refresh } = useAppQuery(
+    () => fetchOrders(module),
+    () => orders.filter((o) => o.module === module),
+    { deps: [module] },
+  );
   const [list, setList] = useState<Order[]>(data);
 
   // keep local list in sync after refresh

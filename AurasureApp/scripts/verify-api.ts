@@ -262,7 +262,7 @@ async function main() {
     discount: 100,
     address: 'Home, 402 Aurora Heights, Raipur',
   });
-  check('place order total recomputed by server', created.total === 408);
+  check('place order total recomputed by server', created.order.total === 408);
 
   const foodSearch = await fetchFoodSearch('burger');
   check('food search hits /search?module=food', foodSearch.items.length === 1 && foodSearch.items[0]!.name.includes('Burger'));

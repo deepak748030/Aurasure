@@ -48,13 +48,37 @@ async function seedDemoUser() {
   if (existing) return existing;
 
   const passwordHash = await bcrypt.hash(password, config.auth.bcryptRounds);
+  const daysAgo = (d) => new Date(Date.now() - d * 24 * 60 * 60 * 1000);
+  const inDays = (d) => new Date(Date.now() + d * 24 * 60 * 60 * 1000);
+
   return User.create({
     id: newId('usr'),
     name: 'Aarav Sharma',
     phone,
     email: 'aarav.sharma@example.com',
     passwordHash,
-    wallet: 250,
+    // Wallet: 250 opening + 300 referral + 250 added = 800 for the demo.
+    wallet: 800,
+    walletTxs: [
+      { id: newId('wtx'), type: 'credit', title: 'Welcome bonus', note: 'Thanks for joining Aurasure', amount: 250, balanceAfter: 250, createdAt: daysAgo(20) },
+      { id: newId('wtx'), type: 'credit', title: 'Referral bonus', note: 'Friend joined with your code', amount: 300, balanceAfter: 550, createdAt: daysAgo(12) },
+      { id: newId('wtx'), type: 'debit', title: 'Order AUR-FD-88K2', note: 'Food delivery', amount: 120, balanceAfter: 430, createdAt: daysAgo(4) },
+      { id: newId('wtx'), type: 'credit', title: 'Money added', note: 'Instant top-up · UPI', amount: 250, balanceAfter: 680, createdAt: daysAgo(2) },
+      { id: newId('wtx'), type: 'credit', title: 'Cashback', note: 'Coupon AURA50', amount: 120, balanceAfter: 800, createdAt: daysAgo(1) },
+    ],
+    loyaltyPoints: 1240,
+    loyaltyTxs: [
+      { id: newId('ltx'), type: 'earned', title: 'Order reward', note: '₹620 spent → points', points: 310, balanceAfter: 310, createdAt: daysAgo(4) },
+      { id: newId('ltx'), type: 'earned', title: 'Referral bonus', note: 'Friend joined', points: 250, balanceAfter: 560, createdAt: daysAgo(12) },
+      { id: newId('ltx'), type: 'earned', title: 'Order reward', note: '₹780 spent → points', points: 390, balanceAfter: 950, createdAt: daysAgo(2) },
+      { id: newId('ltx'), type: 'earned', title: 'Order reward', note: '₹580 spent → points', points: 290, balanceAfter: 1240, createdAt: daysAgo(1) },
+    ],
+    coupons: [
+      { id: newId('cpn'), code: 'AURA50', title: '₹50 off on your first order', subtitle: 'Welcome coupon', minOrder: 199, offType: 'flat', offValue: 50, expiresAt: inDays(25) },
+      { id: newId('cpn'), code: 'FOOD25', title: '25% off on food delivery', subtitle: 'Up to ₹120', minOrder: 349, offType: 'percent', offValue: 25, expiresAt: inDays(18) },
+      { id: newId('cpn'), code: 'FREEDEL', title: 'Free delivery on all orders', subtitle: 'No minimum', minOrder: 0, offType: 'flat', offValue: 0, expiresAt: inDays(30) },
+    ],
+    referralCode: 'AAR3210',
     addresses: [
       { id: newId('adr'), label: 'Home', line: '402, Aurora Heights, Civil Lines', city: 'Raipur', pin: '492001', isDefault: true },
       { id: newId('adr'), label: 'Work', line: 'Tech Park, 5th Floor, GE Road', city: 'Raipur', pin: '492001', isDefault: false },

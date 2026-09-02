@@ -11,7 +11,9 @@ const getMe = asyncHandler(async (req, res) => ok(res, { user: req.user.toJSON()
 
 /** PUT /api/v1/users/me */
 const updateMe = asyncHandler(async (req, res) => {
-  const allowed = ['name', 'email', 'avatar', 'wallet'];
+  // NOTE: `wallet` is intentionally NOT editable here - money only moves
+  // through the wallet ledger endpoints (rewards controller).
+  const allowed = ['name', 'email', 'avatar'];
   for (const key of allowed) {
     if (req.body[key] !== undefined) req.user[key] = req.body[key];
   }
@@ -61,6 +63,23 @@ const deleteAddress = asyncHandler(async (req, res) => {
   return noContent(res);
 });
 
+/** POST /api/v1/users/me/partner-application - body { kind, name?, city? } */
+const savePartnerApplication = asyncHandler(async (req, res) => {
+  const { kind, name, city } = req.body;
+  const existing = req.user.partnerApplication && req.user.partnerApplication.kind === kind
+    ? req.user.partnerApplication
+    : null;
+  req.user.partnerApplication = {
+    kind,
+    name: String(name || req.user.name || '').trim(),
+    city: String(city || '').trim(),
+    appliedAt: existing ? existing.appliedAt : new Date(),
+    status: existing ? existing.status : 'submitted',
+  };
+  await req.user.save();
+  return ok(res, { application: req.user.partnerApplication });
+});
+
 /** GET /api/v1/users/me/favorites */
 const getFavorites = asyncHandler(async (req, res) => ok(res, { favorites: req.user.favorites }));
 
@@ -78,4 +97,14 @@ const putFavorite = asyncHandler(async (req, res) => {
   return ok(res, { favorites: req.user.favorites });
 });
 
-module.exports = { getMe, updateMe, getAddresses, addAddress, updateAddress, deleteAddress, getFavorites, putFavorite };
+module.exports = {
+  getMe,
+  updateMe,
+  getAddresses,
+  addAddress,
+  updateAddress,
+  deleteAddress,
+  getFavorites,
+  putFavorite,
+  savePartnerApplication,
+};

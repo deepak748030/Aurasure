@@ -192,4 +192,64 @@ export interface UserProfile {
   addresses: Address[];
 }
 
+/* ---------------------------- Rewards ---------------------------- */
+
+export interface WalletTx {
+  id: string;
+  type: 'credit' | 'debit';
+  title: string;
+  note?: string;
+  amount: number;
+  balanceAfter: number;
+  createdAt: string;
+}
+
+export interface WalletData {
+  balance: number;
+  transactions: WalletTx[];
+}
+
+export interface LoyaltyTx {
+  id: string;
+  type: 'earned' | 'redeemed';
+  title: string;
+  note?: string;
+  points: number;
+  balanceAfter: number;
+  createdAt: string;
+}
+
+export interface LoyaltyData {
+  points: number;
+  tier: string;
+  activity: LoyaltyTx[];
+}
+
+export interface Coupon {
+  id: string;
+  code: string;
+  title: string;
+  subtitle?: string;
+  minOrder: number;
+  offType: 'flat' | 'percent';
+  offValue: number;
+  expiresAt: string | null;
+  usedAt: string | null;
+}
+
+export interface ReferralInfo {
+  code: string;
+  earnings: number;
+  friends: number;
+  referredBy: string | null;
+}
+
+export interface PartnerApplication {
+  kind: 'delivery' | 'vendor';
+  name: string;
+  city: string;
+  appliedAt: string;
+  status: string;
+}
+
 export type { IconName } from '@/lib/icons';

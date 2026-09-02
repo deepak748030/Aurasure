@@ -12,6 +12,7 @@ import { BottomSheet } from '../../components/ui/BottomSheet';
 import { useCart } from '../../context/CartContext';
 import { useAppQuery } from '../../hooks/useAppQuery';
 import { addAddressToServer, fetchMe, placeOrder } from '@/api/account';
+import { ApiError } from '@/api/client';
 import { isApiEnabled } from '@/api/config';
 import { userProfile } from '../../data/mock';
 import { colors } from '@/theme/colors';
@@ -65,6 +66,7 @@ export function CheckoutScreen({ navigation }: Props): React.ReactElement {
 
   const delivery = subtotal > 149 || subtotal === 0 ? 0 : DELIVERY_FEE;
   const total = subtotal + delivery;
+  const walletShort = Math.max(0, total - wallet);
 
   const selectAddress = (id: string): void => {
     haptic.light();
@@ -80,6 +82,10 @@ export function CheckoutScreen({ navigation }: Props): React.ReactElement {
       setPlaceError('Please add a delivery address first.');
       return;
     }
+    if (payment === 'wallet' && walletShort > 0 && isApiEnabled) {
+      setPlaceError(`Insufficient wallet balance — add ₹${formatINR(walletShort)} or choose another payment method.`);
+      return;
+    }
 
     setPlacing(true);
     setPlaceError(null);
@@ -91,6 +97,7 @@ export function CheckoutScreen({ navigation }: Props): React.ReactElement {
           deliveryFee: delivery,
           discount: 0,
           address: `${selectedAddress.label}, ${selectedAddress.line}, ${selectedAddress.city} ${selectedAddress.pin}`.trim(),
+          payBy: payment === 'wallet' ? 'wallet' : 'cod',
           etaMinutes: module === 'food' ? 25 : 0,
         });
       }
@@ -99,7 +106,11 @@ export function CheckoutScreen({ navigation }: Props): React.ReactElement {
       setDone(true);
     } catch (err) {
       console.warn('[checkout] could not sync order with server:', err);
-      setPlaceError('Order could not be placed on the server. Check the API URL and try again.');
+      setPlaceError(
+        err instanceof ApiError && err.message
+          ? err.message
+          : 'Order could not be placed on the server. Check the API URL and try again.',
+      );
     } finally {
       setPlacing(false);
     }
@@ -211,6 +222,11 @@ export function CheckoutScreen({ navigation }: Props): React.ReactElement {
               </View>
             </Pressable>
           ))}
+          {payment === 'wallet' && walletShort > 0 ? (
+            <Text variant="caption" color={colors.danger} style={{ marginTop: 6, paddingHorizontal: 4 }}>
+              Short by {formatINR(walletShort)} — add money to your wallet or pick another method.
+            </Text>
+          ) : null}
         </Card>
 
         <Card variant="alt" style={{ marginTop: 14 }}>

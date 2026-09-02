@@ -13,7 +13,8 @@ import { Rating } from '../../components/ui/Rating';
 import { Chip } from '../../components/ui/Chip';
 import { DishCard, DishCardSkeleton } from '../../components/food/DishCard';
 import { BottomSheet } from '../../components/ui/BottomSheet';
-import { useMockQuery } from '../../hooks/useMockQuery';
+import { useAppQuery } from '../../hooks/useAppQuery';
+import { fetchRestaurant } from '@/api/food';
 import { useCart } from '../../context/CartContext';
 import {
   cartItemFromFood,
@@ -39,11 +40,14 @@ export function RestaurantScreen({ route, navigation }: Props): React.ReactEleme
   const [qty, setQty] = useState(1);
   const [catFilter, setCatFilter] = useState<string | undefined>(undefined);
 
-  const { data, loading, refreshing, refresh } = useMockQuery(() => {
-    const restaurant = getRestaurantById(restaurantId);
-    const items = getFoodItemsByRestaurant(restaurantId);
-    return { restaurant, items };
-  });
+  const { data, loading, refreshing, refresh } = useAppQuery(
+    () => fetchRestaurant(restaurantId),
+    () => ({
+      restaurant: getRestaurantById(restaurantId),
+      items: getFoodItemsByRestaurant(restaurantId),
+      categories: foodCategories,
+    }),
+  );
 
   const restaurant = data.restaurant;
   const dishes = catFilter ? data.items.filter((d) => d.categoryIds.includes(catFilter)) : data.items;
@@ -120,8 +124,8 @@ export function RestaurantScreen({ route, navigation }: Props): React.ReactEleme
             <View style={{ marginRight: 8 }}>
               <Chip label="All" active={!catFilter} onPress={() => setCatFilter(undefined)} />
             </View>
-            {foodCategories.map((c, i) => (
-              <View key={c.id} style={{ marginRight: i === foodCategories.length - 1 ? 0 : 8 }}>
+            {data.categories.map((c, i) => (
+              <View key={c.id} style={{ marginRight: i === data.categories.length - 1 ? 0 : 8 }}>
                 <Chip label={c.name} icon={c.icon} active={catFilter === c.id} onPress={() => setCatFilter(c.id)} />
               </View>
             ))}

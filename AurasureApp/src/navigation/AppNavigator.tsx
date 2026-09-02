@@ -10,6 +10,9 @@ import { GateScreen } from '../screens/gate/GateScreen';
 import { FoodHomeScreen } from '../screens/food/FoodHomeScreen';
 import { RestaurantScreen } from '../screens/food/RestaurantScreen';
 import { ShopHomeScreen } from '../screens/shop/ShopHomeScreen';
+import { ShopCategoryScreen } from '../screens/shop/ShopCategoryScreen';
+import { ShopStoreScreen } from '../screens/shop/ShopStoreScreen';
+import { ShopSeeAllScreen } from '../screens/shop/ShopSeeAllScreen';
 import { ProductScreen } from '../screens/shop/ProductScreen';
 import { SearchScreen } from '../screens/search/SearchScreen';
 import { LikesScreen } from '../screens/likes/LikesScreen';
@@ -60,6 +63,9 @@ function HomeNavigator(): React.ReactElement {
       <HomeStack.Screen name="Restaurant" component={RestaurantScreen} />
       <HomeStack.Screen name="Product" component={ProductScreen} />
       <HomeStack.Screen name="Search" component={SearchScreen} />
+      <HomeStack.Screen name="ShopCategory" component={ShopCategoryScreen} />
+      <HomeStack.Screen name="Store" component={ShopStoreScreen} />
+      <HomeStack.Screen name="SeeAll" component={ShopSeeAllScreen} />
     </HomeStack.Navigator>
   );
 }

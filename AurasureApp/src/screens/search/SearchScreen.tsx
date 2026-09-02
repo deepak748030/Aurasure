@@ -10,37 +10,87 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { DishCard, DishCardSkeleton } from '../../components/food/DishCard';
 import { ProductCard, ProductCardSkeleton } from '../../components/shop/ProductCard';
 import { Grid } from '../../components/common/Grid';
+import { useAppQuery } from '../../hooks/useAppQuery';
+import { isApiEnabled } from '@/api/config';
+import { fetchFoodCategories, fetchFoodSearch } from '@/api/food';
+import { fetchShopCategories, fetchShopSearch } from '@/api/shop';
 import { foodCategories, searchFood, searchProducts, shopCategories } from '../../data/mock';
 import { colors } from '@/theme/colors';
 import { layout } from '@/theme/tokens';
 import { haptic } from '@/lib/haptics';
 import { useApp } from '@/context/AppContext';
-import type { FoodItem, Product, ShopCategory } from '../../types';
+import type { FoodCategory, FoodItem, Product, ShopCategory } from '../../types';
 import type { HomeStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'Search'>;
 
 export function SearchScreen({ navigation }: Props): React.ReactElement {
   const [query, setQuery] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [results, setResults] = useState<FoodItem[] | Product[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [refreshTick, setRefreshTick] = useState(0);
   const { module } = useApp();
   const isFood = module === 'food';
 
+  // Category chips come from the server when connected, mock otherwise.
+  const { data: categoriesData, refresh: refreshCategories } = useAppQuery<FoodCategory[] | ShopCategory[]>(
+    () => (isFood ? fetchFoodCategories() : fetchShopCategories()),
+    () => (isFood ? foodCategories : shopCategories),
+    { deps: [module] },
+  );
+  const categories = categoriesData;
+
+  const q = query.trim();
+
+  // Debounced live search: server in API mode, sync mock otherwise.
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 650);
-    return () => clearTimeout(t);
-  }, []);
+    if (!q) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    if (isApiEnabled) {
+      setSearching(true);
+      const timer = setTimeout(async () => {
+        try {
+          if (isFood) {
+            const payload = await fetchFoodSearch(q);
+            if (cancelled) return;
+            setResults(payload.items);
+          } else {
+            const payload = await fetchShopSearch(q);
+            if (cancelled) return;
+            setResults(payload.products);
+          }
+          setSearching(false);
+        } catch {
+          if (cancelled) return;
+          setResults(isFood ? searchFood(q) : searchProducts(q));
+          setSearching(false);
+        }
+      }, 300);
+      return () => {
+        cancelled = true;
+        clearTimeout(timer);
+      };
+    }
+
+    setResults(isFood ? searchFood(q) : searchProducts(q));
+    return () => {
+      cancelled = true;
+    };
+  }, [q, isFood, refreshTick]);
+
+  const loading = Boolean(q) && searching;
+  const total = results.length;
 
   const onRefresh = (): void => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 650);
+    refreshCategories();
+    setRefreshTick((t) => t + 1);
   };
-
-  // Only the selected module is searchable - Food never surfaces shop items.
-  const foods = query.trim() && isFood ? searchFood(query) : [];
-  const shops = query.trim() && !isFood ? searchProducts(query) : [];
-  const total = foods.length + shops.length;
 
   const openFood = (d: FoodItem): void => {
     void navigation.navigate('Restaurant', { restaurantId: d.restaurantId });
@@ -48,8 +98,6 @@ export function SearchScreen({ navigation }: Props): React.ReactElement {
   const openProduct = (p: Product): void => {
     void navigation.navigate('Product', { productId: p.id });
   };
-
-  const categories = isFood ? foodCategories : shopCategories;
 
   const header = (
     <View
@@ -69,8 +117,8 @@ export function SearchScreen({ navigation }: Props): React.ReactElement {
   );
 
   return (
-    <Screen header={header} refreshing={refreshing} onRefresh={onRefresh} padded>
-      {!query.trim() ? (
+    <Screen header={header} refreshing={loading} onRefresh={onRefresh} padded>
+      {!q ? (
         <>
           <SectionHeader title={isFood ? 'Popular in Food' : 'Popular in the store'} />
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 0 }}>
@@ -105,11 +153,11 @@ export function SearchScreen({ navigation }: Props): React.ReactElement {
           </>
         )
       ) : total === 0 ? (
-        <EmptyState icon="search" title="No results found" subtitle={`We couldn't find anything for "${query}" in ${isFood ? 'Food' : 'the store'}. Try another keyword.`} />
+        <EmptyState icon="search" title="No results found" subtitle={`We couldn't find anything for "${q}" in ${isFood ? 'Food' : 'the store'}. Try another keyword.`} />
       ) : isFood ? (
         <>
-          <SectionHeader title="Food" subtitle={`${foods.length} results`} />
-          {foods.map((d) => (
+          <SectionHeader title="Food" subtitle={`${total} results`} />
+          {(results as FoodItem[]).map((d) => (
             <View key={d.id} style={{ marginBottom: 12 }}>
               <DishCard item={d} onPress={openFood} />
             </View>
@@ -117,8 +165,8 @@ export function SearchScreen({ navigation }: Props): React.ReactElement {
         </>
       ) : (
         <>
-          <SectionHeader title="Products" subtitle={`${shops.length} results`} />
-          <Grid data={shops} renderItem={(p) => <ProductCard product={p} onPress={openProduct} />} />
+          <SectionHeader title="Products" subtitle={`${total} results`} />
+          <Grid data={results as Product[]} renderItem={(p) => <ProductCard product={p} onPress={openProduct} />} />
         </>
       )}
       <View style={{ height: 8 }} />

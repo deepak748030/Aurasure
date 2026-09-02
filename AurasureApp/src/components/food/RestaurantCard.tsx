@@ -46,12 +46,12 @@ export function RestaurantCard({ restaurant, onPress }: RestaurantCardProps): Re
           {restaurant.name}
         </Text>
         <Text variant="caption" color={colors.textSecondary} numberOfLines={1} style={{ marginTop: 2 }}>
-          {restaurant.cuisines.join(' · ')}
+          {restaurant.line ?? restaurant.cuisines.join(' · ')}
         </Text>
         <View style={styles.metaRow}>
           <Rating value={restaurant.rating} reviews={restaurant.reviews} size={12} />
           <Text variant="caption" color={colors.textTertiary} style={{ marginHorizontal: 6 }}>
-            · {formatDistance(restaurant.distanceKm)}
+            · {restaurant.distanceKm >= 100 ? '100+ km' : formatDistance(restaurant.distanceKm)}
           </Text>
           <Icon name="clock" size={12} color={colors.textTertiary} />
           <Text variant="caption" color={colors.textTertiary} style={{ marginLeft: 3 }}>

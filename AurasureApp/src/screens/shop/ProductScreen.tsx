@@ -14,9 +14,10 @@ import { Rating } from '../../components/ui/Rating';
 import { Price } from '../../components/ui/Price';
 import { Card } from '../../components/ui/Card';
 import { BottomSheet } from '../../components/ui/BottomSheet';
-import { useMockQuery } from '../../hooks/useMockQuery';
+import { useAppQuery } from '../../hooks/useAppQuery';
+import { fetchProduct } from '@/api/shop';
 import { useCart } from '../../context/CartContext';
-import { cartItemFromProduct, getProductById } from '../../data/mock';
+import { cartItemFromProduct, getProductById, getStoreById } from '../../data/mock';
 import { colors } from '@/theme/colors';
 import { layout, radius } from '@/theme/tokens';
 import { discountPercent, formatINR, formatRating } from '@/lib/format';
@@ -35,9 +36,15 @@ export function ProductScreen({ route, navigation }: Props): React.ReactElement 
   const [successOpen, setSuccessOpen] = useState(false);
   const [warn, setWarn] = useState<string | null>(null);
 
-  const { data, loading, refreshing, refresh } = useMockQuery(() => getProductById(productId) ?? null);
+  const { data, loading, refreshing, refresh } = useAppQuery(
+    () => fetchProduct(productId),
+    () => {
+      const product = getProductById(productId) ?? null;
+      return { product, store: product ? getStoreById(product.storeId) : undefined };
+    },
+  );
 
-  const product = data;
+  const { product, store } = data;
 
   const handleAdd = (): void => {
     if (!product) return;
@@ -148,6 +155,26 @@ export function ProductScreen({ route, navigation }: Props): React.ReactElement 
                   ))}
                 </View>
               </View>
+            ) : null}
+
+            {store ? (
+              <Pressable
+                onPress={() => navigation.navigate('Store', { storeId: store.id })}
+                style={({ pressed }) => [styles.storeRow, { opacity: pressed ? 0.9 : 1 }]}
+              >
+                <View style={styles.storeIcon}>
+                  <Icon name="store" size={16} color={colors.brand[700]} />
+                </View>
+                <View style={{ flex: 1, marginLeft: 10 }}>
+                  <Text variant="caption" color={colors.textTertiary}>
+                    Sold by
+                  </Text>
+                  <Text variant="title" weight="semibold" color={colors.text} numberOfLines={1}>
+                    {store.name}
+                  </Text>
+                </View>
+                <Icon name="chevronRight" size={18} color={colors.textTertiary} />
+              </Pressable>
             ) : null}
 
             <Card variant="alt" style={{ marginTop: 8 }}>
@@ -304,6 +331,24 @@ const styles = StyleSheet.create({
     borderColor: colors.brand[600],
   },
   feature: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
+  storeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 12,
+    marginTop: 12,
+  },
+  storeIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.pill,
+    backgroundColor: colors.brand[50],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   bottomBar: {
     position: 'absolute',
     left: layout.contentHorizontalPadding,

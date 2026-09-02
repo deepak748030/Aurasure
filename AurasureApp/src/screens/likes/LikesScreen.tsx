@@ -7,9 +7,11 @@ import { DishCard } from '../../components/food/DishCard';
 import { ProductCard } from '../../components/shop/ProductCard';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Skeleton } from '../../components/ui/Skeleton';
-import { useMockQuery } from '../../hooks/useMockQuery';
+import { useAppQuery } from '../../hooks/useAppQuery';
+import { fetchFoodCatalog } from '@/api/food';
+import { fetchShopCatalog } from '@/api/shop';
 import { useApp } from '@/context/AppContext';
-import { foodItems, getProductById } from '../../data/mock';
+import { foodItems, shopProducts } from '../../data/mock';
 import { openHomeRoute, switchTab } from '@/navigation/RootNavigation';
 import type { FoodItem, Product } from '@/types';
 
@@ -22,14 +24,19 @@ export function LikesScreen(): React.ReactElement {
   const { module, likesFor } = useApp();
   const ids = likesFor(module);
 
-  const { loading, refreshing, refresh } = useMockQuery(() => ids.length);
+  // Full catalog (server or mock) so liked ids resolve to live entities.
+  const { data: catalog, loading, refreshing, refresh } = useAppQuery(
+    () => (module === 'food' ? fetchFoodCatalog() : fetchShopCatalog()),
+    () => (module === 'food' ? foodItems : shopProducts),
+    { deps: [module] },
+  );
 
   // Derived from the live wishlist (not from the mocked query) so un-liking an
   // item here removes it immediately instead of on the next refresh.
-  const dishes = module === 'food' ? foodItems.filter((f) => ids.includes(f.id)) : [];
+  const dishes = module === 'food' ? (catalog as FoodItem[]).filter((f) => ids.includes(f.id)) : [];
   const products =
     module === 'shop'
-      ? ids.map((id) => getProductById(id)).filter((p): p is Product => p != null)
+      ? (catalog as Product[]).filter((p) => ids.includes(p.id))
       : [];
 
   const openDish = (item: FoodItem): void => openHomeRoute('Restaurant', { restaurantId: item.restaurantId });

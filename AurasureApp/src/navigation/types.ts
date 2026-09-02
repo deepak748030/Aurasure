@@ -23,6 +23,25 @@ export type HomeStackParamList = {
   Restaurant: { restaurantId: string };
   Product: { productId: string };
   Search: undefined;
+  /** E-commerce category landing (e.g. all sunglasses). */
+  ShopCategory: { categoryId: string };
+  /** E-commerce store landing - shows only that store's items. */
+  Store: { storeId: string };
+  /** "See all" grid reached from the round arrows: products, stores or food. */
+  SeeAll: {
+    mode:
+      | 'popular'
+      | 'special'
+      | 'recommended'
+      | 'stores'
+      | 'foodPopular'
+      | 'foodOffers'
+      | 'foodVibes'
+      | 'foodNew'
+      | 'foodNearby';
+    title: string;
+    vibeId?: string;
+  };
 };
 
 export type LikesStackParamList = {

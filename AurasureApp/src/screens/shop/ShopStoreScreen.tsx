@@ -114,11 +114,11 @@ export function ShopStoreScreen({ route, navigation }: Props): React.ReactElemen
             subtitle={`${data.items.length} products · min order ₹${store.minOrder}`}
           />
           {loading ? (
-            <Grid columns={3} gap={8} data={[1, 2, 3, 4, 5, 6]} renderItem={() => <CompactProductCardSkeleton />} />
+            <Grid columns={3} gap={5} data={[1, 2, 3, 4, 5, 6]} renderItem={() => <CompactProductCardSkeleton />} />
           ) : (
             <Grid
               columns={3}
-              gap={8}
+              gap={5}
               data={data.items}
               renderItem={(p) => (
                 <CompactProductCard

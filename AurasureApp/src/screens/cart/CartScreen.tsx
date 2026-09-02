@@ -64,13 +64,6 @@ export function CartScreen({ navigation }: Props): React.ReactElement {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <View style={styles.itemsHead}>
-          <Icon name="cart" size={20} color="#9C005E" />
-          <Text variant="title" weight="bold" color="#9C005E" style={{ marginLeft: 8 }}>
-            Cart Items ({items.length})
-          </Text>
-        </View>
-
         {loading
           ? [1, 2].map((k) => (
               <View key={k} style={[styles.itemCard, { opacity: 0.5 }]}>
@@ -261,15 +254,6 @@ const styles = StyleSheet.create({
   },
   headerBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   scroll: { paddingHorizontal: 6, paddingBottom: 30 },
-  itemsHead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F7E8F5',
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginTop: 4,
-  },
   itemCard: {
     flexDirection: 'row',
     backgroundColor: colors.surface,

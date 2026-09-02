@@ -72,7 +72,7 @@ export function CompactFoodCard({ item, onPress }: CompactFoodCardProps): React.
             {formatMinutes(item.prepTime)}
           </Text>
         </View>
-        <Text variant="caption" weight="semibold" color={colors.text} numberOfLines={2} style={{ marginTop: 3, minHeight: 32 }}>
+        <Text variant="caption" weight="semibold" color={colors.text} numberOfLines={2} style={{ marginTop: 2, minHeight: 26 }}>
           {item.name}
         </Text>
         <View style={styles.priceRow}>
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   imageWrap: {
     position: 'relative',
     width: '100%',
-    height: 104,
+    height: 84,
     backgroundColor: colors.food[50],
   },
   offBadge: {
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   info: {
-    padding: 8,
+    padding: 6,
   },
   timeRow: {
     flexDirection: 'row',
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 6,
+    marginTop: 4,
   },
   addBtn: {
     flexDirection: 'row',
@@ -171,8 +171,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.food[400],
     borderRadius: radius.pill,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingVertical: 3,
+    paddingHorizontal: 9,
     backgroundColor: colors.surface,
   },
 });

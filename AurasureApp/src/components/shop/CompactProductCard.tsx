@@ -81,7 +81,7 @@ export function CompactProductCard({ product, onPress, showWish = true }: Compac
       </View>
 
       <View style={styles.info}>
-        <Text variant="caption" weight="semibold" color={colors.text} numberOfLines={2} style={{ minHeight: 32 }}>
+        <Text variant="caption" weight="semibold" color={colors.text} numberOfLines={2} style={{ minHeight: 26 }}>
           {product.name}
         </Text>
         <View style={styles.metaRow}>
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
   imageWrap: {
     position: 'relative',
     width: '100%',
-    height: 104,
+    height: 84,
     backgroundColor: colors.brand[50],
   },
   offBadge: {
@@ -187,13 +187,13 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   info: {
-    padding: 8,
+    padding: 6,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 6,
+    marginTop: 4,
   },
   ratingWrap: {
     flexDirection: 'row',
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
     flexWrap: 'wrap',
-    marginTop: 6,
+    marginTop: 4,
   },
   addBtn: {
     position: 'relative',
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.pill,
-    height: 28,
-    marginTop: 8,
+    height: 24,
+    marginTop: 6,
   },
 });

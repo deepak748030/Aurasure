@@ -148,11 +148,11 @@ export function ShopHomeScreen({ navigation }: Props): React.ReactElement {
         action={<SeeAllArrow onPress={() => openSeeAll('popular', 'Most popular products')} />}
       />
       {loading ? (
-        <Grid columns={3} gap={8} data={[1, 2, 3, 4, 5, 6]} renderItem={() => <CompactProductCardSkeleton />} />
+        <Grid columns={3} gap={5} data={[1, 2, 3, 4, 5, 6]} renderItem={() => <CompactProductCardSkeleton />} />
       ) : (
         <Grid
           columns={3}
-          gap={8}
+          gap={5}
           data={popularProducts}
           renderItem={(p) => <CompactProductCard product={p} onPress={openProduct} />}
         />
@@ -188,11 +188,11 @@ export function ShopHomeScreen({ navigation }: Props): React.ReactElement {
         action={<SeeAllArrow onPress={() => openSeeAll('special', 'Special offers')} />}
       />
       {loading ? (
-        <Grid columns={3} gap={8} data={[1, 2, 3, 4, 5, 6]} renderItem={() => <CompactProductCardSkeleton />} />
+        <Grid columns={3} gap={5} data={[1, 2, 3, 4, 5, 6]} renderItem={() => <CompactProductCardSkeleton />} />
       ) : (
         <Grid
           columns={3}
-          gap={8}
+          gap={5}
           data={offerProducts}
           renderItem={(p) => <CompactProductCard product={p} onPress={openProduct} />}
         />

@@ -63,11 +63,11 @@ export function ShopCategoryScreen({ route, navigation }: Props): React.ReactEle
 
       <View style={{ height: data.items.length ? 18 : 0 }} />
       {loading ? (
-        <Grid columns={3} gap={8} data={[1, 2, 3, 4, 5, 6]} renderItem={() => <CompactProductCardSkeleton />} />
+        <Grid columns={3} gap={5} data={[1, 2, 3, 4, 5, 6]} renderItem={() => <CompactProductCardSkeleton />} />
       ) : (
         <Grid
           columns={3}
-          gap={8}
+          gap={5}
           data={data.items}
           renderItem={(p) => (
             <CompactProductCard

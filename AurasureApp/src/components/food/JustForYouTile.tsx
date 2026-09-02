@@ -50,20 +50,20 @@ export function JustForYouTile({ vibe, onPress }: JustForYouTileProps): React.Re
 const styles = StyleSheet.create({
   tile: {
     position: 'relative',
-    height: 148,
+    height: 122,
     borderRadius: radius.lg,
     overflow: 'hidden',
   },
   photoWrap: {
     position: 'absolute',
-    top: 18,
+    top: 10,
     left: 0,
     right: 0,
     alignItems: 'center',
   },
   photo: {
-    width: 92,
-    height: 82,
+    width: 80,
+    height: 64,
     borderRadius: radius.md,
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.75)',

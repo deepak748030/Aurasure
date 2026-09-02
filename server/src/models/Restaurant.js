@@ -25,6 +25,7 @@ const restaurantSchema = new mongoose.Schema(
     cover: { type: mongoose.Schema.Types.Mixed, default: null },
     tags: { type: [String], default: [] },
     categoryIds: { type: [String], default: [] },
+    vendorId: { type: String, default: null, index: true },
   },
   {
     timestamps: true,

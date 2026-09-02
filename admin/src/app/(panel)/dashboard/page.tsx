@@ -86,12 +86,12 @@ export default function DashboardPage() {
               onClick={() => router.push('/customers')}
             />
             <StatCard
-              label="Pending applications"
-              value={num(s?.pendingPartners)}
-              hint="Vendor & delivery partners"
+              label="Vendor KYC queue"
+              value={num(s?.pendingVendors)}
+              hint="Documents waiting verification"
               icon={UserCheck}
               tone="info"
-              onClick={() => router.push('/partners')}
+              onClick={() => router.push('/vendors')}
             />
           </div>
 

@@ -14,6 +14,7 @@ const shopRoutes = require('./shop.routes');
 const bannerRoutes = require('./banner.routes');
 const searchRoutes = require('./search.routes');
 const orderRoutes = require('./order.routes');
+const vendorRoutes = require('./vendor.routes');
 
 const router = Router();
 
@@ -31,6 +32,7 @@ router.use('/shop', requireDb, shopRoutes);
 router.use('/banners', requireDb, bannerRoutes);
 router.use('/search', requireDb, searchRoutes);
 router.use('/orders', requireDb, orderRoutes);
+router.use('/vendor', requireDb, vendorRoutes);
 
 // Dev stats
 router.get('/stats', requireDb, async (req, res, next) => {

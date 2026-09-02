@@ -22,6 +22,8 @@ const shopStoreSchema = new mongoose.Schema(
     tags: { type: [String], default: [] },
     categoryIds: { type: [String], default: [] },
     cover: { type: mongoose.Schema.Types.Mixed, default: null },
+    vendorId: { type: String, default: null, index: true },
+    isClosed: { type: Boolean, default: false },
   },
   {
     timestamps: true,

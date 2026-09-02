@@ -70,6 +70,52 @@ export function useOrder(id: string) {
   });
 }
 
+export function useVendors(query: { status?: string; module?: string; q?: string; page?: number } = {}) {
+  return useQuery({
+    queryKey: ['vendors', query],
+    queryFn: async () => {
+      const res = await apiRaw<{ vendors: import('./types').Vendor[]; pending: number }>('/admin/vendors', {
+        query: { ...query },
+      });
+      return { vendors: res.data.vendors, pending: res.data.pending, meta: res.meta };
+    },
+  });
+}
+
+export function useVendor(id: string) {
+  return useQuery({
+    queryKey: ['vendor', id],
+    queryFn: () =>
+      api<{
+        vendor: import('./types').Vendor;
+        user: { id: string; name: string; phone: string; email?: string } | null;
+        orders: Order[];
+        requiredDocuments: { key: string; label: string }[];
+      }>(`/admin/vendors/${id}`),
+    enabled: Boolean(id),
+  });
+}
+
+export function useVendorMutations(id: string) {
+  const qc = useQueryClient();
+  const invalidate = () => {
+    void qc.invalidateQueries({ queryKey: ['vendor', id] });
+    void qc.invalidateQueries({ queryKey: ['vendors'] });
+    void qc.invalidateQueries({ queryKey: ['stats'] });
+  };
+  const decide = useMutation({
+    mutationFn: (body: { status: string; note?: string }) =>
+      api(`/admin/vendors/${id}`, { method: 'PATCH', body }),
+    onSuccess: invalidate,
+  });
+  const verifyDoc = useMutation({
+    mutationFn: (body: { key: string; verified: boolean; note?: string }) =>
+      api(`/admin/vendors/${id}/documents`, { method: 'PATCH', body }),
+    onSuccess: invalidate,
+  });
+  return { decide, verifyDoc };
+}
+
 export function usePartners() {
   return useQuery({
     queryKey: ['partners'],

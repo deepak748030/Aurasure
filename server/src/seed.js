@@ -26,6 +26,8 @@ const Banner = require('./models/Banner');
 const Promo = require('./models/Promo');
 const User = require('./models/User');
 const Order = require('./models/Order');
+const Vendor = require('./models/Vendor');
+const { emptyDocs } = require('./utils/vendorDocs');
 
 const FRESH = process.env.SEED_FRESH === '1' || process.argv.includes('--fresh');
 
@@ -244,12 +246,14 @@ async function main() {
   const demoUser = await seedDemoUser();
   const adminUser = await seedAdminUser();
   const partnerApplicants = await seedPartnerApplicants();
+  const demoVendor = await seedDemoVendor();
   const seededOrders = await seedDemoOrders(demoUser._id);
   const normalizedDemoOrders = await normalizeDemoOrders(demoUser._id);
 
   console.log('[seed] done ✓');
   console.log('  admin user      → phone ' + adminUser.phone + ' / role ' + adminUser.role);
   if (partnerApplicants.length) console.log('  partner apps    ', partnerApplicants);
+  if (demoVendor) console.log('  demo vendor     → phone', demoVendor.phone, '/ password vendor@123 / food');
   if (seededOrders) console.log('  demo orders     ', seededOrders);
   if (normalizedDemoOrders) console.log('  demo orders     ', normalizedDemoOrders, 'normalised (wallet/loyalty back-fill)');
   console.log('  food categories ', foodCategories);

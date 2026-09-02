@@ -48,7 +48,7 @@ function requireRole(...roles) {
   return (req, res, next) => {
     if (!req.user) return next(ApiError.unauthorized('Authentication token missing', 'TOKEN_MISSING'));
     if (!roles.includes(req.user.role)) {
-      return next(ApiError.forbidden('Admin access required', 'ADMIN_ONLY'));
+      return next(ApiError.forbidden('You do not have access to this area', 'FORBIDDEN_ROLE'));
     }
     return next();
   };

@@ -70,7 +70,8 @@ const userSchema = new mongoose.Schema(
     // Public id used by the mobile app (same shape as mock data).
     id: { type: String, unique: true, index: true },
     // Role - `admin` unlocks the in-app Admin Console (order + partner ops).
-    role: { type: String, enum: ['customer', 'admin'], default: 'customer', index: true },
+    // `delivery` is reserved for the upcoming partner app — never reuse vendor.
+    role: { type: String, enum: ['customer', 'admin', 'vendor', 'delivery'], default: 'customer', index: true },
     name: { type: String, required: true, trim: true, maxlength: 80 },
     email: { type: String, trim: true, lowercase: true, sparse: true },
     phone: { type: String, required: true, unique: true, trim: true, index: true },

@@ -327,7 +327,7 @@ const listCustomers = asyncHandler(async (req, res) => {
   const { page, limit, skip } = paginate(req.query, { defaultLimit: 20, maxLimit: 100 });
   const query = {};
 
-  if (req.query.role === 'customer' || req.query.role === 'admin') query.role = req.query.role;
+  if (['customer', 'admin', 'vendor', 'delivery'].includes(req.query.role)) query.role = req.query.role;
   if (req.query.q) {
     const rx = new RegExp(escapeRegex(req.query.q), 'i');
     query.$or = [{ name: rx }, { phone: rx }, { email: rx }, { id: rx }, { referralCode: rx }];

@@ -17,6 +17,13 @@ import { downloadCsv, toCsv } from '@/lib/csv';
 import { dateOnly, initials, maskPhone, money, num } from '@/lib/format';
 import type { CustomerRow } from '@/lib/types';
 
+function titleCaseRole(role: string): string {
+  if (role === 'admin') return 'Admin';
+  if (role === 'vendor') return 'Vendor';
+  if (role === 'delivery') return 'Delivery';
+  return 'Customer';
+}
+
 export default function CustomersPage() {
   const router = useRouter();
   const toast = useToast();
@@ -120,8 +127,8 @@ export default function CustomersPage() {
       key: 'role',
       label: 'Role',
       render: (row) => (
-        <Badge tone={row.role === 'admin' ? 'brand' : 'neutral'}>
-          {row.role === 'admin' ? 'Admin' : 'Customer'}
+        <Badge tone={row.role === 'admin' ? 'brand' : row.role === 'vendor' ? 'warning' : 'neutral'}>
+          {titleCaseRole(row.role)}
         </Badge>
       ),
       value: (row) => row.role,
@@ -183,6 +190,8 @@ export default function CustomersPage() {
           >
             <option value="">All roles</option>
             <option value="customer">Customers</option>
+            <option value="vendor">Vendors</option>
+            <option value="delivery">Delivery</option>
             <option value="admin">Admins</option>
           </Select>
         </div>

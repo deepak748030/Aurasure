@@ -15,6 +15,7 @@ import {
   Clock,
   StickyNote,
   User as UserIcon,
+  Bike,
 } from 'lucide-react';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -253,6 +254,47 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               ) : null}
             </div>
           </Card>
+
+          {order.deliveryTask ? (
+            <Card>
+              <CardHeader title="Delivery" subtitle="Task created when the order left the vendor" />
+              <dl className="mt-3 space-y-2.5 text-[13.5px]">
+                <div className="flex items-center justify-between">
+                  <dt className="text-ink-500">Task</dt>
+                  <dd className="font-mono text-brand-700">{order.deliveryTask.code}</dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt className="text-ink-500">State</dt>
+                  <dd><Badge tone={order.deliveryTask.state === 'delivered' ? 'success' : order.deliveryTask.state === 'available' ? 'info' : 'warning'}>{titleCase(order.deliveryTask.state.replaceAll('_', ' '))}</Badge></dd>
+                </div>
+                {order.deliveryTask.riderName ? (
+                  <div className="flex items-center justify-between">
+                    <dt className="flex items-center gap-1.5 text-ink-500"><Bike size={14} /> Rider</dt>
+                    <dd className="text-ink-800">{order.deliveryTask.riderName} · {order.deliveryTask.riderPhone}</dd>
+                  </div>
+                ) : null}
+                {order.deliveryTask.pickup?.otp ? (
+                  <div className="flex items-center justify-between">
+                    <dt className="text-ink-500">Pickup OTP</dt>
+                    <dd className="font-mono text-ink-800">{order.deliveryTask.pickup.otp}</dd>
+                  </div>
+                ) : null}
+                {order.deliveryTask.drop?.otp ? (
+                  <div className="flex items-center justify-between">
+                    <dt className="text-ink-500">Drop OTP</dt>
+                    <dd className="font-mono text-ink-800">{order.deliveryTask.drop.otp}</dd>
+                  </div>
+                ) : null}
+                <div className="flex items-center justify-between">
+                  <dt className="text-ink-500">Payout</dt>
+                  <dd className="tabular text-ink-800">{money(order.deliveryTask.riderPayout)}</dd>
+                </div>
+                <Link href="/delivery" className="inline-flex items-center gap-1 pt-1 text-[13px] font-medium text-brand-600 hover:text-brand-700">
+                  Open delivery board <ChevronRight size={14} />
+                </Link>
+              </dl>
+            </Card>
+          ) : null}
 
           <Card>
             <CardHeader title="Payment & rewards" />

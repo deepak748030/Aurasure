@@ -10,6 +10,7 @@ const asyncHandler = require('../utils/asyncHandler');
 const { ok, paginate, listMeta } = require('../utils/response');
 const { allDocsVerified, requiredDocuments } = require('../utils/vendorDocs');
 const { ensureOutlet } = require('./vendor.controller');
+const { writeAudit } = require('../utils/audit');
 
 const listVendors = asyncHandler(async (req, res) => {
   const { status, module, q } = req.query;
@@ -58,6 +59,15 @@ const decide = asyncHandler(async (req, res) => {
     if (note) vendor.reviewNote = String(note).slice(0, 400);
     await vendor.save();
     await ensureOutlet(vendor);
+    await writeAudit({
+      actor: req.user,
+      action: 'vendor.approve',
+      targetType: 'vendor',
+      targetId: vendor.id,
+      targetCode: vendor.outletName || vendor.phone,
+      detail: String(note || ''),
+      req,
+    });
     return ok(res, { vendor });
   }
 
@@ -74,6 +84,15 @@ const decide = asyncHandler(async (req, res) => {
     }
   }
   await vendor.save();
+  await writeAudit({
+    actor: req.user,
+    action: `vendor.${status}`,
+    targetType: 'vendor',
+    targetId: vendor.id,
+    targetCode: vendor.outletName || vendor.phone,
+    detail: String(note || ''),
+    req,
+  });
   return ok(res, { vendor });
 });
 
@@ -87,6 +106,15 @@ const verifyDoc = asyncHandler(async (req, res) => {
   if (note !== undefined) doc.note = String(note).slice(0, 200);
   if (vendor.status === 'submitted') vendor.status = 'under_review';
   await vendor.save();
+  await writeAudit({
+    actor: req.user,
+    action: 'vendor.doc',
+    targetType: 'vendor_document',
+    targetId: vendor.id,
+    targetCode: `${vendor.outletName || vendor.phone} · ${doc.label || key}`,
+    detail: `${key} → ${verified ? 'verified' : 'unverified'}`,
+    req,
+  });
   return ok(res, { vendor });
 });
 

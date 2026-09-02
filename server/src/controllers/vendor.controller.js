@@ -6,6 +6,7 @@ const ShopStore = require('../models/ShopStore');
 const FoodItem = require('../models/FoodItem');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
+const DeliveryTask = require('../models/DeliveryTask');
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { ok, created, paginate, listMeta } = require('../utils/response');
@@ -13,6 +14,7 @@ const { newId } = require('../utils/id');
 const { docsComplete, profileComplete, emptyDocs } = require('../utils/vendorDocs');
 const { describeUpload } = require('./upload.controller');
 const { applyOrderCancellation } = require('./order.controller');
+const { createDeliveryTaskForOrder } = require('../utils/delivery');
 
 async function loadVendor(req) {
   const vendor = await Vendor.findOne({ userId: req.user.id });
@@ -208,7 +210,24 @@ const listOrders = asyncHandler(async (req, res) => {
   if (status) query.status = status;
   const total = await Order.countDocuments(query);
   const orders = await Order.find(query).sort({ placedAt: -1 }).skip(skip).limit(limit);
-  return ok(res, { orders }, listMeta(total, page, limit));
+  const taskIds = orders.map((o) => o.deliveryTaskId).filter(Boolean);
+  const tasks = taskIds.length ? await DeliveryTask.find({ id: { $in: taskIds } }).lean() : [];
+  const taskById = new Map(tasks.map((t) => [t.id, t]));
+  const out = orders.map((order) => {
+    const json = order.toJSON ? order.toJSON() : { ...order };
+    const task = taskById.get(json.deliveryTaskId);
+    if (task) {
+      json.delivery = {
+        taskId: task.id,
+        state: task.state,
+        pickupOtp: task.pickup?.otp || '',
+        riderName: task.riderName || '',
+        riderPhone: task.riderPhone || '',
+      };
+    }
+    return json;
+  });
+  return ok(res, { orders: out }, listMeta(total, page, limit));
 });
 
 const advanceOrder = asyncHandler(async (req, res) => {
@@ -234,6 +253,10 @@ const advanceOrder = asyncHandler(async (req, res) => {
   }
   order.status = status;
   await order.save();
+  if (status === 'out_for_delivery') {
+    // A delivery partner task is published only after the item is ready.
+    await createDeliveryTaskForOrder(order);
+  }
   return ok(res, { order });
 });
 

@@ -150,3 +150,13 @@ the moment finance needs refunds but not KYC.
 - **P0:** dashboard, live ops board, order detail + force actions, vendor KYC review, rider KYC review, manual rider assignment, audit log. (Manual assignment is what lets the rider app ship before auto-dispatch exists.)
 - **P1:** finance (settlements, payouts, COD reconciliation), catalogue moderation, customer support tools, refunds with approval rules.
 - **P2:** promotions engine, push campaigns, zones + surge config, analytics warehouse, feature flags.
+
+## Implementation updates
+
+- Activity Log is now server-backed via `GET /api/v1/admin/audit` (see
+  `AdminAudit` model); browser-local storage is only a fallback and the page
+  fetches/paginates the server trail.
+- New **Delivery tasks** page at `/delivery` lists every `DeliveryTask` and
+  lets an operator assign an approved, online rider (guarded by COD limit).
+- Rider KYC pages (`/riders`, `/riders/[id]`) are wired to
+  `/admin/riders`; approving is server-gated on 100% verified documents.

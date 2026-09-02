@@ -51,6 +51,12 @@ const orderSchema = new mongoose.Schema(
     // available → …" preference. Shown to fulfilment in the admin console.
     instructions: { type: String, default: '' },
     payoutCredited: { type: Boolean, default: false },
+    // Delivery partner fields - filled once a rider takes / finishes the trip.
+    deliveryTaskId: { type: String, default: null, index: true },
+    deliveryPartnerId: { type: String, default: null },
+    deliveryPartnerName: { type: String, default: '' },
+    deliveryPartnerPhone: { type: String, default: '' },
+    deliveredAt: { type: Date, default: null },
   },
   {
     timestamps: true,

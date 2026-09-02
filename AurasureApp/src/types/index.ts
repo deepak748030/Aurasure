@@ -181,6 +181,17 @@ export interface Order {
   couponCode?: string | null;
   /** Customer instruction (e.g. "if any product is not available → call me"). */
   instructions?: string;
+  /** Delivery partner / rider task info - filled once an order is on the way. */
+  delivery?: {
+    taskId?: string;
+    state?: string;
+    pickupOtp?: string;
+    riderName?: string;
+    riderPhone?: string;
+  } | null;
+  deliveryPartnerName?: string;
+  deliveryPartnerPhone?: string;
+  deliveredAt?: string;
 }
 
 export interface Address {

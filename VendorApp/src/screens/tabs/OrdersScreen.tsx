@@ -69,6 +69,31 @@ export function OrdersScreen(): React.ReactElement {
                 Note: {o.instructions}
               </Text>
             ) : null}
+            {o.status === 'out_for_delivery' && o.delivery ? (
+              <View
+                style={{
+                  marginTop: 10,
+                  backgroundColor: colors.brand[50],
+                  borderRadius: 12,
+                  padding: 10,
+                  borderWidth: 1,
+                  borderColor: colors.brand[100],
+                }}
+              >
+                <Text variant="caption" color={colors.brand[800]}>
+                  Pickup OTP — tell the rider: {o.delivery.pickupOtp}
+                </Text>
+                {o.delivery.riderName ? (
+                  <Text variant="caption" color={colors.textSecondary} style={{ marginTop: 4 }}>
+                    Rider: {o.delivery.riderName} · {o.delivery.state.replace('_', ' ')}
+                  </Text>
+                ) : (
+                  <Text variant="caption" color={colors.textSecondary} style={{ marginTop: 4 }}>
+                    Waiting for a rider to accept…
+                  </Text>
+                )}
+              </View>
+            ) : null}
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
               {o.status === 'placed' ? (
                 <>

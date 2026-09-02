@@ -15,6 +15,7 @@ const mongoose = require('mongoose');
 
 const User = require('../models/User');
 const Order = require('../models/Order');
+const DeliveryTask = require('../models/DeliveryTask');
 const FoodCategory = require('../models/FoodCategory');
 const FoodVibe = require('../models/FoodVibe');
 const Restaurant = require('../models/Restaurant');
@@ -30,6 +31,7 @@ const asyncHandler = require('../utils/asyncHandler');
 const { ok, created, paginate, listMeta } = require('../utils/response');
 const { newId } = require('../utils/id');
 const { walletTx, loyaltyTx } = require('../utils/ledger');
+const { writeAudit } = require('../utils/audit');
 
 /* ------------------------------------------------------------------ *
  * Helpers
@@ -135,7 +137,17 @@ function crud({ model, key, prefix, fields, search, sort = { createdAt: -1 }, fi
       }
       throw err;
     }
-    return created(res, { [key.replace(/ies$/, 'y').replace(/s$/, '')]: doc.toJSON() });
+    const single = key.replace(/ies$/, 'y').replace(/s$/, '');
+    await writeAudit({
+      actor: req.user,
+      action: 'catalogue.create',
+      targetType: key,
+      targetId: doc.id,
+      targetCode: doc.name || doc.title || doc.code || doc.id,
+      detail: `Created ${key}`,
+      req,
+    });
+    return created(res, { [single]: doc.toJSON() });
   });
 
   const update = asyncHandler(async (req, res) => {
@@ -152,12 +164,30 @@ function crud({ model, key, prefix, fields, search, sort = { createdAt: -1 }, fi
       }
       throw err;
     }
+    await writeAudit({
+      actor: req.user,
+      action: 'catalogue.update',
+      targetType: key,
+      targetId: doc.id,
+      targetCode: doc.name || doc.title || doc.code || doc.id,
+      detail: `Updated ${key}`,
+      req,
+    });
     return ok(res, { [key.replace(/ies$/, 'y').replace(/s$/, '')]: doc.toJSON() });
   });
 
   const remove = asyncHandler(async (req, res) => {
     const doc = await model.findOneAndDelete({ id: req.params.id });
     if (!doc) throw ApiError.notFound('Record not found', 'NOT_FOUND');
+    await writeAudit({
+      actor: req.user,
+      action: 'catalogue.delete',
+      targetType: key,
+      targetId: doc.id,
+      targetCode: doc.name || doc.title || doc.code || doc.id,
+      detail: `Deleted ${key}`,
+      req,
+    });
     return ok(res, { deleted: req.params.id });
   });
 
@@ -440,6 +470,15 @@ const adjustWallet = asyncHandler(async (req, res) => {
   );
   await user.save();
 
+  await writeAudit({
+    actor: req.user,
+    action: 'customer.wallet',
+    targetType: 'customer',
+    targetId: user.id,
+    targetCode: `${user.name} · ${user.phone}`,
+    detail: `${type} ₹${amount} · ${String(note).slice(0, 200)}`,
+    req,
+  });
   return ok(res, { wallet: user.wallet, walletTxs: user.walletTxs.slice(0, 20) });
 });
 
@@ -473,6 +512,15 @@ const adjustLoyalty = asyncHandler(async (req, res) => {
   );
   await user.save();
 
+  await writeAudit({
+    actor: req.user,
+    action: 'customer.loyalty',
+    targetType: 'customer',
+    targetId: user.id,
+    targetCode: `${user.name} · ${user.phone}`,
+    detail: `${type} ${points} pts · ${String(note).slice(0, 200)}`,
+    req,
+  });
   return ok(res, { loyaltyPoints: user.loyaltyPoints, loyaltyTxs: user.loyaltyTxs.slice(0, 20) });
 });
 
@@ -515,6 +563,8 @@ const getOrder = asyncHandler(async (req, res) => {
       loyaltyPoints: doc.user.loyaltyPoints,
     }
     : null;
+  const task = await DeliveryTask.findOne({ orderId: doc._id.toString() });
+  order.deliveryTask = task ? task.toJSON() : null;
 
   return ok(res, { order });
 });

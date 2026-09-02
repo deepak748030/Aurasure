@@ -4,6 +4,8 @@ const { Router } = require('express');
 const { body } = require('express-validator');
 const controller = require('../controllers/admin.controller');
 const vendorsAdmin = require('../controllers/adminVendors.controller');
+const ridersAdmin = require('../controllers/adminRiders.controller');
+const deliveryAdmin = require('../controllers/adminDelivery.controller');
 const console_ = require('../controllers/adminCatalog.controller');
 const uploads = require('../controllers/upload.controller');
 const promos = require('../controllers/promo.controller');
@@ -20,6 +22,8 @@ router.get('/stats', controller.getStats);
 router.get('/orders', controller.listOrders);
 router.get('/orders/:id', console_.getOrder);
 
+router.get('/audit', controller.listAudit);
+
 router.patch(
   '/orders/:id/status',
   [
@@ -31,6 +35,13 @@ router.patch(
   controller.setOrderStatus,
 );
 
+/* Manual dispatch - assign a delivery partner from the console. */
+router.get('/delivery/tasks', deliveryAdmin.listTasks);
+router.get('/delivery/tasks/:id', deliveryAdmin.getTask);
+router.get('/delivery/riders', deliveryAdmin.assignableRiders);
+router.post('/delivery/tasks/:id/assign', deliveryAdmin.assignTaskToRider);
+router.post('/orders/:id/assign-rider', deliveryAdmin.assignOrderRider);
+
 router.get('/partners', controller.listPartners);
 router.patch(
   '/partners/:userId',
@@ -41,6 +52,20 @@ router.patch(
   validate,
   controller.decidePartner,
 );
+
+/* ------------------------------------------------------------------ *
+ * Vendor KYC (mobile VendorApp) and delivery-partner KYC (RiderApp).
+ * ------------------------------------------------------------------ */
+router.get('/vendors', vendorsAdmin.listVendors);
+router.get('/vendors/:id', vendorsAdmin.getVendor);
+router.patch('/vendors/:id', vendorsAdmin.decide);
+router.patch('/vendors/:id/documents', vendorsAdmin.verifyDoc);
+
+router.get('/riders', ridersAdmin.listRiders);
+router.get('/riders/:id', ridersAdmin.getRider);
+router.patch('/riders/:id', ridersAdmin.decide);
+router.patch('/riders/:id/documents', ridersAdmin.verifyDoc);
+router.patch('/riders/:id/cod-deposits/:depositId', ridersAdmin.confirmCodDeposit);
 
 /* ------------------------------------------------------------------ *
  * Admin panel (admin/) - customers, reports, catalogue CRUD.

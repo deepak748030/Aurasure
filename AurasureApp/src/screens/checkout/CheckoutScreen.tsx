@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useFloatingBarBottomInset } from '@/hooks/useBottomInset';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Screen } from '../../components/ui/Screen';
@@ -72,6 +72,9 @@ export function CheckoutScreen({ navigation }: Props): React.ReactElement {
   const [done, setDone] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [placeError, setPlaceError] = useState<string | null>(null);
+  // Synchronous single-flight guard: the Button only disables after a re-render,
+  // so two ultra-fast taps could otherwise both reach placeOrder().
+  const placingLock = useRef(false);
 
   const profile = profileData ?? userProfile;
   const addresses: Address[] = [...profile.addresses, ...extraAddresses];
@@ -134,6 +137,8 @@ export function CheckoutScreen({ navigation }: Props): React.ReactElement {
   };
 
   const placeOrderNow = async (): Promise<void> => {
+    // Guard against double submission before any async work happens.
+    if (placingLock.current) return;
     if (items.length === 0) {
       navigation.goBack();
       return;
@@ -147,6 +152,7 @@ export function CheckoutScreen({ navigation }: Props): React.ReactElement {
       return;
     }
 
+    placingLock.current = true;
     setPlacing(true);
     setPlaceError(null);
     try {
@@ -172,6 +178,7 @@ export function CheckoutScreen({ navigation }: Props): React.ReactElement {
       console.warn('[checkout] could not place order:', err);
       setPlaceError(err instanceof Error && err.message ? err.message : 'Order could not be placed. Please try again.');
     } finally {
+      placingLock.current = false;
       setPlacing(false);
     }
   };

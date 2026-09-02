@@ -70,9 +70,10 @@ export interface FoodSearchPayload {
   restaurants: Restaurant[];
 }
 
-export async function fetchFoodSearch(query: string): Promise<FoodSearchPayload> {
+export async function fetchFoodSearch(query: string, signal?: AbortSignal): Promise<FoodSearchPayload> {
   const data = await apiGet<FoodSearchPayload>(
     `/search?module=food&q=${encodeURIComponent(query)}`,
+    { signal },
   );
   return { items: data.items ?? [], restaurants: data.restaurants ?? [] };
 }

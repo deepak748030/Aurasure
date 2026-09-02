@@ -130,6 +130,32 @@ const listOrders = asyncHandler(async (req, res) => {
  */
 const setOrderStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
+
+  if (status === 'cancelled') {
+    // Atomic claim - only the first cancel flips the status, so refunds and
+    // loyalty/coupon reversals can never run twice (even on a double tap or a
+    // race with the customer's own cancel request).
+    const order = await Order.findOneAndUpdate(
+      { id: req.params.id, status: { $in: ['placed', 'confirmed'] } },
+      { $set: { status: 'cancelled' } },
+      { new: true },
+    );
+    if (!order) {
+      const exists = await Order.findOne({ id: req.params.id }).select('status');
+      if (!exists) throw ApiError.notFound('Order not found', 'ORDER_NOT_FOUND');
+      if (TERMINAL_STATUSES.includes(exists.status)) {
+        throw ApiError.badRequest(`Order is already ${exists.status} - no further changes`, 'ORDER_FINISHED');
+      }
+      throw ApiError.badRequest('This order can no longer be cancelled', 'CANT_CANCEL');
+    }
+    const user = await applyOrderCancellation(order);
+    const out = publicOrder(order);
+    out.user = { name: user.name, phone: user.phone };
+    out.wallet = user.wallet;
+    out.loyaltyPoints = user.loyaltyPoints;
+    return ok(res, { order: out });
+  }
+
   const order = await Order.findOne({ id: req.params.id });
   if (!order) throw ApiError.notFound('Order not found', 'ORDER_NOT_FOUND');
 
@@ -137,20 +163,6 @@ const setOrderStatus = asyncHandler(async (req, res) => {
     throw ApiError.badRequest(`Order is already ${order.status} - no further changes`, 'ORDER_FINISHED');
   }
   if (status === order.status) return ok(res, { order: publicOrder(order) });
-
-  if (status === 'cancelled') {
-    if (!['placed', 'confirmed'].includes(order.status)) {
-      throw ApiError.badRequest('This order can no longer be cancelled', 'CANT_CANCEL');
-    }
-    order.status = 'cancelled';
-    const user = await applyOrderCancellation(order);
-    await order.save();
-    const out = publicOrder(order);
-    out.user = { name: user.name, phone: user.phone };
-    out.wallet = user.wallet;
-    out.loyaltyPoints = user.loyaltyPoints;
-    return ok(res, { order: out });
-  }
 
   if (!Object.prototype.hasOwnProperty.call(STATUS_RANK, status)) {
     throw ApiError.badRequest('Invalid status for this action', 'INVALID_STATUS');

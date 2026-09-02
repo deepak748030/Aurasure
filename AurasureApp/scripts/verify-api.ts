@@ -301,6 +301,30 @@ async function main() {
     check('dead server throws ApiError', err instanceof ApiError && err.code === 'NETWORK_ERROR' && err.status === 0);
   }
 
+  // ── Phase 2b: timeout + external abort (production request hardening) ────
+  const slow = http.createServer(() => {
+    /* never responds - used to assert the client's own deadlines */
+  });
+  await new Promise<void>((resolve) => slow.listen(5124, '127.0.0.1', resolve));
+  process.env.EXPO_PUBLIC_API_URL = 'http://127.0.0.1:5124';
+  const { apiGet: slowApiGet } = await import('../src/api/client');
+
+  try {
+    await slowApiGet('/never', { timeoutMs: 150 });
+    check('request times out with ApiError TIMEOUT', false);
+  } catch (err) {
+    check('request times out with ApiError TIMEOUT', err instanceof ApiError && err.code === 'TIMEOUT');
+  }
+
+  const external = new AbortController();
+  const aborted = slowApiGet('/never', { signal: external.signal }).then(
+    () => false,
+    (err: unknown) => err instanceof ApiError && err.code === 'ABORTED',
+  );
+  external.abort();
+  check('external AbortSignal cancels the fetch (ABORTED)', await aborted);
+  await new Promise<void>((resolve) => slow.close(() => resolve()));
+
   // ── Phase 3: live local server (DB down → graceful 503 ApiError) ────────
   process.env.EXPO_PUBLIC_API_URL = 'http://127.0.0.1:5000';
   const { fetchFoodHome: liveFetch } = await import('../src/api/food');

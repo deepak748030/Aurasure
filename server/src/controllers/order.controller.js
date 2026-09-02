@@ -217,19 +217,28 @@ const getOrder = asyncHandler(async (req, res) => {
 /** PATCH /api/v1/orders/:id/status (auth) - lets a user cancel a live order */
 const updateStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
-  const order = await Order.findOne({ id: req.params.id, user: req.user._id });
-  if (!order) throw ApiError.notFound('Order not found', 'ORDER_NOT_FOUND');
 
   if (status !== 'cancelled') {
     throw ApiError.forbidden('Only the kitchen can update this status', 'STATUS_READONLY');
   }
-  if (!['placed', 'confirmed'].includes(order.status)) {
+
+  // Atomic claim: only the first request flips placed/confirmed → cancelled.
+  // A second cancel (double tap, retry, a concurrent admin action) matches
+  // nothing and errors out BEFORE any refund bookkeeping runs, so the wallet
+  // can never be refunded twice or loyalty reversed twice.
+  const order = await Order.findOneAndUpdate(
+    { id: req.params.id, user: req.user._id, status: { $in: ['placed', 'confirmed'] } },
+    { $set: { status: 'cancelled' } },
+    { new: true },
+  );
+
+  if (!order) {
+    const exists = await Order.findOne({ id: req.params.id, user: req.user._id }).select('status');
+    if (!exists) throw ApiError.notFound('Order not found', 'ORDER_NOT_FOUND');
     throw ApiError.badRequest('This order can no longer be cancelled', 'CANT_CANCEL');
   }
 
-  order.status = 'cancelled';
   await applyOrderCancellation(order);
-  await order.save();
   return ok(res, { order });
 });
 

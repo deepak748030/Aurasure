@@ -11,8 +11,7 @@ import { Input } from '../../components/ui/Input';
 import { BottomSheet } from '../../components/ui/BottomSheet';
 import { useCart } from '../../context/CartContext';
 import { useAppQuery } from '../../hooks/useAppQuery';
-import { addAddressToServer, fetchCoupons, fetchMe, markCouponUsed, placeOrder } from '@/api/account';
-import { ApiError } from '@/api/client';
+import { addAddressToServer, fetchCoupons, fetchMe, placeOrder } from '@/api/account';
 import { isApiEnabled } from '@/api/config';
 import { userProfile } from '../../data/mock';
 import { colors } from '@/theme/colors';
@@ -57,7 +56,7 @@ type Props = NativeStackScreenProps<CartStackParamList, 'Checkout'>;
 
 export function CheckoutScreen({ navigation }: Props): React.ReactElement {
   const barBottom = useFloatingBarBottomInset(10);
-  const { remove } = useCart();
+  const { remove, availPrefFor, setAvailPref } = useCart();
   const { module, items, subtotal } = useModuleCart();
   const { data: profileData } = useAppQuery(fetchMe, () => userProfile);
   const [extraAddresses, setExtraAddresses] = useState<Address[]>([]);
@@ -151,33 +150,27 @@ export function CheckoutScreen({ navigation }: Props): React.ReactElement {
     setPlacing(true);
     setPlaceError(null);
     try {
-      if (isApiEnabled) {
-        await placeOrder({
-          module,
-          items,
-          deliveryFee: delivery,
-          discount,
-          address: `${selectedAddress.label}, ${selectedAddress.line}, ${selectedAddress.city} ${selectedAddress.pin}`.trim(),
-          payBy: payment === 'wallet' ? 'wallet' : 'cod',
-          etaMinutes: module === 'food' ? 25 : 0,
-        });
-      }
-      // Consume the coupon only once the order went through.
-      if (appliedCoupon) {
-        markCouponUsed(appliedCoupon.id).catch(() => {
-          /* best-effort: coupon may already be consumed server-side */
-        });
-      }
+      await placeOrder({
+        module,
+        items,
+        deliveryFee: delivery,
+        // The server consumes the coupon and prices it authoritatively; the
+        // client only previews the bill (same rules, mirror image).
+        couponCode: appliedCoupon ? appliedCoupon.code : null,
+        address: `${selectedAddress.label}, ${selectedAddress.line}, ${selectedAddress.city} ${selectedAddress.pin}`.trim(),
+        payBy: payment === 'wallet' ? 'wallet' : 'cod',
+        etaMinutes: module === 'food' ? 25 : 0,
+        // "If any product is not available" preference chosen in the cart -
+        // travels with the order so ops/fulfilment can honour it.
+        instructions: availPrefFor(module),
+      });
       haptic.success();
       items.forEach((i) => remove(i.id));
+      setAvailPref(module, null);
       setDone(true);
     } catch (err) {
-      console.warn('[checkout] could not sync order with server:', err);
-      setPlaceError(
-        err instanceof ApiError && err.message
-          ? err.message
-          : 'Order could not be placed on the server. Check the API URL and try again.',
-      );
+      console.warn('[checkout] could not place order:', err);
+      setPlaceError(err instanceof Error && err.message ? err.message : 'Order could not be placed. Please try again.');
     } finally {
       setPlacing(false);
     }
@@ -273,6 +266,14 @@ export function CheckoutScreen({ navigation }: Props): React.ReactElement {
               Add new address
             </Text>
           </Pressable>
+          {availPrefFor(module) ? (
+            <View style={styles.availNote}>
+              <Icon name="info" size={14} color="#9C005E" />
+              <Text variant="caption" color="#8B0057" style={{ marginLeft: 6, flex: 1 }}>
+                If an item is unavailable: {availPrefFor(module)}
+              </Text>
+            </View>
+          ) : null}
         </Card>
 
         <Card variant="alt" style={{ marginTop: 14 }}>
@@ -492,6 +493,17 @@ const styles = StyleSheet.create({
   radioActive: { borderColor: colors.brand[600] },
   radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.brand[600] },
   addNew: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+  availNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FBF3F9',
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: '#E4BBD8',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 12,
+  },
   payRow: {
     flexDirection: 'row',
     alignItems: 'center',

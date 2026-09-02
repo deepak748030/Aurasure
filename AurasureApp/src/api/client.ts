@@ -32,6 +32,8 @@ export interface RequestOptions {
   body?: unknown;
   /** Attach the Bearer token (silent demo login) when available. */
   auth?: boolean;
+  /** Explicit bearer token; overrides `auth` when provided (admin console). */
+  token?: string | null;
   signal?: AbortSignal;
 }
 
@@ -47,7 +49,7 @@ interface Envelope<T> {
  * envelopes, so callers (and the `useAppQuery` fallback) can react uniformly.
  */
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = 'GET', body, auth = false, signal } = options;
+  const { method = 'GET', body, auth = false, token, signal } = options;
 
   const baseUrl = getApiBaseUrl();
   if (!baseUrl) {
@@ -56,9 +58,11 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
-  if (auth) {
-    const token = await tokenProvider?.();
+  if (token !== undefined) {
     if (token) headers.Authorization = `Bearer ${token}`;
+  } else if (auth) {
+    const t = await tokenProvider?.();
+    if (t) headers.Authorization = `Bearer ${t}`;
   }
 
   let res: Response;

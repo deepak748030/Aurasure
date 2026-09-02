@@ -34,6 +34,7 @@ import {
   updateProfile,
 } from '@/api/account';
 import { userProfile } from '../../data/mock';
+import { AdminConsoleBody } from '../../components/admin/AdminConsoleBody';
 import { switchTab } from '@/navigation/RootNavigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { Coupon, IconName, LoyaltyData, ReferralInfo, WalletData } from '@/types';
@@ -60,6 +61,7 @@ const META: Record<MenuDetailKey, Meta> = {
   refer: { title: 'Refer & Earn', subtitle: 'Invite friends, earn rewards', icon: 'share', tint: '#E5F7E5', color: '#2C9B4D', gradient: ['#4CB86A', '#2C9B4D'] },
   delivery: { title: 'Join as a Delivery Man', subtitle: 'Earn flexible income', icon: 'truck', tint: '#E2F1FF', color: '#2E87D6', gradient: ['#4A7BE0', '#2E87D6'] },
   vendor: { title: 'Open Vendor', subtitle: 'Sell on Aurasure', icon: 'store', tint: '#FCE7E4', color: '#D9573F', gradient: ['#E5765F', '#D9573F'] },
+  admin: { title: 'Admin Console', subtitle: 'Orders, fulfilment & partners', icon: 'gauge', tint: '#EDE9FE', color: '#5B4BC4', gradient: ['#4F46A8', '#3730A3'] },
   liveChat: { title: 'Live Chat', subtitle: 'Talk to us in real time', icon: 'message', tint: '#E5F7E5', color: '#2C9B4D', gradient: ['#4CB86A', '#2C9B4D'] },
   help: { title: 'Help & Support', subtitle: 'We are here to help', icon: 'phone', tint: '#E4F1FC', color: '#2E87D6', gradient: ['#4A7BE0', '#2E87D6'] },
   terms: { title: 'Terms & Conditions', subtitle: 'Legal agreement', icon: 'info', tint: '#F0E8FF', color: '#8C5ADB', gradient: ['#A06BE8', '#8C5ADB'] },
@@ -155,6 +157,8 @@ function renderBody(
       return <DeliveryBody />;
     case 'vendor':
       return <VendorBody />;
+    case 'admin':
+      return <AdminConsoleBody />;
     case 'liveChat':
       return <LiveChatBody />;
     case 'help':
@@ -171,7 +175,7 @@ function renderBody(
 /* ---------------------------- profile ---------------------------- */
 
 function EditProfileBody(): React.ReactElement {
-  const { phone } = useApp();
+  const { phone, login } = useApp();
   const loggedIn = !!phone;
   const { data: profile } = useAppQuery(fetchMe, () => userProfile);
   const [display, setDisplay] = useState(profile?.name ?? '');
@@ -179,6 +183,14 @@ function EditProfileBody(): React.ReactElement {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Populate the fields once the (async) profile arrives - never overwrite
+  // text the user has already typed.
+  useEffect(() => {
+    if (!profile) return;
+    setDisplay((d) => d || profile.name || '');
+    setEmail((e) => e || profile.email || '');
+  }, [profile]);
 
   const save = async (): Promise<void> => {
     if (!display.trim()) {
@@ -190,6 +202,8 @@ function EditProfileBody(): React.ReactElement {
     setSaved(false);
     try {
       await updateProfile({ name: display.trim(), email: email.trim() });
+      // Reflect the new name in the More-screen header instantly.
+      if (phone) login(phone, display.trim());
       setSaved(true);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not save changes');
@@ -1195,7 +1209,7 @@ function HelpBody({ navigation }: { navigation: Props['navigation'] }): React.Re
     },
     {
       label: 'Cancel an order',
-      icon: 'close' as IconName,
+      icon: 'x' as IconName,
       onPress: (): void => {
         navigation.popToTop();
         switchTab('Orders');

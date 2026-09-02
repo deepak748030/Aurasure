@@ -33,11 +33,11 @@ const UNAVAILABLE_OPTIONS = [
 type Props = NativeStackScreenProps<CartStackParamList, 'Cart'>;
 
 export function CartScreen({ navigation }: Props): React.ReactElement {
-  const { setQty, remove } = useCart();
+  const { setQty, remove, availPrefFor, setAvailPref } = useCart();
   const { module, items, subtotal } = useModuleCart();
   const [loading, setLoading] = useState(true);
   const [sheet, setSheet] = useState(false);
-  const [selected, setSelected] = useState<string | null>(null);
+  const selected = availPrefFor(module);
 
   useEffect(() => {
     const t = setTimeout(() => setLoading(false), 450);
@@ -182,7 +182,7 @@ export function CartScreen({ navigation }: Props): React.ReactElement {
                 key={opt}
                 onPress={() => {
                   haptic.selection();
-                  setSelected(opt);
+                  setAvailPref(module, opt);
                 }}
                 style={({ pressed }) => [styles.sheetOption, on ? styles.sheetOptionOn : null, { opacity: pressed ? 0.92 : 1 }]}
               >

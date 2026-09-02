@@ -42,6 +42,12 @@ const orderSchema = new mongoose.Schema(
     loyaltyEarned: { type: Number, default: 0, min: 0 },
     etaMinutes: { type: Number, default: 0, min: 0 },
     address: { type: String, required: true },
+    // Coupon that was redeemed on this order (kept for cancellation restores).
+    couponId: { type: String, default: null },
+    couponCode: { type: String, default: null },
+    // Customer instruction, e.g. the cart's "if any product is not
+    // available → …" preference. Shown to fulfilment in the admin console.
+    instructions: { type: String, default: '' },
   },
   {
     timestamps: true,

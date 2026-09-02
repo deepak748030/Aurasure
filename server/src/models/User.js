@@ -36,11 +36,11 @@ const walletTxSchema = new mongoose.Schema(
   { _id: false },
 );
 
-// Loyalty ledger entry (points earned/redeemed).
+// Loyalty ledger entry (points earned/redeemed/reversed).
 const loyaltyTxSchema = new mongoose.Schema(
   {
     id: { type: String, required: true },
-    type: { type: String, enum: ['earned', 'redeemed'], required: true },
+    type: { type: String, enum: ['earned', 'redeemed', 'reversed'], required: true },
     title: { type: String, required: true },
     note: { type: String, default: '' },
     points: { type: Number, required: true },
@@ -69,6 +69,8 @@ const userSchema = new mongoose.Schema(
   {
     // Public id used by the mobile app (same shape as mock data).
     id: { type: String, unique: true, index: true },
+    // Role - `admin` unlocks the in-app Admin Console (order + partner ops).
+    role: { type: String, enum: ['customer', 'admin'], default: 'customer', index: true },
     name: { type: String, required: true, trim: true, maxlength: 80 },
     email: { type: String, trim: true, lowercase: true, sparse: true },
     phone: { type: String, required: true, unique: true, trim: true, index: true },

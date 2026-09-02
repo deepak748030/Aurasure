@@ -66,7 +66,6 @@ router.post(
 );
 
 router.get('/me/coupons', rewards.getCoupons);
-router.post('/me/coupons/:couponId/apply', rewards.applyCoupon);
 
 router.get('/me/referral', rewards.getReferral);
 router.post(

@@ -8,6 +8,7 @@ const healthController = require('../controllers/health.controller');
 
 const authRoutes = require('./auth.routes');
 const userRoutes = require('./user.routes');
+const adminRoutes = require('./admin.routes');
 const foodRoutes = require('./food.routes');
 const shopRoutes = require('./shop.routes');
 const bannerRoutes = require('./banner.routes');
@@ -24,6 +25,7 @@ router.use('/auth', requireDb, authRoutes);
 
 // Data routes - all guarded by requireDb
 router.use('/users', requireDb, userRoutes);
+router.use('/admin', requireDb, adminRoutes);
 router.use('/food', requireDb, foodRoutes);
 router.use('/shop', requireDb, shopRoutes);
 router.use('/banners', requireDb, bannerRoutes);

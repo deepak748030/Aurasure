@@ -232,6 +232,20 @@ export function OrderDetailScreen({ route, navigation }: Props): React.ReactElem
             </View>
           </Card>
 
+          {order.instructions ? (
+            <Card variant="alt" style={{ marginTop: 14 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Icon name="info" size={15} color="#9C005E" />
+                <Text variant="overline" weight="bold" color="#8B0057" style={{ marginLeft: 6 }}>
+                  IF AN ITEM IS UNAVAILABLE
+                </Text>
+              </View>
+              <Text variant="body" color={colors.textSecondary} style={{ marginTop: 6 }}>
+                {order.instructions}
+              </Text>
+            </Card>
+          ) : null}
+
           <Card variant="alt" style={{ marginTop: 14 }}>
             <View style={styles.billRow}>
               <Text variant="body" color={colors.textSecondary}>Item total</Text>
@@ -243,7 +257,9 @@ export function OrderDetailScreen({ route, navigation }: Props): React.ReactElem
             </View>
             {order.discount > 0 ? (
               <View style={styles.billRow}>
-                <Text variant="body" color={colors.success}>Discount</Text>
+                <Text variant="body" color={colors.success}>
+                  {order.couponCode ? `Coupon ${order.couponCode}` : 'Discount'}
+                </Text>
                 <Text variant="body" color={colors.success}>-{formatINR(order.discount)}</Text>
               </View>
             ) : null}
@@ -267,11 +283,11 @@ export function OrderDetailScreen({ route, navigation }: Props): React.ReactElem
                   setConfirming(true);
                 }}
               />
-              {!isApiEnabled ? (
-                <Text variant="caption" color={colors.textTertiary} style={{ textAlign: 'center', marginTop: 8 }}>
-                  Demo mode — connect the server to sync cancellations.
-                </Text>
-              ) : null}
+              <Text variant="caption" color={colors.textTertiary} style={{ textAlign: 'center', marginTop: 8 }}>
+                {!isApiEnabled
+                  ? 'Cancelling refunds your wallet & reverses earned points instantly.'
+                  : 'Wallet money is refunded and earned points are reversed on cancel.'}
+              </Text>
             </View>
           ) : null}
           {cancelError ? (

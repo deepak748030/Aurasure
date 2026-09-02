@@ -176,6 +176,11 @@ export interface Order {
   payBy?: 'wallet' | 'cod' | 'upi' | 'card';
   walletPaid?: number;
   loyaltyEarned?: number;
+  /** Coupon redeemed on this order (server stores it for cancel restores). */
+  couponId?: string | null;
+  couponCode?: string | null;
+  /** Customer instruction (e.g. "if any product is not available → call me"). */
+  instructions?: string;
 }
 
 export interface Address {
@@ -215,7 +220,7 @@ export interface WalletData {
 
 export interface LoyaltyTx {
   id: string;
-  type: 'earned' | 'redeemed';
+  type: 'earned' | 'redeemed' | 'reversed';
   title: string;
   note?: string;
   points: number;
@@ -254,6 +259,38 @@ export interface PartnerApplication {
   city: string;
   appliedAt: string;
   status: string;
+}
+
+/* ---------------------------- Admin console ---------------------------- */
+
+/** Order as seen by the admin console - includes who placed it. */
+export interface AdminOrder extends Order {
+  user?: { name: string; phone: string } | null;
+}
+
+export interface AdminPartnerApplication {
+  userId: string;
+  name: string;
+  phone: string;
+  kind: 'delivery' | 'vendor';
+  city: string;
+  appliedAt: string | null;
+  status: 'submitted' | 'approved' | 'rejected';
+  note?: string;
+}
+
+export interface AdminStats {
+  users: number;
+  restaurants: number;
+  foodItems: number;
+  shops: number;
+  products: number;
+  orders: number;
+  revenue: number;
+  liveOrders: number;
+  cancelledOrders: number;
+  walletCollected: number;
+  pendingPartners: number;
 }
 
 export type { IconName } from '@/lib/icons';

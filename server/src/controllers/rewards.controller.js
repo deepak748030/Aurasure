@@ -115,25 +115,6 @@ const getCoupons = asyncHandler(async (req, res) => {
   return ok(res, { coupons });
 });
 
-/**
- * POST /api/v1/users/me/coupons/:couponId/apply
- * Marks a coupon as used (one-time). Also credits the "Cashback" wallet row
- * when the coupon carries a flat cashback so the wallet stays live.
- */
-const applyCoupon = asyncHandler(async (req, res) => {
-  ensureLedger(req.user);
-  const coupon = req.user.coupons.find((c) => c.id === req.params.couponId);
-  if (!coupon) throw ApiError.notFound('Coupon not found', 'COUPON_NOT_FOUND');
-  if (coupon.usedAt) throw ApiError.badRequest('Coupon already used', 'COUPON_USED');
-  if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) {
-    throw ApiError.badRequest('Coupon has expired', 'COUPON_EXPIRED');
-  }
-
-  coupon.usedAt = new Date();
-  await req.user.save();
-  return ok(res, { coupon });
-});
-
 /** GET /api/v1/users/me/referral -> { code, earnings, friends } */
 const getReferral = asyncHandler(async (req, res) => {
   ensureLedger(req.user);
@@ -223,7 +204,6 @@ module.exports = {
   getLoyalty,
   redeemLoyalty,
   getCoupons,
-  applyCoupon,
   getReferral,
   applyReferral,
   applyWelcomePerks,

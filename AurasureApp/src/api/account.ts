@@ -1,9 +1,10 @@
 'use strict';
 
-import { apiGet, apiPost, apiPut, apiPatch, apiDelete } from './client';
+import { apiGet, apiPost, apiPut, apiPatch, apiDelete, ApiError } from './client';
 import { isApiEnabled } from './config';
 import type {
   Address,
+  AdminPartnerApplication,
   CartItem,
   Coupon,
   LoyaltyData,
@@ -77,6 +78,145 @@ const sortNew = <T extends { createdAt: string }>(arr: T[]): T[] =>
   [...arr].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
 /* ------------------------------------------------------------------ *
+ * Offline order store
+ * ------------------------------------------------------------------ *
+ * Static `data/mock.ts` orders are the *seed*; every order placed or
+ * cancelled while the API is off is written into this mutable store so the
+ * Orders tab, order details, cancel flows and the admin console all read
+ * one consistent history (exactly like the server does in API mode).
+ * ------------------------------------------------------------------ */
+
+/** Plain deep clone (Order holds only JSON-safe values + image refs). */
+function cloneOrder(order: Order): Order {
+  return JSON.parse(JSON.stringify(order)) as Order;
+}
+
+let demoOrders: Order[] | null = null;
+
+/** Seed the demo history once (lazily, from the static mock orders). */
+async function ensureDemoOrders(): Promise<Order[]> {
+  if (!demoOrders) {
+    const { orders } = await import('../data/mock');
+    demoOrders = orders.map(cloneOrder);
+  }
+  return demoOrders;
+}
+
+/** Copies of every order in the offline history (customer + admin). */
+export async function mockAllOrders(): Promise<Order[]> {
+  const list = await ensureDemoOrders();
+  return list.map(cloneOrder);
+}
+
+/** Advance an offline order's status (admin console fulfilment). */
+export async function mockAdvanceOrder(orderId: string, status: Order['status']): Promise<Order> {
+  const list = await ensureDemoOrders();
+  const order = list.find((o) => o.id === orderId);
+  if (!order) throw new ApiError(404, 'ORDER_NOT_FOUND', 'Order not found');
+  if (order.status === 'delivered' || order.status === 'cancelled') {
+    throw new ApiError(400, 'ORDER_FINISHED', `Order is already ${order.status}`);
+  }
+  order.status = status;
+  if (status === 'out_for_delivery' && order.module === 'food' && !order.etaMinutes) order.etaMinutes = 15;
+  if (status === 'delivered') order.etaMinutes = 0;
+  return cloneOrder(order);
+}
+
+/** Offline ledger reversal - mirrors server `applyOrderCancellation`. */
+export async function mockCancelOrderById(orderId: string): Promise<Order> {
+  const list = await ensureDemoOrders();
+  const order = list.find((o) => o.id === orderId);
+  if (!order) throw new ApiError(404, 'ORDER_NOT_FOUND', 'Order not found');
+  if (!(order.status === 'placed' || order.status === 'confirmed')) {
+    throw new ApiError(400, 'CANT_CANCEL', 'This order can no longer be cancelled');
+  }
+
+  // Wallet refund.
+  const walletPaid = order.walletPaid ?? 0;
+  if (walletPaid > 0) {
+    mockStore.wallet = Math.round((mockStore.wallet + walletPaid) * 100) / 100;
+    mockStore.walletTxs.push({
+      id: `w_${mid()}`,
+      type: 'credit',
+      title: `Refund ${order.code}`,
+      note: 'Order cancelled',
+      amount: walletPaid,
+      balanceAfter: mockStore.wallet,
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  // Loyalty clawback.
+  if ((order.loyaltyEarned ?? 0) > 0 && mockStore.points >= (order.loyaltyEarned ?? 0)) {
+    mockStore.points -= order.loyaltyEarned ?? 0;
+    mockStore.loyaltyTxs.push({
+      id: `l_${mid()}`,
+      type: 'reversed',
+      title: 'Reward reversed',
+      note: `Order ${order.code} cancelled`,
+      points: order.loyaltyEarned ?? 0,
+      balanceAfter: mockStore.points,
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  // Coupon restore.
+  if (order.couponId) {
+    mockStore.coupons = mockStore.coupons.map((c) =>
+      c.id === order.couponId ? { ...c, usedAt: null } : c,
+    );
+  }
+
+  order.status = 'cancelled';
+  return cloneOrder(order);
+}
+
+/** Offline partner applications shown in the admin console. */
+let mockPartnerList: AdminPartnerApplication[] | null = null;
+
+/**
+ * Rebuilds the offline applicant list on every call so applications submitted
+ * from the customer "join as partner" screens appear live, while preserving
+ * decisions already made by the admin (approve/reject survive refreshes).
+ */
+export async function mockPartnerRequests(): Promise<AdminPartnerApplication[]> {
+  const daysAgo = (d: number): string => new Date(Date.now() - d * DAY_MS).toISOString();
+  const defaults: AdminPartnerApplication[] = [
+    { userId: 'usr_rohan', name: 'Rohan Verma', phone: '70000 00001', kind: 'vendor', city: 'Raipur', appliedAt: daysAgo(1), status: 'submitted' },
+    { userId: 'usr_imran', name: 'Imran Khan', phone: '70000 00002', kind: 'delivery', city: 'Bhilai', appliedAt: daysAgo(2), status: 'submitted' },
+  ];
+  const ownSubmissions: AdminPartnerApplication[] = mockStore.partners
+    .filter((p) => p.status === 'submitted')
+    .map((p) => ({
+      userId: 'usr_demo',
+      name: p.name,
+      phone: '+91 98765 43210',
+      kind: p.kind,
+      city: p.city,
+      appliedAt: p.appliedAt,
+      status: 'submitted' as const,
+    }));
+  const prev = mockPartnerList ?? [];
+  const merged = [...defaults, ...ownSubmissions].map((p) => {
+    const prior = prev.find((x) => x.userId === p.userId);
+    return prior && prior.status !== 'submitted' ? { ...p, status: prior.status } : p;
+  });
+  mockPartnerList = merged;
+  return merged.map((p) => ({ ...p }));
+}
+
+/** Approve / reject an offline partner application (admin console). */
+export async function mockDecidePartner(userId: string, decision: 'approved' | 'rejected'): Promise<void> {
+  const list = mockPartnerList ?? (await mockPartnerRequests());
+  const entry = list.find((p) => p.userId === userId);
+  if (!entry) throw new ApiError(404, 'APPLICATION_NOT_FOUND', 'Application not found');
+  entry.status = decision;
+  if (userId === 'usr_demo') {
+    mockStore.partners = mockStore.partners.map((p) => ({ ...p, status: decision }));
+  }
+}
+
+/* ------------------------------------------------------------------ *
  * Profile
  * ------------------------------------------------------------------ */
 
@@ -144,9 +284,9 @@ export async function updateProfile(patch: { name?: string; email?: string }): P
 
 export async function fetchOrders(module: 'food' | 'shop'): Promise<Order[]> {
   if (!isApiEnabled) {
-    const { orders } = await import('../data/mock');
     await mockDelay(700);
-    return orders.filter((o) => o.module === module);
+    const all = await mockAllOrders();
+    return all.filter((o) => o.module === module);
   }
   const data = await apiGet<{ orders: Order[] }>(`/orders?module=${module}`, { auth: true });
   return data.orders;
@@ -154,22 +294,19 @@ export async function fetchOrders(module: 'food' | 'shop'): Promise<Order[]> {
 
 export async function fetchOrder(orderId: string): Promise<Order | undefined> {
   if (!isApiEnabled) {
-    const { orders } = await import('../data/mock');
     await mockDelay(650);
-    return orders.find((o) => o.id === orderId);
+    const all = await mockAllOrders();
+    return all.find((o) => o.id === orderId);
   }
   const data = await apiGet<{ order: Order }>(`/orders/${encodeURIComponent(orderId)}`, { auth: true });
   return data.order;
 }
 
-/** PATCH /orders/:id/status - cancel a live order (server). */
+/** PATCH /orders/:id/status - cancel a live order (server / offline ledger). */
 export async function cancelOrder(orderId: string): Promise<Order> {
   if (!isApiEnabled) {
     await mockDelay(800);
-    const { orders } = await import('../data/mock');
-    const found = orders.find((o) => o.id === orderId);
-    if (!found) throw new Error('Order not found');
-    return { ...found, status: 'cancelled' };
+    return mockCancelOrderById(orderId);
   }
   const data = await apiPatch<{ order: Order }>(`/orders/${encodeURIComponent(orderId)}/status`, { status: 'cancelled' }, { auth: true });
   return data.order;
@@ -179,11 +316,20 @@ export interface PlaceOrderInput {
   module: 'food' | 'shop';
   items: CartItem[];
   deliveryFee: number;
-  discount: number;
   address: string;
   /** 'wallet' deducts from the Aurasure wallet server-side. */
   payBy?: 'wallet' | 'cod' | 'upi' | 'card';
+  /** Consumed atomically with the order (server validates + prices it). */
+  couponCode?: string | null;
   etaMinutes?: number;
+  /** "If any product is not available" preference picked in the cart. */
+  instructions?: string | null;
+}
+
+/** Mirror of the server's percentage-coupon cap (FOOD25 style offers). */
+function mockCouponDiscount(coupon: Coupon, itemTotal: number): number {
+  if (coupon.offType === 'percent') return Math.min(Math.round((itemTotal * coupon.offValue) / 100), 120);
+  return Math.min(coupon.offValue, itemTotal);
 }
 
 export interface PlaceOrderResult {
@@ -197,32 +343,83 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
     await mockDelay(900);
     const stamp = Date.now().toString(36).toUpperCase().slice(-5);
     const code = `AUR-${input.module === 'shop' ? 'SH' : 'FD'}-${stamp}`;
-    const itemTotal = input.items.reduce((s, i) => s + i.unitPrice * i.qty, 0);
-    const total = Math.max(0, itemTotal + input.deliveryFee - input.discount);
-    const wallet = input.payBy === 'wallet' ? mockStore.wallet - total : mockStore.wallet;
-    mockStore.wallet = wallet;
-    return {
-      order: {
-        id: `o_${stamp}`,
-        code,
-        module: input.module,
-        placedAt: new Date().toISOString(),
-        status: 'placed',
-        items: input.items,
-        itemTotal,
-        deliveryFee: input.deliveryFee,
-        discount: input.discount,
-        total,
-        etaMinutes: input.etaMinutes ?? 0,
-        address: input.address,
-        payBy: input.payBy ?? 'cod',
-        walletPaid: input.payBy === 'wallet' ? total : 0,
-        loyaltyEarned: Math.floor(total / 100) * 5,
-      },
-      wallet,
-      loyaltyPoints: mockStore.points,
+    const itemTotal = Math.round(input.items.reduce((sum, i) => sum + i.unitPrice * i.qty, 0) * 100) / 100;
+
+    // Coupon: validate + consume exactly like the server does in API mode.
+    let coupon: Coupon | null = null;
+    let discount = 0;
+    const couponCode = (input.couponCode ?? '').trim().toUpperCase();
+    if (couponCode) {
+      coupon = mockStore.coupons.find((c) => c.code === couponCode) ?? null;
+      if (!coupon) throw new ApiError(400, 'COUPON_INVALID', 'Invalid coupon code');
+      if (coupon.usedAt) throw new ApiError(400, 'COUPON_USED', 'This coupon has already been used');
+      if (itemTotal < coupon.minOrder) {
+        throw new ApiError(400, 'COUPON_MIN_ORDER', `This coupon needs a minimum order of ₹${coupon.minOrder}`);
+      }
+      discount = mockCouponDiscount(coupon, itemTotal);
+    }
+
+    const total = Math.max(0, itemTotal + input.deliveryFee - discount);
+    const walletPaid = input.payBy === 'wallet' ? total : 0;
+    if (input.payBy === 'wallet') {
+      if (mockStore.wallet < total) {
+        throw new ApiError(400, 'WALLET_INSUFFICIENT', `Insufficient wallet balance - add ₹${Math.ceil(total - mockStore.wallet)} or choose another method`);
+      }
+      mockStore.wallet = Math.round((mockStore.wallet - total) * 100) / 100;
+      mockStore.walletTxs.push({
+        id: `w_${mid()}`,
+        type: 'debit',
+        title: `Order ${code}`,
+        note: input.module === 'food' ? 'Food delivery' : 'Shop order',
+        amount: total,
+        balanceAfter: mockStore.wallet,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
+    const loyaltyEarned = Math.floor(total / 100) * 5;
+    if (loyaltyEarned > 0) {
+      mockStore.points += loyaltyEarned;
+      mockStore.loyaltyTxs.push({
+        id: `l_${mid()}`,
+        type: 'earned',
+        title: 'Order reward',
+        note: `₹${Math.round(total)} spent → points`,
+        points: loyaltyEarned,
+        balanceAfter: mockStore.points,
+        createdAt: new Date().toISOString(),
+      });
+    }
+    if (coupon) {
+      mockStore.coupons = mockStore.coupons.map((c) =>
+        c.id === coupon!.id ? { ...c, usedAt: new Date().toISOString() } : c,
+      );
+    }
+
+    const order: Order = {
+      id: `o_${stamp}`,
+      code,
+      module: input.module,
+      placedAt: new Date().toISOString(),
+      status: 'placed',
+      items: input.items,
+      itemTotal,
+      deliveryFee: input.deliveryFee,
+      discount,
+      total,
+      etaMinutes: input.etaMinutes ?? 0,
+      address: input.address,
+      payBy: input.payBy ?? 'cod',
+      walletPaid,
+      loyaltyEarned,
+      couponId: coupon ? coupon.id : null,
+      couponCode: coupon ? coupon.code : null,
+      instructions: input.instructions?.trim() ? input.instructions.trim() : undefined,
     };
+    (await ensureDemoOrders()).unshift(order);
+    return { order, wallet: mockStore.wallet, loyaltyPoints: mockStore.points };
   }
+
   const data = await apiPost<PlaceOrderResult>(
     '/orders',
     {
@@ -238,10 +435,11 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
         image: i.image,
       })),
       deliveryFee: input.deliveryFee,
-      discount: input.discount,
       address: input.address,
       payBy: input.payBy ?? 'cod',
-      meta: { etaMinutes: input.etaMinutes ?? 0 },
+      couponCode: input.couponCode || undefined,
+      etaMinutes: input.etaMinutes ?? 0,
+      instructions: input.instructions?.trim() || undefined,
     },
     { auth: true },
   );
@@ -387,16 +585,6 @@ export async function fetchCoupons(): Promise<Coupon[] | null> {
   } catch {
     return null;
   }
-}
-
-/** POST /users/me/coupons/:id/apply - marks a coupon used (server). */
-export async function markCouponUsed(couponId: string): Promise<void> {
-  if (!isApiEnabled) {
-    await mockDelay(400);
-    mockStore.coupons = mockStore.coupons.map((c) => (c.id === couponId ? { ...c, usedAt: new Date().toISOString() } : c));
-    return;
-  }
-  await apiPost(`/users/me/coupons/${encodeURIComponent(couponId)}/apply`, {}, { auth: true });
 }
 
 export async function fetchReferral(): Promise<ReferralInfo | null> {

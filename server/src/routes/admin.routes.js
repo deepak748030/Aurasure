@@ -3,6 +3,7 @@
 const { Router } = require('express');
 const { body } = require('express-validator');
 const controller = require('../controllers/admin.controller');
+const console_ = require('../controllers/adminCatalog.controller');
 const { authenticate, requireRole } = require('../middlewares/auth');
 const validate = require('../middlewares/validate');
 
@@ -13,6 +14,7 @@ router.use(authenticate(), requireRole('admin'));
 
 router.get('/stats', controller.getStats);
 router.get('/orders', controller.listOrders);
+router.get('/orders/:id', console_.getOrder);
 
 router.patch(
   '/orders/:id/status',
@@ -35,5 +37,29 @@ router.patch(
   validate,
   controller.decidePartner,
 );
+
+/* ------------------------------------------------------------------ *
+ * Admin panel (admin/) - customers, reports, catalogue CRUD.
+ * ------------------------------------------------------------------ */
+
+router.get('/customers', console_.listCustomers);
+router.get('/customers/:id', console_.getCustomer);
+router.patch('/customers/:id', console_.setCustomerRole);
+router.post('/customers/:id/wallet', console_.adjustWallet);
+router.post('/customers/:id/loyalty', console_.adjustLoyalty);
+
+router.get('/reports/overview', console_.reportOverview);
+router.get('/lookups', console_.lookups);
+router.get('/system', console_.systemInfo);
+
+// Catalogue CRUD - one identical REST surface per resource.
+for (const [path, handlers] of Object.entries(console_.resources)) {
+  router.get(`/${path}`, handlers.list);
+  router.post(`/${path}`, handlers.create);
+  router.get(`/${path}/:id`, handlers.getOne);
+  router.put(`/${path}/:id`, handlers.update);
+  router.patch(`/${path}/:id`, handlers.update);
+  router.delete(`/${path}/:id`, handlers.remove);
+}
 
 module.exports = router;

@@ -6,8 +6,9 @@
  * single geometry definition and stay pixel-consistent at every size.
  *
  * Mark  : the "aura arch" - an A built from a rounded arch + crossbar, wrapped
- *         in two concentric aura arcs. Colours come from src/theme/colors.ts
- *         (brand indigo -> violet), which is what the app actually paints with.
+ *         in two concentric aura arcs. Flat colour only, no gradients: the
+ *         brand indigo from src/theme/colors.ts, with the two lighter brand
+ *         tints for the arcs. Flat survives 24px and 1-colour printing.
  * Type  : Manrope ExtraBold, slightly tightened tracking.
  *
 * Run (from a scratch dir with the deps installed):
@@ -58,13 +59,14 @@ const { Resvg, sharp, MANROPE } = loadDeps();
 
 /* ------------------------------------------------------------------ tokens */
 
+// Straight out of src/theme/colors.ts. Flat fills only - no gradients anywhere
+// in the brand system.
 const C = {
-  brand500: '#6A5EF5',
-  brand600: '#5B46E5',
-  brand700: '#4B36C9',
-  violet: '#8B5CF6',
-  violetSoft: '#A78BFA',
+  brand: '#5B46E5', // brand.600 - the primary, same as colors.shopAccent
+  brandTint: '#A8B2FF', // brand.300 - inner aura arc
+  brandTintSoft: '#C9D0FF', // brand.200 - outer aura arc
   ink: '#141033',
+  inkSoft: '#5B6478',
   white: '#FFFFFF',
 };
 
@@ -114,15 +116,15 @@ const barPath = () => `M ${M.cx - M.radius + 4} ${M.barY} L ${M.cx + M.radius - 
 
 /**
  * @param {object} o
- * @param {string} o.stroke  paint for the arch + bar (colour or url(#id))
- * @param {string} o.auraStroke paint for the aura arcs
+ * @param {string} o.stroke arch + crossbar colour
+ * @param {string[]} o.aura one flat colour per aura arc, inner first
  */
-function markGroup({ stroke, auraStroke }) {
+function markGroup({ stroke, aura }) {
   const arcs = M.aura
     .map(
-      (a) =>
+      (a, i) =>
         `<path d="${topArc(M.cx, M.arcCy, M.radius + M.stroke / 2 + a.gap, a.sweep)}" ` +
-        `fill="none" stroke="${auraStroke}" stroke-width="${a.w}" stroke-linecap="round" opacity="${a.o}"/>`,
+        `fill="none" stroke="${aura[i]}" stroke-width="${a.w}" stroke-linecap="round"/>`,
     )
     .join('\n    ');
 
@@ -140,48 +142,35 @@ const MARK_BOX = {
   h: M.legBottom + M.stroke / 2 - (M.arcCy - (M.radius + M.stroke / 2 + M.aura[1].gap)),
 };
 
-// userSpaceOnUse, not the default objectBoundingBox: the crossbar is a flat
-// line whose bbox has zero height, and a bbox gradient on that is degenerate
-// (the element silently disappears). Coordinates are in mark space.
-const brandGradient = (id, from = C.brand500, to = C.violet) => `
-  <linearGradient id="${id}" gradientUnits="userSpaceOnUse"
-    x1="${MARK_BOX.x}" y1="${MARK_BOX.y}" x2="${MARK_BOX.x + MARK_BOX.w}" y2="${MARK_BOX.y + MARK_BOX.h}">
-    <stop offset="0" stop-color="${from}"/>
-    <stop offset="1" stop-color="${to}"/>
-  </linearGradient>`;
+// The two palettes the mark ever ships in.
+const ON_LIGHT = { stroke: C.brand, aura: [C.brandTint, C.brandTintSoft] };
+// On the solid brand tile the arcs are flat white knocked back with a plain
+// alpha - two flat tones, no gradient.
+const onBrand = () => ({
+  stroke: C.white,
+  aura: [0.55, 0.32].map((a) => `rgba(255,255,255,${a})`),
+});
 
 /* --------------------------------------------------------------- documents */
 
-/** Square app icon: full-bleed gradient, white mark. No transparency (iOS). */
+/** Square app icon: flat brand tile, white mark. No transparency (iOS). */
 function iconSvg({ rounded = 0, glyphScale = 0.62 } = {}) {
   const S = 1024;
   const k = (S * glyphScale) / MARK_BOX.w;
   const tx = S / 2 - (MARK_BOX.x + MARK_BOX.w / 2) * k;
   const ty = S / 2 - (MARK_BOX.y + MARK_BOX.h / 2) * k;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${S}" height="${S}" viewBox="0 0 ${S} ${S}">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="${C.violet}"/>
-      <stop offset="0.52" stop-color="${C.brand500}"/>
-      <stop offset="1" stop-color="${C.brand700}"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="0.24" cy="0.16" r="0.85">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30"/>
-      <stop offset="0.55" stop-color="#FFFFFF" stop-opacity="0.06"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <rect width="${S}" height="${S}" rx="${rounded}" fill="url(#bg)"/>
-  <rect width="${S}" height="${S}" rx="${rounded}" fill="url(#glow)"/>
+  <rect width="${S}" height="${S}" rx="${rounded}" fill="${C.brand}"/>
   <g transform="translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${k.toFixed(4)})">
-    ${markGroup({ stroke: C.white, auraStroke: C.white })}
+    ${markGroup(onBrand())}
   </g>
 </svg>`;
 }
 
 /**
  * Android adaptive foreground: transparent, glyph kept inside the inner 66%
- * safe zone so no launcher mask can clip it.
+ * safe zone so no launcher mask can clip it. The background layer is a flat
+ * colour, so app.json sets adaptiveIcon.backgroundColor and ships no bitmap.
  */
 function adaptiveForegroundSvg({ mono = false } = {}) {
   const S = 1024;
@@ -189,33 +178,13 @@ function adaptiveForegroundSvg({ mono = false } = {}) {
   const k = (S * glyph) / MARK_BOX.w;
   const tx = S / 2 - (MARK_BOX.x + MARK_BOX.w / 2) * k;
   const ty = S / 2 - (MARK_BOX.y + MARK_BOX.h / 2) * k;
+  // Monochrome is a mask: the launcher recolours it, so every stroke has to be
+  // fully opaque black or the arcs come back half-transparent.
+  const paint = mono ? { stroke: '#000000', aura: ['#000000', '#000000'] } : onBrand();
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${S}" height="${S}" viewBox="0 0 ${S} ${S}">
-  <defs>${mono ? '' : brandGradient('mk')}</defs>
   <g transform="translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${k.toFixed(4)})">
-    ${markGroup({
-      stroke: mono ? '#000000' : C.white,
-      auraStroke: mono ? '#000000' : C.white,
-    })}
+    ${markGroup(paint)}
   </g>
-</svg>`;
-}
-
-function adaptiveBackgroundSvg() {
-  const S = 1024;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${S}" height="${S}" viewBox="0 0 ${S} ${S}">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="${C.violet}"/>
-      <stop offset="0.52" stop-color="${C.brand500}"/>
-      <stop offset="1" stop-color="${C.brand700}"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="0.24" cy="0.16" r="0.85">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.26"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <rect width="${S}" height="${S}" fill="url(#bg)"/>
-  <rect width="${S}" height="${S}" fill="url(#glow)"/>
 </svg>`;
 }
 
@@ -227,12 +196,8 @@ function markSvg({ light = false } = {}) {
   const tx = S / 2 - (MARK_BOX.x + MARK_BOX.w / 2) * k;
   const ty = S / 2 - (MARK_BOX.y + MARK_BOX.h / 2) * k;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${S}" height="${S}" viewBox="0 0 ${S} ${S}">
-  <defs>${brandGradient('mk')}</defs>
   <g transform="translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${k.toFixed(4)})">
-    ${markGroup({
-      stroke: light ? C.white : 'url(#mk)',
-      auraStroke: light ? C.white : C.violetSoft,
-    })}
+    ${markGroup(light ? onBrand() : ON_LIGHT)}
   </g>
 </svg>`;
 }
@@ -251,19 +216,15 @@ function wordmarkSvg({ light = false, tagline = false } = {}) {
   const ty = (H - MARK_BOX.h * k) / 2 - MARK_BOX.y * k;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-  <defs>${brandGradient('mk')}</defs>
   <g transform="translate(0 ${ty.toFixed(2)}) scale(${k.toFixed(4)})">
-    ${markGroup({
-      stroke: light ? C.white : 'url(#mk)',
-      auraStroke: light ? C.white : C.violetSoft,
-    })}
+    ${markGroup(light ? onBrand() : ON_LIGHT)}
   </g>
   <text x="${textX}" y="${baseline}" font-family="Manrope" font-weight="800" font-size="${fontSize}"
         letter-spacing="-5" fill="${light ? C.white : C.ink}">Aurasure</text>
   ${
     tagline
       ? `<text x="${textX + 4}" y="${baseline + 74}" font-family="Manrope" font-weight="500" font-size="52"
-        letter-spacing="6" fill="${light ? 'rgba(255,255,255,0.82)' : '#5B6478'}">FOOD &amp; SHOPPING</text>`
+        letter-spacing="6" fill="${light ? 'rgba(255,255,255,0.82)' : C.inkSoft}">FOOD &amp; SHOPPING</text>`
       : ''
   }
 </svg>`;
@@ -277,14 +238,13 @@ function splashSvg() {
   const tx = S / 2 - (MARK_BOX.x + MARK_BOX.w / 2) * k;
   const ty = 300 - MARK_BOX.y * k;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${S}" height="${S}" viewBox="0 0 ${S} ${S}">
-  <defs>${brandGradient('mk')}</defs>
   <g transform="translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${k.toFixed(4)})">
-    ${markGroup({ stroke: 'url(#mk)', auraStroke: C.violetSoft })}
+    ${markGroup(ON_LIGHT)}
   </g>
   <text x="${S / 2}" y="880" text-anchor="middle" font-family="Manrope" font-weight="800"
         font-size="146" letter-spacing="-4" fill="${C.ink}">Aurasure</text>
   <text x="${S / 2}" y="950" text-anchor="middle" font-family="Manrope" font-weight="500"
-        font-size="44" letter-spacing="7" fill="#5B6478">FOOD &amp; SHOPPING</text>
+        font-size="44" letter-spacing="7" fill="${C.inkSoft}">FOOD &amp; SHOPPING</text>
 </svg>`;
 }
 
@@ -319,12 +279,12 @@ async function render(svg, { width, opaque = null, trimPad = null } = {}) {
 }
 
 const FILES = [
-  // App icon (iOS + Android legacy + store listings). Opaque, full bleed.
-  { name: 'icon.png', svg: () => iconSvg(), width: 1024, opaque: C.brand600 },
+  // App icon (iOS + Android legacy + store listings). Flat tile, no alpha.
+  { name: 'icon.png', svg: () => iconSvg(), width: 1024, opaque: C.brand },
   // Android adaptive icon: foreground inside the 66% safe zone, plus a
-  // gradient background layer and a monochrome layer for Android 13 theming.
+  // monochrome layer for Android 13 themed icons. The background is a flat
+  // colour set in app.json, so there is no background bitmap.
   { name: 'adaptive-icon.png', svg: () => adaptiveForegroundSvg(), width: 1024 },
-  { name: 'adaptive-icon-background.png', svg: () => adaptiveBackgroundSvg(), width: 1024, opaque: C.brand600 },
   { name: 'adaptive-icon-monochrome.png', svg: () => adaptiveForegroundSvg({ mono: true }), width: 1024 },
   // Splash + web.
   { name: 'splash-icon.png', svg: () => splashSvg(), width: 1200 },

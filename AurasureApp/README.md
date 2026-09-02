@@ -191,8 +191,9 @@ favorites synchronise to the server later.
 
 Every logo, icon and splash bitmap is generated from one vector definition in
 `scripts/generate-brand.mjs` — the "aura arch" A (rounded arch + crossbar wrapped in two aura
-arcs) in the brand indigo→violet from `src/theme/colors.ts`. Never hand-edit the PNGs; change
-the geometry or colours in the script and re-run it.
+arcs). Flat colour only, no gradients: brand `#5B46E5` with the `brand.300` / `brand.200` tints
+for the arcs, all from `src/theme/colors.ts`. Never hand-edit the PNGs; change the geometry or
+colours in the script and re-run it.
 
 ```bash
 mkdir -p /tmp/brand && cd /tmp/brand
@@ -202,9 +203,8 @@ BRAND_DEPS=$PWD node <repo>/AurasureApp/scripts/generate-brand.mjs
 
 | File | Size | Used by |
 | --- | --- | --- |
-| `icon.png` | 1024² opaque | iOS app icon, Android legacy icon, store listings |
+| `icon.png` | 1024² opaque | iOS app icon, Android legacy icon, store listings (flat `#5B46E5` tile) |
 | `adaptive-icon.png` | 1024² alpha | Android adaptive foreground (glyph inside the 66% safe zone) |
-| `adaptive-icon-background.png` | 1024² opaque | Android adaptive background (gradient) |
 | `adaptive-icon-monochrome.png` | 1024² alpha | Android 13+ themed icons |
 | `splash-icon.png` | 1200² alpha | `expo-splash-screen` (vertical lockup) |
 | `favicon.png` | 96² | web |

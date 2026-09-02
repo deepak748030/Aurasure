@@ -67,7 +67,7 @@ of blocking the app.
 ```
 src/
 ├─ App.tsx                  providers + splash/font bootstrap
-├─ assets.ts                9 local images: 8 WebP + the PNG logo (splash / adaptive icon)
+├─ assets.ts                local image registry: WebP artwork + the brand PNGs (icon, lockups)
 ├─ components/
 │  ├─ ui/                   Screen, Card, Button, Input, TabBar, BottomSheet, Skeleton,
 │  │                        SmartImage, SearchBar, Chip, Badge, Rating, Price, IconBox,
@@ -187,15 +187,42 @@ history. Images come from the server as `{ kind: 'uri', uri }` refs and render
 with the existing `SmartImage`. Likes state and cart stay local by design;
 favorites synchronise to the server later.
 
-## Known limitations
+## Brand assets
 
+Every logo, icon and splash bitmap is generated from one vector definition in
+`scripts/generate-brand.mjs` — the "aura arch" A (rounded arch + crossbar wrapped in two aura
+arcs). Flat colour only, no gradients: brand `#5B46E5` with the `brand.300` / `brand.200` tints
+for the arcs, all from `src/theme/colors.ts`. Never hand-edit the PNGs; change the geometry or
+colours in the script and re-run it.
+
+```bash
+mkdir -p /tmp/brand && cd /tmp/brand
+npm i @resvg/resvg-js sharp @expo-google-fonts/manrope     # generator-only, not app deps
+BRAND_DEPS=$PWD node <repo>/AurasureApp/scripts/generate-brand.mjs
+```
+
+| File | Size | Used by |
+| --- | --- | --- |
+| `icon.png` | 1024² opaque | iOS app icon, Android legacy icon, store listings (flat `#5B46E5` tile) |
+| `adaptive-icon.png` | 1024² alpha | Android adaptive foreground (glyph inside the 66% safe zone) |
+| `adaptive-icon-monochrome.png` | 1024² alpha | Android 13+ themed icons |
+| `splash-icon.png` | 1200² alpha | `expo-splash-screen` (vertical lockup) |
+| `favicon.png` | 96² | web |
+| `logo_aurasure[_light].png` | 3.76:1 | horizontal lockup — `Images.logo` / `Images.logoLight` |
+| `logo_mark[_light].png` | 1:1 | square mark — `Images.logoMark`, for square slots |
+| `logo_aurasure_stacked.png` | 1:1 | vertical lockup — `Images.logoStacked` |
+
+The wordmark is 3.76:1: put it in a box with that ratio (or `contentFit="contain"`). Square
+slots take `logoMark`, never the wordmark.
+
+## Known limitations
 - Mock data only when no URL is configured (or the server is down); no payments, no SMS, no order webhooks.
 - `SmartImage` renders a tinted icon placeholder for the 35 mock entries that have no image — drop a file in `src/assets/images` and wire it in `src/assets.ts` and it lights up.
 - Fonts are fetched from a CDN on first run; offline the app falls back to system fonts.
 - Edge-to-edge is mandatory on Android 16, so `NavigationBar.setBackgroundColorAsync` is not used (it is a no-op there); the app paints both strips itself.
-- Local art ships as WebP (quality 78, resized to what the UI draws at) with the logo kept as an
-  8-bit PNG, because `expo-splash-screen` and the Android adaptive icon need PNG. Total `assets/`
-  is ~0.5 MB, down from ~18 MB.
+- Local art ships as WebP (quality 78, resized to what the UI draws at); the brand marks stay
+  PNG because they need alpha and because `expo-splash-screen` and the Android adaptive icon
+  only accept PNG. Total `assets/` is ~0.6 MB, down from ~18 MB.
 
 ## Troubleshooting
 

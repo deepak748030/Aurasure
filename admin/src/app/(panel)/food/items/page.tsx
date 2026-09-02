@@ -79,7 +79,7 @@ export default function FoodItemsPage() {
       options: restaurants.map((r) => ({ value: r.id, label: r.name })),
     },
     { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Slow cooked, rich tomato gravy…' },
-    { name: 'image', label: 'Image URL', type: 'image' },
+    { name: 'image', label: 'Image', type: 'image' },
     { name: 'price', label: 'Price (₹)', type: 'number', required: true },
     { name: 'mrp', label: 'MRP (₹)', type: 'number' },
     { name: 'prepTime', label: 'Prep time (min)', type: 'number' },

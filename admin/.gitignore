@@ -14,3 +14,6 @@ next-env.d.ts
 # Logs / OS
 *.log
 .DS_Store
+
+# Dev mock API uploads
+.uploads-dev/

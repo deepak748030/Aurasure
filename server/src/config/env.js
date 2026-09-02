@@ -37,6 +37,20 @@ const config = Object.freeze({
     origin: process.env.CORS_ORIGIN || '*',
   }),
 
+  // Image uploads - stored on this server's disk (multer), served from
+  // `${publicPath}` as static files. No third-party storage involved.
+  uploads: Object.freeze({
+    dir: process.env.UPLOAD_DIR
+      ? path.resolve(process.env.UPLOAD_DIR)
+      : path.join(__dirname, '..', '..', 'uploads'),
+    publicPath: process.env.UPLOAD_PUBLIC_PATH || '/uploads',
+    maxFileSizeMb: asInt(process.env.UPLOAD_MAX_FILE_SIZE_MB, 5),
+    maxFiles: asInt(process.env.UPLOAD_MAX_FILES, 10),
+    // Set when the API sits behind a domain/tunnel so stored image URLs are
+    // absolute and reachable by the mobile app (e.g. https://api.aurasure.app).
+    publicBaseUrl: (process.env.PUBLIC_BASE_URL || '').replace(/\/+$/, ''),
+  }),
+
   rateLimit: Object.freeze({
     windowMs: asInt(process.env.RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000),
     max: asInt(process.env.RATE_LIMIT_MAX, 200),

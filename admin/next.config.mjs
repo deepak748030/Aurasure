@@ -18,7 +18,12 @@ const nextConfig = {
     remotePatterns: [{ protocol: 'https', hostname: '**' }, { protocol: 'http', hostname: '**' }],
   },
   async rewrites() {
-    return [{ source: '/api/backend/:path*', destination: `${API_URL}/api/v1/:path*` }];
+    return [
+      { source: '/api/backend/:path*', destination: `${API_URL}/api/v1/:path*` },
+      // Images uploaded through the panel are stored on the API server's own
+      // disk; proxying them keeps every asset same-origin for the browser.
+      { source: '/uploads/:path*', destination: `${API_URL}/uploads/:path*` },
+    ];
   },
 };
 

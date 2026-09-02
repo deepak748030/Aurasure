@@ -39,7 +39,7 @@ const fields: FieldDef[] = [
   { name: 'name', label: 'Category name', type: 'text', required: true, placeholder: 'Fashion' },
   { name: 'tagline', label: 'Tagline', type: 'text', placeholder: 'Trending fits under ₹999' },
   { name: 'icon', label: 'Icon name', type: 'text', required: true, placeholder: 'shirt-outline' },
-  { name: 'image', label: 'Image URL', type: 'image' },
+  { name: 'image', label: 'Image', type: 'image' },
   { name: 'sortOrder', label: 'Sort order', type: 'number' },
 ];
 

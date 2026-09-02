@@ -10,6 +10,7 @@ import { Pagination } from '@/components/ui/Pagination';
 import { Modal, ConfirmDialog } from '@/components/ui/Modal';
 import { ErrorState } from '@/components/ui/EmptyState';
 import { Field, Input, SearchInput, Select, Textarea, Toggle } from '@/components/ui/Input';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 import { useResourceList, useResourceMutation } from '@/lib/queries';
 import { useToast } from '@/lib/toast';
 import { useAuth } from '@/lib/auth';
@@ -285,21 +286,11 @@ export function ResourcePage<T extends CatalogRecord>({
               );
             case 'image':
               return (
-                <div className="space-y-2">
-                  <Input
-                    value={String(value ?? '')}
-                    placeholder="https://…"
-                    onChange={(event) => setValue(field.name, event.target.value)}
-                  />
-                  {value ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={String(value)}
-                      alt=""
-                      className="h-20 w-full rounded-lg object-cover ring-1 ring-[var(--color-line)]"
-                    />
-                  ) : null}
-                </div>
+                <ImageUpload
+                  label={field.label}
+                  value={String(value ?? '')}
+                  onChange={(url) => setValue(field.name, url)}
+                />
               );
             default:
               return (

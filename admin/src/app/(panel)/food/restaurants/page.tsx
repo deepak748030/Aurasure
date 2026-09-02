@@ -76,7 +76,7 @@ export default function RestaurantsPage() {
         ? `Available: ${lookups.foodCategories.map((c) => c.id).join(', ')}`
         : 'Comma separated food category ids',
     },
-    { name: 'cover', label: 'Cover image URL', type: 'image' },
+    { name: 'cover', label: 'Cover image', type: 'image' },
     { name: 'rating', label: 'Rating (0-5)', type: 'number' },
     { name: 'reviews', label: 'Review count', type: 'number' },
     { name: 'deliveryTime', label: 'Delivery time (min)', type: 'number' },

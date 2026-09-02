@@ -46,7 +46,7 @@ const columns: Column<CatalogRecord>[] = [
 const fields: FieldDef[] = [
   { name: 'name', label: 'Collection name', type: 'text', required: true, placeholder: 'Late night cravings' },
   { name: 'tagline', label: 'Tagline', type: 'text', placeholder: 'Open till 2 AM' },
-  { name: 'image', label: 'Image URL', type: 'image' },
+  { name: 'image', label: 'Image', type: 'image' },
   { name: 'from', label: 'Card colour (start)', type: 'color', defaultValue: '#6a5ef5' },
   { name: 'to', label: 'Card colour (end)', type: 'color', defaultValue: '#8b5cf6' },
   { name: 'sortOrder', label: 'Sort order', type: 'number' },

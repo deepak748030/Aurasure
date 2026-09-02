@@ -26,7 +26,7 @@ import { useOrder, useOrderStatusMutation } from '@/lib/queries';
 import { useToast } from '@/lib/toast';
 import { useAuth } from '@/lib/auth';
 import { logActivity } from '@/lib/activity';
-import { money, dateTime, timeAgo, nextStatus, ORDER_FLOW, ORDER_STATUS_LABEL, titleCase, imageUrl } from '@/lib/format';
+import { money, dateTime, timeAgo, nextStatus, ORDER_FLOW, ORDER_STATUS_LABEL, titleCase, imageSrc } from '@/lib/format';
 
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -167,7 +167,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             </div>
             <ul className="divide-y divide-[var(--color-line)] border-t border-[var(--color-line)]">
               {order.items.map((item) => {
-                const src = imageUrl(item.image);
+                const src = imageSrc(item.image);
                 return (
                   <li key={item.id} className="flex items-center gap-3 px-4 py-3 sm:px-5">
                     <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-ink-100 text-[11px] text-ink-400">

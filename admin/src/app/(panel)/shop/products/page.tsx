@@ -95,7 +95,7 @@ export default function ProductsPage() {
       options: categories.map((c) => ({ value: c.id, label: c.name })),
     },
     { name: 'description', label: 'Description', type: 'textarea' },
-    { name: 'image', label: 'Image URL', type: 'image' },
+    { name: 'image', label: 'Image', type: 'image' },
     { name: 'price', label: 'Price (₹)', type: 'number', required: true },
     { name: 'mrp', label: 'MRP (₹)', type: 'number', required: true },
     { name: 'rating', label: 'Rating (0-5)', type: 'number' },

@@ -127,3 +127,19 @@ export function imageUrl(image: unknown): string | null {
   const ref = image as { kind?: string; uri?: string };
   return ref.kind === 'uri' && ref.uri ? ref.uri : null;
 }
+
+/**
+ * URL to actually render in the panel.
+ *
+ * Images uploaded through the console are stored with an absolute URL pointing
+ * at the API host (so the Expo app can load them). The admin browser may not
+ * be able to reach that host directly, but Next proxies `/uploads/*`, so any
+ * upload URL is rewritten to that same-origin path before rendering.
+ */
+export function imageSrc(image: unknown): string | null {
+  const raw = typeof image === 'string' ? image : imageUrl(image);
+  if (!raw) return null;
+  const index = raw.indexOf('/uploads/');
+  if (index >= 0 && /^https?:\/\//i.test(raw)) return raw.slice(index);
+  return raw;
+}

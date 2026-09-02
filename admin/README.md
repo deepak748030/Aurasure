@@ -90,6 +90,7 @@ attached by `src/lib/api.ts`; a `401` clears it and bounces you to `/login`.
 | Shop | **Products** | Full CRUD, store / category / stock filters, colours, sizes, highlight flags |
 | Shop | **Shop categories** | Full CRUD, tagline, icon, sort order |
 | Promotions | **Banners** | Full CRUD, module + visibility filters, live preview of the artwork |
+| Everywhere | **Image upload** | Click or drag-and-drop a file in any catalogue form — it is uploaded to *our own* Node server (multer, disk storage), with progress, preview, replace and delete |
 | Users | **Customers** | Search, role filter, lifetime value, masked phone with click-to-reveal, CSV export |
 | Users | **Customer profile** | Order history, wallet ledger, loyalty ledger, coupons, addresses, wallet & points adjustment, promote/revoke admin |
 | Users | **Partner applications** | Vendor & delivery KYC queue, approve/reject with a reviewer note, CSV export |
@@ -99,6 +100,28 @@ attached by `src/lib/api.ts`; a `401` clears it and bounces you to `/login`.
 
 Every table exports CSV, every list paginates, every screen has a skeleton
 loading state, an empty state and an error state with retry.
+
+### Images
+
+Every `image` / `cover` field in the catalogue forms is a real uploader:
+
+```
+pick file → POST /api/backend/admin/uploads (multipart)
+          → Next rewrite → API /api/v1/admin/uploads
+          → multer writes server/uploads/<yyyy-mm>/<slug>-<rand>.jpg
+          → { image: { kind:'uri', uri }, url, path } saved on the record
+```
+
+- **No third-party storage.** No S3, no Cloudinary, no external upload API —
+  the bytes are written to the API server's own disk and served back by it.
+- JPG / PNG / WebP / GIF / AVIF / SVG, 5 MB max, validated on both sides.
+- Upload progress, image preview, *Replace* and *Remove* (which also deletes the
+  just-uploaded file from disk so no orphans pile up).
+- Pasting an external URL is still allowed via *"Use an external URL instead"*.
+- The panel proxies `/uploads/*` to the API too, so images are always
+  same-origin for the browser while the stored URL stays absolute for the Expo
+  app. When a phone must load them, set `PUBLIC_BASE_URL` in `server/.env` to a
+  host the device can reach.
 
 ---
 
@@ -147,8 +170,12 @@ added **additively** — no existing route, controller or model was modified:
 
 - `server/src/controllers/adminCatalog.controller.js` *(new)* — catalogue CRUD,
   customers, wallet/loyalty adjustments, reports, lookups, system info.
+- `server/src/middlewares/upload.js` + `server/src/controllers/upload.controller.js`
+  *(new)* — multer disk storage, type/size validation, delete endpoint.
 - `server/src/routes/admin.routes.js` *(extended)* — mounts the above under the
   existing `authenticate() + requireRole('admin')` guard.
+- `server/src/app.js` *(extended)* — serves `/uploads` as static files.
+- `server/src/config/env.js` + `.env.example` *(extended)* — upload settings.
 
 Everything else in `server/` and all of `AurasureApp/` is untouched.
 

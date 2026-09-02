@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { Star } from 'lucide-react';
-import { imageUrl, money } from '@/lib/format';
+import { imageSrc, money } from '@/lib/format';
 import { Badge } from '@/components/ui/Badge';
 
 /** Small square thumbnail + name, the first column of most catalogue tables. */
@@ -17,7 +17,7 @@ export function NameCell({
   meta?: ReactNode;
   fallback?: string;
 }) {
-  const src = imageUrl(image);
+  const src = imageSrc(image);
   const label = String(name ?? fallback);
   return (
     <div className="flex min-w-0 items-center gap-2.5">

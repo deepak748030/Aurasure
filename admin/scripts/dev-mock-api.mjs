@@ -15,6 +15,9 @@
  */
 import express from 'express';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import multer from 'multer';
 
 const PORT = Number(process.env.MOCK_PORT || 5000);
 const app = express();
@@ -687,6 +690,69 @@ for (const [path, resource] of Object.entries(resources)) {
     return ok(res, { deleted: req.params.id });
   });
 }
+
+/* ------------------------- uploads (same as server) ---------------------- */
+
+const UPLOAD_DIR = path.resolve(process.env.MOCK_UPLOAD_DIR || '.uploads-dev');
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+const bucket = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+};
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination(req, file, cb) {
+      const dir = path.join(UPLOAD_DIR, bucket());
+      fs.mkdirSync(dir, { recursive: true });
+      cb(null, dir);
+    },
+    filename(req, file, cb) {
+      const base = path.parse(file.originalname || 'image').name.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40) || 'image';
+      const ext = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/gif': '.gif', 'image/avif': '.avif', 'image/svg+xml': '.svg' }[file.mimetype] || '.jpg';
+      cb(null, `${base}-${Date.now().toString(36)}${crypto.randomBytes(4).toString('hex')}${ext}`);
+    },
+  }),
+  limits: { fileSize: 5 * 1024 * 1024, files: 10 },
+  fileFilter: (req, file, cb) =>
+    file.mimetype.startsWith('image/') ? cb(null, true) : cb(new Error(`Unsupported image type: ${file.mimetype}`)),
+});
+
+app.use('/uploads', express.static(UPLOAD_DIR, { index: false, fallthrough: false }));
+
+const describe = (req, file) => {
+  const rel = path.relative(UPLOAD_DIR, file.path).split(path.sep).join('/');
+  const url = `${req.protocol}://${req.get('host')}/uploads/${rel}`;
+  return { image: { kind: 'uri', uri: url }, url, path: `/uploads/${rel}`, file: rel, name: file.originalname, size: file.size, mimeType: file.mimetype };
+};
+
+app.post('/api/v1/admin/uploads', (req, res) => {
+  upload.single('image')(req, res, (err) => {
+    if (err) return fail(res, 400, err.code === 'LIMIT_FILE_SIZE' ? 'FILE_TOO_LARGE' : 'UPLOAD_FAILED', err.code === 'LIMIT_FILE_SIZE' ? 'Image is larger than 5 MB' : err.message);
+    if (!req.file) return fail(res, 400, 'NO_FILE', 'No image received - send a file in the `image` field');
+    return res.status(201).json({ success: true, data: describe(req, req.file) });
+  });
+});
+
+app.post('/api/v1/admin/uploads/bulk', (req, res) => {
+  upload.array('images', 10)(req, res, (err) => {
+    if (err) return fail(res, 400, 'UPLOAD_FAILED', err.message);
+    if (!req.files?.length) return fail(res, 400, 'NO_FILE', 'No images received');
+    return res.status(201).json({ success: true, data: { uploads: req.files.map((f) => describe(req, f)) } });
+  });
+});
+
+app.delete('/api/v1/admin/uploads/:bucket/:file', (req, res) => {
+  const target = path.resolve(UPLOAD_DIR, req.params.bucket, req.params.file);
+  if (!target.startsWith(path.resolve(UPLOAD_DIR) + path.sep)) return fail(res, 400, 'INVALID_PATH', 'Invalid file path');
+  try {
+    fs.unlinkSync(target);
+  } catch {
+    return fail(res, 404, 'FILE_NOT_FOUND', 'File not found');
+  }
+  return ok(res, { deleted: `${req.params.bucket}/${req.params.file}` });
+});
 
 app.get('/api/v1/health', (req, res) => ok(res, { status: 'ok', mock: true }));
 app.use((req, res) => fail(res, 404, 'ROUTE_NOT_FOUND', `Cannot ${req.method} ${req.originalUrl}`));

@@ -38,7 +38,7 @@ const fields: FieldDef[] = [
     placeholder: 'restaurant-outline',
     hint: 'Ionicons name used by the mobile app',
   },
-  { name: 'image', label: 'Image URL', type: 'image' },
+  { name: 'image', label: 'Image', type: 'image' },
   { name: 'sortOrder', label: 'Sort order', type: 'number' },
 ];
 

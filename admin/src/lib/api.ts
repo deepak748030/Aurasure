@@ -123,3 +123,69 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
   const { data } = await apiRaw<T>(path, options);
   return data;
 }
+
+export interface UploadResult {
+  image: { kind: 'uri'; uri: string };
+  url: string;
+  /** Same-origin path, e.g. `/uploads/2026-09/burger-x1.jpg`. */
+  path: string;
+  /** `2026-09/burger-x1.jpg` - used by the delete endpoint. */
+  file: string;
+  name: string;
+  size: number;
+  mimeType: string;
+}
+
+/**
+ * Uploads one image to our own Node server (multer, disk storage) through the
+ * same-origin proxy. `onProgress` reports 0-100 while the bytes are in flight,
+ * which `fetch` cannot do — hence XMLHttpRequest.
+ */
+export function uploadImage(
+  file: File,
+  onProgress?: (percent: number) => void,
+  signal?: AbortSignal,
+): Promise<UploadResult> {
+  return new Promise((resolve, reject) => {
+    const form = new FormData();
+    form.append('image', file);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${BASE}/admin/uploads`);
+    const token = getToken();
+    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable && onProgress) {
+        onProgress(Math.round((event.loaded / event.total) * 100));
+      }
+    };
+
+    xhr.onload = () => {
+      let json: { success?: boolean; data?: UploadResult; error?: { code: string; message: string } } | null = null;
+      try {
+        json = JSON.parse(xhr.responseText);
+      } catch {
+        json = null;
+      }
+      if (xhr.status >= 200 && xhr.status < 300 && json?.success && json.data) {
+        resolve(json.data);
+        return;
+      }
+      if (xhr.status === 401) setToken(null);
+      reject(new ApiError(xhr.status, json?.error?.code ?? 'UPLOAD_FAILED', json?.error?.message ?? 'Upload failed'));
+    };
+
+    xhr.onerror = () => reject(new ApiError(0, 'NETWORK_ERROR', 'Could not reach the Aurasure server'));
+    xhr.onabort = () => reject(new ApiError(0, 'ABORTED', 'Upload cancelled'));
+    signal?.addEventListener('abort', () => xhr.abort(), { once: true });
+
+    xhr.send(form);
+  });
+}
+
+/** Deletes a file previously uploaded through `uploadImage` (`2026-09/x.jpg`). */
+export function deleteUpload(file: string): Promise<{ deleted: string }> {
+  return api<{ deleted: string }>(`/admin/uploads/${file}`, { method: 'DELETE' });
+}
+

@@ -58,7 +58,7 @@ const fields: FieldDef[] = [
     defaultValue: 'food',
   },
   { name: 'badge', label: 'Badge text', type: 'text', placeholder: 'LIMITED' },
-  { name: 'image', label: 'Image URL', type: 'image' },
+  { name: 'image', label: 'Image', type: 'image' },
   { name: 'sortOrder', label: 'Sort order', type: 'number' },
   { name: 'active', label: 'Visible in app', type: 'toggle', defaultValue: true },
 ];

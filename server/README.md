@@ -80,6 +80,11 @@ See `.env.example`:
 | `BCRYPT_ROUNDS` | `10` | password hashing cost |
 | `CORS_ORIGIN` | `*` | comma-separated origins, `*` = any |
 | `RATE_LIMIT_WINDOW_MS` / `RATE_LIMIT_MAX` | `900000` / `200` | basic rate limit |
+| `UPLOAD_DIR` | `server/uploads` | where multer writes uploaded images (git-ignored) |
+| `UPLOAD_PUBLIC_PATH` | `/uploads` | URL prefix the images are served from |
+| `UPLOAD_MAX_FILE_SIZE_MB` | `5` | per-image size limit |
+| `UPLOAD_MAX_FILES` | `10` | files per bulk upload |
+| `PUBLIC_BASE_URL` | *(empty)* | absolute base URL baked into stored image links. Empty = use the request host (fine locally); set it in prod / when a phone must reach the images, e.g. `http://192.168.1.5:5000` |
 
 ## API
 
@@ -137,6 +142,47 @@ Error envelope: `{ "success": false, "error": { code, message, details? } }`
 | GET/PUT | `/users/me` | profile |
 | POST/PUT/DELETE | `/users/me/addresses[/:addressId]` | saved addresses |
 | GET/PUT | `/users/me/favorites` | likes per module (`{ module, refId }`) |
+
+### Admin console (auth, `role: admin`)
+| Method | Route | Notes |
+| --- | --- | --- |
+| GET | `/admin/stats` | headline counters |
+| GET | `/admin/orders` | `?module=&status=&page=&limit=` |
+| GET | `/admin/orders/:id` | one order + customer |
+| PATCH | `/admin/orders/:id/status` | forward-only advance, or cancel + refund |
+| GET/PATCH | `/admin/partners`, `/admin/partners/:userId` | vendor / delivery KYC |
+| GET | `/admin/customers`, `/admin/customers/:id` | list + full profile |
+| POST | `/admin/customers/:id/wallet`, `/admin/customers/:id/loyalty` | ledger adjustments |
+| PATCH | `/admin/customers/:id` | promote / demote admin |
+| GET | `/admin/reports/overview` | `?days=` charts data |
+| GET | `/admin/lookups`, `/admin/system` | dropdown data, runtime info |
+| GET/POST/PUT/PATCH/DELETE | `/admin/food/categories`, `/admin/food/vibes`, `/admin/food/restaurants`, `/admin/food/items`, `/admin/shop/categories`, `/admin/shop/stores`, `/admin/shop/products`, `/admin/banners` | catalogue CRUD |
+
+### Image uploads (auth, `role: admin`)
+
+Images are stored **on this server** with [multer](https://github.com/expressjs/multer)
+— no S3, Cloudinary or any third-party service. Files land in
+`UPLOAD_DIR/<yyyy-mm>/<slug>-<random>.<ext>` and are served back as static
+files from `UPLOAD_PUBLIC_PATH`.
+
+| Method | Route | Notes |
+| --- | --- | --- |
+| POST | `/admin/uploads` | multipart field `image` → `{ image: { kind:'uri', uri }, url, path, file, size, mimeType }` |
+| POST | `/admin/uploads/bulk` | multipart field `images` (up to `UPLOAD_MAX_FILES`) |
+| DELETE | `/admin/uploads/:bucket/:file` | removes a stored file (path-traversal safe) |
+| GET | `/uploads/<bucket>/<file>` | the static image itself (cached 30 days) |
+
+Accepted types: JPEG, PNG, WebP, GIF, AVIF, SVG. Oversized files fail with
+`FILE_TOO_LARGE`, anything else with `UNSUPPORTED_FILE_TYPE`. The returned
+`image` object is exactly the `ImageRef` shape the mobile app already renders,
+so it can be saved straight onto a restaurant `cover`, product `image`, banner
+`image`, and so on.
+
+```bash
+curl -X POST http://localhost:5000/api/v1/admin/uploads \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "image=@./burger.jpg"
+```
 
 ### Orders (auth)
 | Method | Route | Notes |

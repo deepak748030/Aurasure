@@ -6,7 +6,7 @@ import { Text } from '../ui/Text';
 import { Badge } from '../ui/Badge';
 import { Icon } from '@/lib/icons';
 import { colors } from '@/theme/colors';
-import { radius } from '@/theme/tokens';
+import { layout, radius } from '@/theme/tokens';
 import { haptic } from '@/lib/haptics';
 import type { ImageRef, IconName } from '@/types';
 
@@ -80,9 +80,11 @@ const styles = StyleSheet.create({
 
   hero: {
     position: 'relative',
-    width: '100%',
     height: 208,
-    borderRadius: radius.xl,
+    // Pull out of the screen gutter so the artwork is flush with the device edges
+    // (stretch + negative margin widens the box to the full device width).
+    marginHorizontal: -layout.contentHorizontalPadding,
+    borderRadius: 0,
     overflow: 'hidden',
     backgroundColor: colors.food[100],
   },

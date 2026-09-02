@@ -131,7 +131,7 @@ export function ShopHomeScreen({ navigation }: Props): React.ReactElement {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingRight: layout.contentHorizontalPadding, gap: 12 }}
+          contentContainerStyle={{ paddingRight: layout.contentHorizontalPadding, gap: 8 }}
           style={{ marginHorizontal: -layout.contentHorizontalPadding }}
         >
           {railStores.map((s) => (
@@ -148,11 +148,11 @@ export function ShopHomeScreen({ navigation }: Props): React.ReactElement {
         action={<SeeAllArrow onPress={() => openSeeAll('popular', 'Most popular products')} />}
       />
       {loading ? (
-        <Grid columns={3} gap={10} data={[1, 2, 3, 4, 5, 6]} renderItem={() => <CompactProductCardSkeleton />} />
+        <Grid columns={3} gap={8} data={[1, 2, 3, 4, 5, 6]} renderItem={() => <CompactProductCardSkeleton />} />
       ) : (
         <Grid
           columns={3}
-          gap={10}
+          gap={8}
           data={popularProducts}
           renderItem={(p) => <CompactProductCard product={p} onPress={openProduct} />}
         />
@@ -171,7 +171,7 @@ export function ShopHomeScreen({ navigation }: Props): React.ReactElement {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingRight: layout.contentHorizontalPadding, gap: 10 }}
+          contentContainerStyle={{ paddingRight: layout.contentHorizontalPadding, gap: 8 }}
           style={{ marginHorizontal: -layout.contentHorizontalPadding }}
         >
           {data.stores.map((s) => (
@@ -188,11 +188,11 @@ export function ShopHomeScreen({ navigation }: Props): React.ReactElement {
         action={<SeeAllArrow onPress={() => openSeeAll('special', 'Special offers')} />}
       />
       {loading ? (
-        <Grid columns={3} gap={10} data={[1, 2, 3, 4, 5, 6]} renderItem={() => <CompactProductCardSkeleton />} />
+        <Grid columns={3} gap={8} data={[1, 2, 3, 4, 5, 6]} renderItem={() => <CompactProductCardSkeleton />} />
       ) : (
         <Grid
           columns={3}
-          gap={10}
+          gap={8}
           data={offerProducts}
           renderItem={(p) => <CompactProductCard product={p} onPress={openProduct} />}
         />
@@ -207,7 +207,7 @@ export function ShopHomeScreen({ navigation }: Props): React.ReactElement {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingRight: layout.contentHorizontalPadding, gap: 12 }}
+          contentContainerStyle={{ paddingRight: layout.contentHorizontalPadding, gap: 8 }}
           style={{ marginHorizontal: -layout.contentHorizontalPadding }}
         >
           {categoryItems.map((c) => (

@@ -137,7 +137,7 @@ export function FoodHomeScreen({ navigation }: Props): React.ReactElement {
         subtitle="Curated collections"
         action={<SeeAllArrow onPress={() => openSeeAll('foodPopular', 'Popular items')} />}
       />
-      <Grid columns={3} gap={10} data={data.vibes} renderItem={(v) => <JustForYouTile vibe={v} onPress={openVibe} />} />
+      <Grid columns={3} gap={8} data={data.vibes} renderItem={(v) => <JustForYouTile vibe={v} onPress={openVibe} />} />
 
       <View style={{ height: 26 }} />
       {/* New on Aurasure - freshly added stores */}
@@ -152,7 +152,7 @@ export function FoodHomeScreen({ navigation }: Props): React.ReactElement {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingRight: layout.contentHorizontalPadding, gap: 12 }}
+          contentContainerStyle={{ paddingRight: layout.contentHorizontalPadding, gap: 8 }}
           style={{ marginHorizontal: -layout.contentHorizontalPadding }}
         >
           {data.newStores.map((r) => (
@@ -207,7 +207,7 @@ export function FoodHomeScreen({ navigation }: Props): React.ReactElement {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingRight: layout.contentHorizontalPadding, gap: 12 }}
+        contentContainerStyle={{ paddingRight: layout.contentHorizontalPadding, gap: 8 }}
         style={{ marginHorizontal: -layout.contentHorizontalPadding }}
       >
         {data.restaurants.map((r) => (
@@ -224,11 +224,11 @@ export function FoodHomeScreen({ navigation }: Props): React.ReactElement {
         action={<SeeAllArrow onPress={() => openSeeAll('foodPopular', 'Most popular items')} />}
       />
       {loading ? (
-        <Grid columns={3} gap={10} data={[1, 2, 3, 4, 5, 6, 7, 8, 9]} renderItem={() => <CompactFoodCardSkeleton />} />
+        <Grid columns={3} gap={8} data={[1, 2, 3, 4, 5, 6, 7, 8, 9]} renderItem={() => <CompactFoodCardSkeleton />} />
       ) : (
         <Grid
           columns={3}
-          gap={10}
+          gap={8}
           data={popularItems}
           renderItem={(item) => <CompactFoodCard item={item} onPress={openDish} />}
         />
@@ -244,11 +244,11 @@ export function FoodHomeScreen({ navigation }: Props): React.ReactElement {
           action={<SeeAllArrow onPress={() => openSeeAll('foodOffers', 'Special offers')} />}
         />
         {loading ? (
-          <Grid columns={3} gap={10} data={[1, 2, 3, 4, 5, 6, 7, 8, 9]} renderItem={() => <CompactFoodCardSkeleton />} />
+          <Grid columns={3} gap={8} data={[1, 2, 3, 4, 5, 6, 7, 8, 9]} renderItem={() => <CompactFoodCardSkeleton />} />
         ) : (
           <Grid
             columns={3}
-            gap={10}
+            gap={8}
             data={offerItems}
             renderItem={(item) => <CompactFoodCard item={item} onPress={openDish} />}
           />

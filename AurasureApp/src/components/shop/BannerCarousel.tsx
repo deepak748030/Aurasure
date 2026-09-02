@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ScrollView, View, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { BannerCard } from '../common/BannerCard';
 import { colors } from '@/theme/colors';
+import { layout } from '@/theme/tokens';
 import { haptic } from '@/lib/haptics';
 import type { Banner } from '@/types';
 
@@ -12,9 +13,10 @@ interface BannerCarouselProps {
 }
 
 /**
- * Right-side swipeable banner carousel. Each slide is full container width
- * (the Screen gutter is already applied by the parent), pages one at a time
- * and shows a small progress dot row underneath.
+ * Full-bleed banner carousel: the carousel stretches edge-to-edge of the
+ * screen (cancelling the 6px screen gutter), every slide is one screen width
+ * and the artwork touches the left/right device edges with no side radius.
+ * Pages one at a time and shows a small progress dot row underneath.
  */
 export function BannerCarousel({ banners, onPress, height = 150 }: BannerCarouselProps): React.ReactElement | null {
   const [width, setWidth] = useState(0);
@@ -31,14 +33,12 @@ export function BannerCarousel({ banners, onPress, height = 150 }: BannerCarouse
   };
 
   return (
-    <View onLayout={onLayout}>
+    <View style={{ marginHorizontal: -layout.contentHorizontalPadding }} onLayout={onLayout}>
       <ScrollView
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={onMomentumEnd}
-        // Small peek keeps the user aware there is more to the right.
-        contentContainerStyle={{ paddingRight: 12 }}
       >
         {banners.map((banner) => (
           <View key={banner.id} style={{ width }}>
@@ -49,6 +49,7 @@ export function BannerCarousel({ banners, onPress, height = 150 }: BannerCarouse
               image={banner.image}
               height={height}
               fullBleed={false}
+              style={{ borderRadius: 0 }}
               onPress={() => {
                 haptic.light();
                 onPress(banner);
@@ -81,6 +82,14 @@ export function BannerCarouselSkeleton({
   height?: number;
 }): React.ReactElement {
   return (
-    <View style={{ height: height + 16, borderRadius: 16, backgroundColor: colors.brand[50], opacity: 0.6 }} />
+    <View
+      style={{
+        marginHorizontal: -layout.contentHorizontalPadding,
+        height: height + 16,
+        borderRadius: 0,
+        backgroundColor: colors.brand[50],
+        opacity: 0.6,
+      }}
+    />
   );
 }

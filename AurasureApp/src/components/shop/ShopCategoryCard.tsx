@@ -26,8 +26,14 @@ export function ShopCategoryCard({ category, onPress, active = false }: ShopCate
         { opacity: pressed ? 0.92 : 1 },
       ]}
     >
-      <IconBox icon={category.icon} size={52} radiusSize={radius.md} tint={active ? colors.brand[100] : colors.surfaceAlt} iconColor={colors.brand[600]} />
-      <Text variant="caption" color={colors.textSecondary} weight="semibold" style={{ marginTop: 8, textAlign: 'center' }}>
+      <IconBox icon={category.icon} size={40} radiusSize={radius.md} tint={active ? colors.brand[100] : colors.surfaceAlt} iconColor={colors.brand[600]} />
+      <Text
+        variant="caption"
+        color={colors.textSecondary}
+        weight="semibold"
+        numberOfLines={1}
+        style={{ marginTop: 6, textAlign: 'center' }}
+      >
         {category.name}
       </Text>
     </Pressable>
@@ -44,7 +50,7 @@ export function ShopCategoryRow({ items, activeId, onSelect }: ShopCategoryRowPr
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: layout.contentHorizontalPadding, gap: 0 }}>
       {items.map((c, i) => (
-        <View key={c.id} style={{ marginRight: i === items.length - 1 ? 0 : 12 }}>
+        <View key={c.id} style={{ marginRight: i === items.length - 1 ? 0 : 8 }}>
           <ShopCategoryCard category={c} onPress={onSelect} active={c.id === activeId} />
         </View>
       ))}
@@ -56,7 +62,9 @@ const styles = StyleSheet.create({
   tile: {
     width: 76,
     alignItems: 'center',
-    paddingVertical: 14,
+    // Compact vertical padding + smaller icon so the chip reads as a balanced
+    // rounded tile instead of a tall narrow column.
+    paddingVertical: 8,
     borderRadius: radius.lg,
     backgroundColor: colors.surface,
     borderWidth: 1,

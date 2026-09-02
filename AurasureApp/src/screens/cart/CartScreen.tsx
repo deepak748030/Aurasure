@@ -220,9 +220,6 @@ function CartRow({
             </View>
           ) : null}
         </View>
-        <Text variant="subtitle" weight="bold" color={colors.text} style={{ marginTop: 4 }}>
-          {formatINR(item.unitPrice)}
-        </Text>
 
         <View style={styles.itemActions}>
           <Pressable onPress={onRemove} hitSlop={8} style={styles.deleteBtn}>
@@ -244,7 +241,8 @@ function CartRow({
           </View>
         </View>
 
-        <Text variant="title" weight="bold" color={colors.text} style={{ marginTop: 8, textAlign: 'right' }}>
+        {/* Single price per line - shows the line total (== unit price when qty is 1). */}
+        <Text variant="title" weight="bold" color={colors.text} style={{ marginTop: 6, textAlign: 'right' }}>
           {formatINR(item.unitPrice * item.qty)}
         </Text>
       </View>
@@ -267,25 +265,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F7E8F5',
-    borderRadius: 16,
-    paddingVertical: 12,
+    borderRadius: 10,
+    paddingVertical: 10,
     paddingHorizontal: 12,
     marginTop: 4,
   },
   itemCard: {
     flexDirection: 'row',
     backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 16,
-    marginTop: 14,
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 10,
     borderWidth: 1,
     borderColor: '#EFE7F0',
   },
-  itemThumb: { width: 78, height: 78, borderRadius: 16, backgroundColor: '#F7E2F1' },
+  itemThumb: { width: 78, height: 78, borderRadius: 10, backgroundColor: '#F7E2F1' },
   itemInfo: { flex: 1, marginLeft: 14 },
   unitBadge: {
     backgroundColor: '#F7E2F1',
-    borderRadius: 8,
+    borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 2,
     marginLeft: 8,
@@ -297,9 +295,9 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   deleteBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: '#FCEAF3',
     alignItems: 'center',
     justifyContent: 'center',
@@ -323,7 +321,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'stretch',
-    marginTop: 22,
+    marginTop: 16,
     minHeight: 56,
     paddingHorizontal: 24,
     paddingVertical: 12,
@@ -345,11 +343,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: 18,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#EFE7F0',
-    padding: 16,
-    marginTop: 22,
+    padding: 12,
+    marginTop: 16,
   },
   chevBox: {
     width: 34,
@@ -361,9 +359,9 @@ const styles = StyleSheet.create({
   },
   priceCard: {
     backgroundColor: '#10111D',
-    borderRadius: 22,
-    padding: 18,
-    marginTop: 24,
+    borderRadius: 14,
+    padding: 16,
+    marginTop: 18,
   },
   priceHead: { flexDirection: 'row', alignItems: 'center' },
   priceHeadIcon: {
@@ -374,15 +372,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  priceRule: { height: 1, backgroundColor: 'rgba(255,255,255,0.16)', marginVertical: 14 },
+  priceRule: { height: 1, backgroundColor: 'rgba(255,255,255,0.16)', marginVertical: 12 },
   priceRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 },
   freeDelivery: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFF3E0',
-    borderRadius: 16,
-    padding: 12,
-    marginTop: 16,
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 14,
   },
   freeDeliveryIcon: {
     width: 32,
@@ -405,7 +403,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 18,
+    marginTop: 14,
   },
   sheetOption: {
     borderRadius: radius.lg,

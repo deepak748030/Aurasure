@@ -37,7 +37,6 @@
     "morgan": "^1.10.0"
   },
   "devDependencies": {
-    "cross-env": "^7.0.3",
-    "mongodb-memory-server": "^10.4.3"
+    "cross-env": "^7.0.3"
   }
 }

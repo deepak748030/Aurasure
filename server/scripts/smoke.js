@@ -1,13 +1,19 @@
 'use strict';
 
 /**
- * End-to-end smoke test against a real MongoDB.
+ * End-to-end smoke test against a REAL MongoDB (MongoDB Atlas or a local
+ * MongoDB). This script NEVER starts an in-memory database - no
+ * `mongodb-memory-server` is bundled or used anywhere in this project.
  *
- * Uses `mongodb-memory-server` (bundled) when the binary can be downloaded,
- * OR a running local MongoDB when you set:
- *   SMOKE_MONGODB_URI=mongodb://127.0.0.1:27017/aurasure-smoke
+ * The target database is resolved in this order:
+ *   1. SMOKE_MONGODB_URI             - dedicated test DB (recommended), or
+ *   2. MONGODB_URI (server/.env)     - the same Atlas URI the API uses.
+ *
+ * If neither is set the script fails fast with instructions instead of
+ * silently pointing at the localhost default or spinning anything up.
  *
  * Run: npm run smoke
+ *   SMOKE_MONGODB_URI="mongodb+srv://user:pass@cluster0.xxxxx.mongodb.net/aurasure-smoke" npm run smoke
  */
 const path = require('path');
 const http = require('http');
@@ -15,17 +21,30 @@ const { execFileSync } = require('child_process');
 
 const SERVER_ROOT = path.join(__dirname, '..');
 const SMOKE_PORT = 5099;
-const EXTERNAL_URI = process.env.SMOKE_MONGODB_URI;
 
-async function startMongo() {
-  if (EXTERNAL_URI) {
-    console.log('[smoke] using external MongoDB:', EXTERNAL_URI);
-    return { uri: EXTERNAL_URI, stop: async () => {} };
+/** Pick a real MongoDB URI - never in-memory. */
+function resolveMongoUri() {
+  // Prefer an explicit override, then MONGODB_URI (env var or server/.env).
+  // The built-in `mongodb://127.0.0.1:27017/aurasure` default from env.js is
+  // deliberately NOT used here: a smoke run must always target a database the
+  // developer has explicitly chosen (e.g. an Atlas test DB).
+  const uri = process.env.SMOKE_MONGODB_URI || process.env.MONGODB_URI;
+  if (!uri || !uri.trim()) {
+    console.error(
+      '\n[smoke] No MongoDB URI found. This test runs against a real MongoDB only ' +
+        '(no in-memory database is available).\n' +
+        '  • Set SMOKE_MONGODB_URI to a dedicated test database, e.g.\n' +
+        '      SMOKE_MONGODB_URI="mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/aurasure-smoke" npm run smoke\n' +
+        '  • or set MONGODB_URI in server/.env (your MongoDB Atlas URI) and run npm run smoke.\n',
+    );
+    process.exit(1);
   }
-  const { MongoMemoryServer } = require('mongodb-memory-server');
-  const mongod = await MongoMemoryServer.create();
-  console.log('[smoke] in-memory MongoDB up:', mongod.getUri());
-  return { uri: mongod.getUri(), stop: async () => mongod.stop() };
+  return uri.trim();
+}
+
+/** Hide credentials so connection strings never leak into logs. */
+function maskUri(uri) {
+  return uri.replace(/\/\/([^:/@\s]+):([^@\s]+)@/, '//$1:***@');
 }
 
 function get(port, reqPath, opts = {}) {
@@ -52,12 +71,14 @@ function get(port, reqPath, opts = {}) {
 }
 
 async function main() {
-  const mongo = await startMongo();
+  const uri = resolveMongoUri();
+  console.log('[smoke] using real MongoDB:', maskUri(uri));
+  console.log('[smoke] (no in-memory MongoDB is ever started by this project)');
 
-  // Seed with the test database.
+  // Seed with the target database.
   execFileSync(process.execPath, ['src/seed.js'], {
     cwd: SERVER_ROOT,
-    env: { ...process.env, MONGODB_URI: mongo.uri, SEED_USER_PHONE: '9999999999' },
+    env: { ...process.env, MONGODB_URI: uri, SEED_USER_PHONE: '9999999999' },
     stdio: 'inherit',
   });
 
@@ -144,7 +165,6 @@ async function main() {
 
   await new Promise((resolve) => server.close(resolve));
   await disconnectDB();
-  await mongo.stop();
 
   if (failed) {
     console.error(`\n[smoke] ${failed} check(s) FAILED`);

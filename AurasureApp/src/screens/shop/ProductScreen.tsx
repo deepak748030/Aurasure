@@ -288,10 +288,12 @@ const styles = StyleSheet.create({
   },
   imageWrap: {
     position: 'relative',
-    width: '100%',
     height: 300,
+    // Full-bleed: stretch + negative margin cancels the screen gutter so the
+    // image touches the device edges.
+    marginHorizontal: -layout.contentHorizontalPadding,
     backgroundColor: colors.brand[50],
-    borderRadius: radius.lg,
+    borderRadius: 0,
     overflow: 'hidden',
   },
   image: {

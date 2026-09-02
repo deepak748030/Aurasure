@@ -11,7 +11,7 @@ interface GridProps<T> {
 
 // Two/three column grid. Uses space-between with percentage widths so the
 // container gap stays 0 (per design brief) while items stay evenly spaced.
-export function Grid<T>({ data, renderItem, columns = 2, gap = 12, contentStyle }: GridProps<T>): React.ReactElement {
+export function Grid<T>({ data, renderItem, columns = 2, gap = 8, contentStyle }: GridProps<T>): React.ReactElement {
   const width = columns === 2 ? '48.5%' : '31.5%';
   return (
     <View style={[{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }, contentStyle]}>

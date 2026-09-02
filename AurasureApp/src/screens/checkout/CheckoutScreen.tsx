@@ -61,7 +61,7 @@ export function CheckoutScreen({ navigation }: Props): React.ReactElement {
   const addresses: Address[] = [...profile.addresses, ...extraAddresses];
   const selectedAddress = addresses.find((a) => a.id === addressId) ?? addresses.find((a) => a.isDefault) ?? addresses[0];
   const wallet = profile.wallet;
-  const payOptions = PAYMENTS.map((p) => (p.id === 'wallet' ? { ...p, sub: `Balance ₹${formatINR(wallet)}` } : p));
+  const payOptions = PAYMENTS.map((p) => (p.id === 'wallet' ? { ...p, sub: `Balance ${formatINR(wallet)}` } : p));
 
   const delivery = subtotal > 149 || subtotal === 0 ? 0 : DELIVERY_FEE;
   const total = subtotal + delivery;

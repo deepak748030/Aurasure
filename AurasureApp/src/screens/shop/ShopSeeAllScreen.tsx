@@ -130,7 +130,7 @@ export function ShopSeeAllScreen({ route, navigation }: Props): React.ReactEleme
         ) : kind === 'foodStores' ? (
           <Grid data={[1, 2, 3, 4]} renderItem={() => <RestaurantCardSkeleton />} />
         ) : (
-          <Grid columns={3} gap={10} data={[1, 2, 3, 4, 5, 6]} renderItem={() => (kind === 'foodItems' ? <CompactFoodCardSkeleton /> : <CompactProductCardSkeleton />)} />
+          <Grid columns={3} gap={8} data={[1, 2, 3, 4, 5, 6]} renderItem={() => (kind === 'foodItems' ? <CompactFoodCardSkeleton /> : <CompactProductCardSkeleton />)} />
         )
       ) : kind === 'shopStores' ? (
         <Grid
@@ -153,7 +153,7 @@ export function ShopSeeAllScreen({ route, navigation }: Props): React.ReactEleme
       ) : kind === 'foodItems' ? (
         <Grid
           columns={3}
-          gap={10}
+          gap={8}
           data={data.data as FoodItem[]}
           renderItem={(item) => (
             <CompactFoodCard
@@ -165,7 +165,7 @@ export function ShopSeeAllScreen({ route, navigation }: Props): React.ReactEleme
       ) : (
         <Grid
           columns={3}
-          gap={10}
+          gap={8}
           data={data.data as Product[]}
           renderItem={(p) => (
             <CompactProductCard product={p} onPress={(product) => navigation.navigate('Product', { productId: product.id })} />

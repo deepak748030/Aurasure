@@ -1,5 +1,6 @@
 'use strict';
 
+const fs = require('fs');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -54,6 +55,21 @@ function createApp() {
       service: 'aurasure-api',
       docs: '/api/v1/health',
       version: '1.0.0',
+    }),
+  );
+
+  // Uploaded images - written by multer (see middlewares/upload.js) and served
+  // straight from this server's disk. `crossOriginResourcePolicy` is relaxed
+  // for this path only so the Expo app and the admin panel can render them.
+  fs.mkdirSync(config.uploads.dir, { recursive: true });
+  app.use(
+    config.uploads.publicPath,
+    helmet.crossOriginResourcePolicy({ policy: 'cross-origin' }),
+    express.static(config.uploads.dir, {
+      maxAge: '30d',
+      immutable: true,
+      index: false,
+      fallthrough: false,
     }),
   );
 

@@ -152,6 +152,17 @@ const banners = [
   { id: 'b6', module: 'shop', title: 'Audio Week', subtitle: 'ANC headphones from ₹4,999', badge: 'WEEK', image: img('aur-banner-audio'), target: { kind: 'category', categoryId: 'sc_audio' }, sortOrder: 6, active: true },
 ];
 
+// Promo code campaigns shown in the admin panel (Promotions -> Promo codes).
+// A code becomes spendable once it is issued to a customer or claimed in-app.
+const in90Days = () => new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+
+const promos = [
+  { id: 'promo_welcome50', code: 'WELCOME50', title: 'Flat ₹50 off your first order', subtitle: 'On orders above ₹199', description: 'Valid once per customer.', module: 'all', offType: 'flat', offValue: 50, maxDiscount: 0, minOrder: 199, startsAt: null, expiresAt: in90Days(), usageLimit: 0, perUserLimit: 1, selfClaim: true, active: true },
+  { id: 'promo_food25', code: 'FOOD25', title: '25% off on food orders', subtitle: 'Up to ₹120 off', description: 'Applies to the food app only.', module: 'food', offType: 'percent', offValue: 25, maxDiscount: 120, minOrder: 249, startsAt: null, expiresAt: in90Days(), usageLimit: 500, perUserLimit: 1, selfClaim: true, active: true },
+  { id: 'promo_shop150', code: 'SHOP150', title: 'Flat ₹150 off electronics', subtitle: 'On orders above ₹999', description: 'Applies to the shop app only.', module: 'shop', offType: 'flat', offValue: 150, maxDiscount: 0, minOrder: 999, startsAt: null, expiresAt: in90Days(), usageLimit: 200, perUserLimit: 1, selfClaim: true, active: true },
+  { id: 'promo_freedel', code: 'FREEDEL', title: 'Free delivery on all orders', subtitle: 'No minimum order', description: 'Delivery fee waived at checkout.', module: 'all', offType: 'flat', offValue: 0, maxDiscount: 0, minOrder: 0, startsAt: null, expiresAt: in90Days(), usageLimit: 0, perUserLimit: 2, selfClaim: true, active: true },
+];
+
 module.exports = {
   foodCategories,
   foodVibes,
@@ -161,4 +172,5 @@ module.exports = {
   shopStores,
   products,
   banners,
+  promos,
 };

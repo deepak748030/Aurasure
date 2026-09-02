@@ -4,6 +4,7 @@ const { Router } = require('express');
 const { body } = require('express-validator');
 const controller = require('../controllers/user.controller');
 const rewards = require('../controllers/rewards.controller');
+const promos = require('../controllers/promo.controller');
 const { authenticate } = require('../middlewares/auth');
 const validate = require('../middlewares/validate');
 
@@ -66,6 +67,13 @@ router.post(
 );
 
 router.get('/me/coupons', rewards.getCoupons);
+// Customer types a promo code created in the admin panel -> coupon in wallet.
+router.post(
+  '/me/coupons/claim',
+  [body('code').trim().isLength({ min: 2, max: 30 }).withMessage('Enter a valid promo code')],
+  validate,
+  promos.claimPromo,
+);
 
 router.get('/me/referral', rewards.getReferral);
 router.post(

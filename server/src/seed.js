@@ -190,6 +190,27 @@ async function seedDemoOrders(userId) {
   return docs.length;
 }
 
+/**
+ * Back-fills payment/loyalty metadata on the two demo orders created by older
+ * seeds (they predate walletPaid/loyaltyEarned). Never touches cancelled
+ * orders - those were already reversed based on the amounts at the time.
+ */
+async function normalizeDemoOrders(userId) {
+  const patches = [
+    { code: 'AUR-FD-20517', $set: { payBy: 'wallet', walletPaid: 617, loyaltyEarned: 30 } },
+    { code: 'AUR-SH-19842', $set: { payBy: 'cod', walletPaid: 0, loyaltyEarned: 145 } },
+  ];
+  let normalized = 0;
+  for (const patch of patches) {
+    const res = await Order.updateOne(
+      { user: userId, code: patch.code, status: { $ne: 'cancelled' } },
+      { $set: patch.$set },
+    );
+    normalized += res.modifiedCount || 0;
+  }
+  return normalized;
+}
+
 async function main() {
   console.log('[seed] connecting to', config.mongodb.uri);
   await connectDB();
@@ -221,11 +242,13 @@ async function main() {
   const adminUser = await seedAdminUser();
   const partnerApplicants = await seedPartnerApplicants();
   const seededOrders = await seedDemoOrders(demoUser._id);
+  const normalizedDemoOrders = await normalizeDemoOrders(demoUser._id);
 
   console.log('[seed] done ✓');
   console.log('  admin user      → phone ' + adminUser.phone + ' / role ' + adminUser.role);
   if (partnerApplicants.length) console.log('  partner apps    ', partnerApplicants);
   if (seededOrders) console.log('  demo orders     ', seededOrders);
+  if (normalizedDemoOrders) console.log('  demo orders     ', normalizedDemoOrders, 'normalised (wallet/loyalty back-fill)');
   console.log('  food categories ', foodCategories);
   console.log('  food vibes      ', foodVibes);
   console.log('  restaurants     ', restaurants);

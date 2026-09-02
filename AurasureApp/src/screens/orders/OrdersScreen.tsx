@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Screen } from '../../components/ui/Screen';
 import { Text } from '../../components/ui/Text';
 import { Icon } from '@/lib/icons';
@@ -40,6 +41,23 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
   cancelled: 'Cancelled',
 };
 
+/** Short progress caption under each order card (no bogus "0 min" ETAs). */
+function progressCaption(o: Order): string {
+  if (o.status === 'delivered') return 'Completed';
+  if (o.status === 'cancelled') return 'Cancelled';
+  if (o.etaMinutes > 0) return `Arriving in ~${o.etaMinutes} min`;
+  switch (o.status) {
+    case 'placed':
+      return 'Waiting for the store to confirm';
+    case 'confirmed':
+      return 'Store confirmed';
+    case 'preparing':
+      return 'Being prepared';
+    case 'out_for_delivery':
+      return 'On the way';
+  }
+}
+
 export function OrdersScreen({ navigation }: Props): React.ReactElement {
   const { module } = useApp();
   // Orders are shared history, but each module only shows its own.
@@ -52,6 +70,15 @@ export function OrdersScreen({ navigation }: Props): React.ReactElement {
 
   // keep local list in sync after refresh
   React.useEffect(() => setList(data), [data]);
+
+  // Re-sync when the screen regains focus: orders may have been placed or
+  // cancelled while the user was elsewhere (checkout, order details, admin).
+  useFocusEffect(
+    React.useCallback(() => {
+      refresh();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [refresh]),
+  );
 
   const open = (o: Order): void => {
     haptic.light();
@@ -93,7 +120,7 @@ export function OrdersScreen({ navigation }: Props): React.ReactElement {
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Icon name="clock" size={14} color={colors.textTertiary} />
                 <Text variant="caption" color={colors.textTertiary} style={{ marginLeft: 6 }}>
-                  {o.status === 'delivered' || o.status === 'cancelled' ? 'Completed' : `Arriving in ${o.etaMinutes} min`}
+                  {progressCaption(o)}
                 </Text>
               </View>
               <Icon name="chevronRight" size={18} color={colors.textTertiary} />

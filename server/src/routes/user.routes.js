@@ -3,6 +3,7 @@
 const { Router } = require('express');
 const { body } = require('express-validator');
 const controller = require('../controllers/user.controller');
+const rewards = require('../controllers/rewards.controller');
 const { authenticate } = require('../middlewares/auth');
 const validate = require('../middlewares/validate');
 
@@ -37,6 +38,41 @@ router.put(
   ],
   validate,
   controller.putFavorite,
+);
+
+// Delivery partner / vendor applications.
+router.post(
+  '/me/partner-application',
+  [body('kind').isIn(['delivery', 'vendor']).withMessage('kind must be delivery or vendor')],
+  validate,
+  controller.savePartnerApplication,
+);
+
+// Rewards: wallet, loyalty points, coupons, referral.
+router.get('/me/wallet', rewards.getWallet);
+router.post(
+  '/me/wallet/add',
+  [body('amount').isFloat({ min: 10, max: 25000 }).withMessage('Amount between 10 and 25000')],
+  validate,
+  rewards.addWalletMoney,
+);
+
+router.get('/me/loyalty', rewards.getLoyalty);
+router.post(
+  '/me/loyalty/redeem',
+  [body('points').isInt({ min: 100 }).withMessage('At least 100 points')],
+  validate,
+  rewards.redeemLoyalty,
+);
+
+router.get('/me/coupons', rewards.getCoupons);
+
+router.get('/me/referral', rewards.getReferral);
+router.post(
+  '/me/referral/apply',
+  [body('code').trim().isLength({ min: 4, max: 16 }).withMessage('Valid referral code required')],
+  validate,
+  rewards.applyReferral,
 );
 
 module.exports = router;

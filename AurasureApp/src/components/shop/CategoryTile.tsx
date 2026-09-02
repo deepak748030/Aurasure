@@ -7,6 +7,7 @@ import { Icon } from '@/lib/icons';
 import { colors } from '@/theme/colors';
 import { radius } from '@/theme/tokens';
 import { haptic } from '@/lib/haptics';
+import { Skeleton } from '../ui/Skeleton';
 import type { ShopCategory } from '@/types';
 
 interface CategoryTileProps {
@@ -55,6 +56,15 @@ export function CategoryTile({ category, itemCount, onPress }: CategoryTileProps
         </View>
       </View>
     </Pressable>
+  );
+}
+
+/** Shape-faithful skeleton for the big "Shop by category" tiles. */
+export function CategoryTileSkeleton(): React.ReactElement {
+  return (
+    <View style={[styles.tile, { backgroundColor: colors.ink[50] }]}>
+      <Skeleton height={116} radius={0} />
+    </View>
   );
 }
 

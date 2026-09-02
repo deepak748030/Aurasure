@@ -121,9 +121,10 @@ export interface ShopSearchPayload {
   stores: ShopStore[];
 }
 
-export async function fetchShopSearch(query: string): Promise<ShopSearchPayload> {
+export async function fetchShopSearch(query: string, signal?: AbortSignal): Promise<ShopSearchPayload> {
   const data = await apiGet<ShopSearchPayload>(
     `/search?module=shop&q=${encodeURIComponent(query)}`,
+    { signal },
   );
   return { products: data.products ?? [], stores: data.stores ?? [] };
 }

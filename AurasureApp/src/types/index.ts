@@ -172,6 +172,15 @@ export interface Order {
   total: number;
   etaMinutes: number;
   address: string;
+  /** Payment channel - wallet orders were deducted from the user balance. */
+  payBy?: 'wallet' | 'cod' | 'upi' | 'card';
+  walletPaid?: number;
+  loyaltyEarned?: number;
+  /** Coupon redeemed on this order (server stores it for cancel restores). */
+  couponId?: string | null;
+  couponCode?: string | null;
+  /** Customer instruction (e.g. "if any product is not available → call me"). */
+  instructions?: string;
 }
 
 export interface Address {
@@ -190,6 +199,98 @@ export interface UserProfile {
   avatar: ImageRef;
   wallet: number;
   addresses: Address[];
+}
+
+/* ---------------------------- Rewards ---------------------------- */
+
+export interface WalletTx {
+  id: string;
+  type: 'credit' | 'debit';
+  title: string;
+  note?: string;
+  amount: number;
+  balanceAfter: number;
+  createdAt: string;
+}
+
+export interface WalletData {
+  balance: number;
+  transactions: WalletTx[];
+}
+
+export interface LoyaltyTx {
+  id: string;
+  type: 'earned' | 'redeemed' | 'reversed';
+  title: string;
+  note?: string;
+  points: number;
+  balanceAfter: number;
+  createdAt: string;
+}
+
+export interface LoyaltyData {
+  points: number;
+  tier: string;
+  activity: LoyaltyTx[];
+}
+
+export interface Coupon {
+  id: string;
+  code: string;
+  title: string;
+  subtitle?: string;
+  minOrder: number;
+  offType: 'flat' | 'percent';
+  offValue: number;
+  expiresAt: string | null;
+  usedAt: string | null;
+}
+
+export interface ReferralInfo {
+  code: string;
+  earnings: number;
+  friends: number;
+  referredBy: string | null;
+}
+
+export interface PartnerApplication {
+  kind: 'delivery' | 'vendor';
+  name: string;
+  city: string;
+  appliedAt: string;
+  status: string;
+}
+
+/* ---------------------------- Admin console ---------------------------- */
+
+/** Order as seen by the admin console - includes who placed it. */
+export interface AdminOrder extends Order {
+  user?: { name: string; phone: string } | null;
+}
+
+export interface AdminPartnerApplication {
+  userId: string;
+  name: string;
+  phone: string;
+  kind: 'delivery' | 'vendor';
+  city: string;
+  appliedAt: string | null;
+  status: 'submitted' | 'approved' | 'rejected';
+  note?: string;
+}
+
+export interface AdminStats {
+  users: number;
+  restaurants: number;
+  foodItems: number;
+  shops: number;
+  products: number;
+  orders: number;
+  revenue: number;
+  liveOrders: number;
+  cancelledOrders: number;
+  walletCollected: number;
+  pendingPartners: number;
 }
 
 export type { IconName } from '@/lib/icons';

@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SmartImage } from '../ui/SmartImage';
+import { Skeleton } from '../ui/Skeleton';
 import { Text } from '../ui/Text';
 import { Icon } from '@/lib/icons';
 import { colors } from '@/theme/colors';
@@ -12,6 +13,11 @@ import type { FoodVibe } from '@/types';
 interface JustForYouTileProps {
   vibe: FoodVibe;
   onPress: (vibe: FoodVibe) => void;
+}
+
+/** Skeleton twin of a collection tile - same 122px-tall rounded block. */
+export function JustForYouTileSkeleton(): React.ReactElement {
+  return <Skeleton width="100%" height={122} radius={radius.lg} />;
 }
 
 /**
@@ -50,20 +56,20 @@ export function JustForYouTile({ vibe, onPress }: JustForYouTileProps): React.Re
 const styles = StyleSheet.create({
   tile: {
     position: 'relative',
-    height: 148,
+    height: 122,
     borderRadius: radius.lg,
     overflow: 'hidden',
   },
   photoWrap: {
     position: 'absolute',
-    top: 18,
+    top: 10,
     left: 0,
     right: 0,
     alignItems: 'center',
   },
   photo: {
-    width: 92,
-    height: 82,
+    width: 80,
+    height: 64,
     borderRadius: radius.md,
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.75)',

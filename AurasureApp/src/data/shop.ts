@@ -558,6 +558,20 @@ export const searchProducts = (query: string): Product[] => {
   );
 };
 
+/** Store matches for a search term (keeps "Search products or brands" honest). */
+export const searchStores = (query: string): ShopStore[] => {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  return shopStores.filter(
+    (s) =>
+      s.name.toLowerCase().includes(q) ||
+      s.brand.toLowerCase().includes(q) ||
+      s.road.toLowerCase().includes(q) ||
+      s.city.toLowerCase().includes(q) ||
+      s.tags.some((t) => t.toLowerCase().includes(q)),
+  );
+};
+
 export const cartItemFromProduct = (item: Product, qty: number, meta?: string): CartItem => ({
   id: `${item.id}-${meta ?? 'default'}`,
   refId: item.id,

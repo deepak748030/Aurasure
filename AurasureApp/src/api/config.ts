@@ -18,5 +18,9 @@ export function getApiBaseUrl(): string {
 export const API_PHONE = process.env.EXPO_PUBLIC_API_PHONE?.trim() || '9876543210';
 export const API_PASSWORD = process.env.EXPO_PUBLIC_API_PASSWORD?.trim() || 'aurasure123';
 
+/** Admin account used by the in-app Admin Console (server seeded by default). */
+export const ADMIN_PHONE = process.env.EXPO_PUBLIC_ADMIN_PHONE?.trim() || '8888888888';
+export const ADMIN_PASSWORD = process.env.EXPO_PUBLIC_ADMIN_PASSWORD?.trim() || 'admin@aurasure';
+
 /** `false` = no URL configured → the app stays fully on mock data. */
 export const isApiEnabled = API_BASE_URL.length > 0;

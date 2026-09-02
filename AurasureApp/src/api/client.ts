@@ -32,7 +32,12 @@ export interface RequestOptions {
   body?: unknown;
   /** Attach the Bearer token (silent demo login) when available. */
   auth?: boolean;
+  /** Explicit bearer token; overrides `auth` when provided (admin console). */
+  token?: string | null;
+  /** Abort the request externally (race guards, screen unmount…). */
   signal?: AbortSignal;
+  /** Hard deadline; 0 disables it. Defaults to DEFAULT_TIMEOUT_MS. */
+  timeoutMs?: number;
 }
 
 interface Envelope<T> {
@@ -41,13 +46,20 @@ interface Envelope<T> {
   error?: { code: string; message: string };
 }
 
+/** Production request budget before a request is abandoned (12 s). */
+const DEFAULT_TIMEOUT_MS = 12000;
+
 /**
  * Performs a request against `{API_BASE_URL}/api/v1{path}` and unwraps the
- * server envelope. Throws `ApiError` on network errors, non-2xx and failed
- * envelopes, so callers (and the `useAppQuery` fallback) can react uniformly.
+ * server envelope. Throws `ApiError` on network errors, timeouts, external
+ * aborts, non-2xx and failed envelopes, so callers (and the `useAppQuery`
+ * fallback) can react uniformly:
+ *  - TIMEOUT  → the server did not answer within `timeoutMs`
+ *  - ABORTED  → the caller's AbortSignal fired (stale request, unmount)
+ *  - NETWORK_ERROR → transport failed (DNS/offline/server down)
  */
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = 'GET', body, auth = false, signal } = options;
+  const { method = 'GET', body, auth = false, token, signal, timeoutMs = DEFAULT_TIMEOUT_MS } = options;
 
   const baseUrl = getApiBaseUrl();
   if (!baseUrl) {
@@ -56,10 +68,44 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
-  if (auth) {
-    const token = await tokenProvider?.();
+  if (token !== undefined) {
     if (token) headers.Authorization = `Bearer ${token}`;
+  } else if (auth) {
+    const t = await tokenProvider?.();
+    if (t) headers.Authorization = `Bearer ${t}`;
   }
+
+  // Compose the caller's AbortSignal with an internal deadline so both a hard
+  // timeout and an external cancel abort the *actual* fetch (never leaving a
+  // request running in the background after the UI moved on).
+  const controller = new AbortController();
+  let timedOut = false;
+  let externallyAborted = false;
+  const onExternalAbort = (): void => {
+    externallyAborted = true;
+    controller.abort();
+  };
+  if (signal) {
+    if (signal.aborted) {
+      throw new ApiError(0, 'ABORTED', 'Request cancelled');
+    }
+    signal.addEventListener('abort', onExternalAbort, { once: true });
+  }
+  const timer = timeoutMs > 0 ? setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs) : null;
+
+  const cleanup = (): void => {
+    if (timer) clearTimeout(timer);
+    if (signal) {
+      try {
+        signal.removeEventListener('abort', onExternalAbort);
+      } catch {
+        /* signal may already be gone - nothing else to clean */
+      }
+    }
+  };
 
   let res: Response;
   try {
@@ -67,14 +113,21 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
-      signal,
+      signal: controller.signal,
     });
   } catch (err) {
-    if (err instanceof Error && err.name === 'AbortError') {
+    cleanup();
+    const abortedByUs =
+      err instanceof Error && err.name === 'AbortError';
+    if (timedOut) {
       throw new ApiError(0, 'TIMEOUT', 'Aurasure server took too long to respond');
+    }
+    if (abortedByUs || externallyAborted) {
+      throw new ApiError(0, 'ABORTED', 'Request cancelled');
     }
     throw new ApiError(0, 'NETWORK_ERROR', 'Could not reach the Aurasure server');
   }
+  cleanup();
 
   let json: Envelope<T> | null = null;
   try {

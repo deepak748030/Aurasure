@@ -17,7 +17,7 @@ import { useAppQuery } from '../../hooks/useAppQuery';
 import { fetchShopStore } from '@/api/shop';
 import { getProductsByStore, getStoreById } from '../../data/mock';
 import { colors } from '@/theme/colors';
-import { radius } from '@/theme/tokens';
+import { layout, radius } from '@/theme/tokens';
 import { formatCount, formatMinutes } from '@/lib/format';
 import type { HomeStackParamList } from '../../navigation/types';
 
@@ -114,11 +114,11 @@ export function ShopStoreScreen({ route, navigation }: Props): React.ReactElemen
             subtitle={`${data.items.length} products · min order ₹${store.minOrder}`}
           />
           {loading ? (
-            <Grid columns={3} gap={10} data={[1, 2, 3, 4, 5, 6]} renderItem={() => <CompactProductCardSkeleton />} />
+            <Grid columns={3} gap={5} data={[1, 2, 3, 4, 5, 6]} renderItem={() => <CompactProductCardSkeleton />} />
           ) : (
             <Grid
               columns={3}
-              gap={10}
+              gap={5}
               data={data.items}
               renderItem={(p) => (
                 <CompactProductCard
@@ -149,9 +149,11 @@ const styles = StyleSheet.create({
   },
   hero: {
     position: 'relative',
-    width: '100%',
     height: 176,
-    borderRadius: radius.lg,
+    // Full-bleed: stretch + negative margin cancels the screen gutter so the
+    // store photo touches the device edges.
+    marginHorizontal: -layout.contentHorizontalPadding,
+    borderRadius: 0,
     overflow: 'hidden',
     backgroundColor: colors.brand[50],
   },

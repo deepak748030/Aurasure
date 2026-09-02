@@ -36,7 +36,9 @@ server/
 │   ├── seed/
 │   │   └── data.js           # 1:1 mirror of the app's mock ids + data
 │   └── seed.js               # idempotent seeder + demo user
-└── scripts/check-syntax.js   # `npm run check`
+└── scripts/
+    ├── check-syntax.js       # `npm run check`
+    └── smoke.js              # `npm run smoke` — E2E against a real MongoDB
 ```
 
 ## Quick start
@@ -46,9 +48,10 @@ cd server
 cp .env.example .env            # adjust values if needed
 npm install
 
-# 1) Start MongoDB (either way)
-docker compose up -d mongo      # option A: docker
-# or start your own mongod / use MongoDB Atlas URI in .env
+# 1) Point MongoDB at your database
+#    MongoDB Atlas → paste your connection string into server/.env as MONGODB_URI
+#    (the server ALWAYS uses MONGODB_URI — no in-memory MongoDB is used anywhere)
+#    or, for local dev only: docker compose up -d mongo
 
 # 2) Seed the database
 npm run seed                    # idempotent upsert
@@ -70,7 +73,8 @@ See `.env.example`:
 | Key | Default | Purpose |
 | --- | --- | --- |
 | `PORT` | `5000` | HTTP port |
-| `MONGODB_URI` | `mongodb://127.0.0.1:27017/aurasure` | Mongo connection |
+| `MONGODB_URI` | `mongodb://127.0.0.1:27017/aurasure` | Mongo connection — set this to your **MongoDB Atlas** connection string (e.g. `mongodb+srv://...`). The server never falls back to an in-memory DB. |
+| `SMOKE_MONGODB_URI` | *(none)* | optional test-DB override for `npm run smoke`. Must be an explicit real MongoDB (e.g. an Atlas test DB); the built-in localhost default is not used by the smoke test. |
 | `JWT_SECRET` | dev-only placeholder | **set a strong secret in prod** |
 | `JWT_EXPIRES_IN` | `7d` | token lifetime |
 | `BCRYPT_ROUNDS` | `10` | password hashing cost |
@@ -186,4 +190,4 @@ Seeded automatically: **phone `9876543210` / password `aurasure123`**
 | `npm run seed` | upsert seed data |
 | `npm run seed:fresh` | wipe + reseed |
 | `npm run check` | syntax-check all source files |
-| `npm run smoke` | E2E smoke test against in-memory Mongo (or `SMOKE_MONGODB_URI=...`) |
+| `npm run smoke` | E2E smoke test against a real MongoDB (set `SMOKE_MONGODB_URI`, or it uses `MONGODB_URI` from `.env`). **No in-memory MongoDB** — a missing URI fails fast with instructions. |

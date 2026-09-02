@@ -5,14 +5,18 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Text } from '../../components/ui/Text';
+import { Skeleton } from '../../components/ui/Skeleton';
 import { Icon } from '@/lib/icons';
 import { Button } from '../../components/ui/Button';
 import { BottomSheet } from '../../components/ui/BottomSheet';
 import { colors } from '@/theme/colors';
 import { radius } from '@/theme/tokens';
+import { formatINR } from '@/lib/format';
 import { haptic } from '@/lib/haptics';
 import { useScreenBars } from '@/lib/systemBars';
 import { useApp } from '@/context/AppContext';
+import { useAppQuery } from '@/hooks/useAppQuery';
+import { fetchLoyalty, fetchWallet } from '@/api/account';
 import type { IconName } from '@/types';
 import type { MenuDetailKey, MenuStackParamList } from '../../navigation/types';
 
@@ -41,6 +45,12 @@ const SECTIONS: MenuSection[] = [
       { label: 'Edit Profile', icon: 'user', tint: '#E4F1FC', color: '#2E87D6', route: 'editProfile' },
       { label: 'My Address', icon: 'mapPin', tint: '#FDE9DE', color: '#E07B3B', route: 'myAddress' },
       { label: 'Settings', icon: 'settings', tint: '#EEEEF0', color: '#6D6D7A', route: 'settings' },
+    ],
+  },
+  {
+    title: 'Manage',
+    rows: [
+      { label: 'Admin Console', icon: 'gauge', tint: '#EDE9FE', color: '#5B4BC4', route: 'admin' },
     ],
   },
   {
@@ -86,6 +96,22 @@ export function MenuScreen(): React.ReactElement {
   const [heroGone, setHeroGone] = useState(false);
   const surface = heroGone ? PAGE_BG : colors.appBarHero;
   useScreenBars(surface, { navigationBar: colors.appBar });
+
+  // Live wallet balance + loyalty points shown right under the profile when a
+  // user is signed in (falls back to demo values when the API is unavailable).
+  const balances = useAppQuery(
+    async () => {
+      const [w, l] = await Promise.all([fetchWallet(), fetchLoyalty()]);
+      if (!w || !l) throw new Error('Rewards unavailable');
+      return { wallet: w.balance, points: l.points, tier: l.tier };
+    },
+    () => ({ wallet: 480, points: 1240, tier: 'Silver' }),
+  );
+
+  const openDetail = (key: MenuDetailKey): void => {
+    haptic.light();
+    navigation.navigate('MenuDetail', { key });
+  };
 
   const goAuth = (): void => {
     haptic.light();
@@ -158,6 +184,59 @@ export function MenuScreen(): React.ReactElement {
               <Icon name={isLoggedIn ? 'logout' : 'arrowRight'} size={14} color="#8B0057" style={{ marginLeft: 4 }} />
             </Pressable>
           </View>
+
+          {/* Live balance quick-glance: wallet + loyalty points, tappable. */}
+          {isLoggedIn ? (
+            <View style={styles.balanceStrip}>
+              <Pressable
+                onPress={() => openDetail('wallet')}
+                style={({ pressed }) => [styles.balanceCell, { opacity: pressed ? 0.9 : 1 }]}
+              >
+                <View style={styles.balanceCellIcon}>
+                  <Icon name="wallet" size={16} color="#FFE9B8" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text variant="overline" color="rgba(255,255,255,0.75)" weight="bold">
+                    WALLET
+                  </Text>
+                  {balances.loading ? (
+                    <Skeleton width={72} height={15} radius={4} style={{ marginTop: 7, backgroundColor: 'rgba(255,255,255,0.4)' }} />
+                  ) : (
+                    <Text variant="subtitle" weight="bold" color={colors.white}>
+                      {formatINR(balances.data.wallet)}
+                    </Text>
+                  )}
+                </View>
+                <Icon name="chevronRight" size={16} color="rgba(255,255,255,0.7)" />
+              </Pressable>
+              <View style={styles.balanceDivider} />
+              <Pressable
+                onPress={() => openDetail('loyalty')}
+                style={({ pressed }) => [styles.balanceCell, { opacity: pressed ? 0.9 : 1 }]}
+              >
+                <View style={[styles.balanceCellIcon, { backgroundColor: 'rgba(242,182,60,0.28)' }]}>
+                  <Icon name="star" size={16} color="#FFD968" filled />
+                </View>
+                <View style={{ flex: 1 }}>
+                  {balances.loading ? (
+                    <Skeleton width={52} height={12} radius={4} style={{ marginTop: 3, backgroundColor: 'rgba(255,255,255,0.4)' }} />
+                  ) : (
+                    <Text variant="overline" color="rgba(255,255,255,0.75)" weight="bold">
+                      {balances.data.tier.toUpperCase()}
+                    </Text>
+                  )}
+                  {balances.loading ? (
+                    <Skeleton width={72} height={15} radius={4} style={{ marginTop: 5, backgroundColor: 'rgba(255,255,255,0.4)' }} />
+                  ) : (
+                    <Text variant="subtitle" weight="bold" color={colors.white}>
+                      {balances.data.points.toLocaleString('en-IN')} pts
+                    </Text>
+                  )}
+                </View>
+                <Icon name="chevronRight" size={16} color="rgba(255,255,255,0.7)" />
+              </Pressable>
+            </View>
+          ) : null}
         </LinearGradient>
 
         <View style={styles.content}>
@@ -290,6 +369,35 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingVertical: 8,
     paddingHorizontal: 12,
+  },
+  balanceStrip: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    borderRadius: 16,
+    marginTop: 12,
+    padding: 6,
+  },
+  balanceCell: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+  },
+  balanceCellIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    backgroundColor: 'rgba(217,142,18,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  balanceDivider: {
+    width: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(255,255,255,0.35)',
+    marginVertical: 6,
   },
   // The 10px gutter belongs to the content column only - the hero above it is
   // full bleed, so the cards span the content width and stay a touch narrower

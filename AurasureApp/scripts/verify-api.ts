@@ -108,8 +108,10 @@ function startFixtureServer(): Promise<http.Server> {
         req.on('data', (c) => (body += c));
         req.on('end', () => {
           const input = JSON.parse(body);
-          const total = input.items.reduce((s: number, i: any) => s + i.unitPrice * i.qty, 0) + input.deliveryFee - input.discount;
-          res.end(ok({ order: { ...FIXTURES.order, id: 'ord_new', total, items: input.items, address: input.address } }));
+          // Server reprices from its catalogue and never trusts a client
+          // `discount` - coupons are optional and applied server-side only.
+          const total = input.items.reduce((s: number, i: any) => s + i.unitPrice * i.qty, 0) + (input.deliveryFee ?? 0);
+          res.end(ok({ order: { ...FIXTURES.order, id: 'ord_new', total, itemTotal: total - (input.deliveryFee ?? 0), items: input.items, address: input.address }, wallet: 250, loyaltyPoints: 5 }));
         });
         return;
       }
@@ -259,10 +261,11 @@ async function main() {
     module: 'food',
     items: [{ id: 'x1', refId: 'f1', kind: 'food', name: 'Burger', unitPrice: 249, qty: 2, image: null }],
     deliveryFee: 10,
-    discount: 100,
     address: 'Home, 402 Aurora Heights, Raipur',
   });
-  check('place order total recomputed by server', created.total === 408);
+  // Server reprices from the catalogue (f1 = ₹249) and applies no client
+  // discount - coupon codes are the only way to discount an order now.
+  check('place order repriced + total recomputed by server', created.order.itemTotal === 498 && created.order.total === 508);
 
   const foodSearch = await fetchFoodSearch('burger');
   check('food search hits /search?module=food', foodSearch.items.length === 1 && foodSearch.items[0]!.name.includes('Burger'));
@@ -297,6 +300,30 @@ async function main() {
   } catch (err) {
     check('dead server throws ApiError', err instanceof ApiError && err.code === 'NETWORK_ERROR' && err.status === 0);
   }
+
+  // ── Phase 2b: timeout + external abort (production request hardening) ────
+  const slow = http.createServer(() => {
+    /* never responds - used to assert the client's own deadlines */
+  });
+  await new Promise<void>((resolve) => slow.listen(5124, '127.0.0.1', resolve));
+  process.env.EXPO_PUBLIC_API_URL = 'http://127.0.0.1:5124';
+  const { apiGet: slowApiGet } = await import('../src/api/client');
+
+  try {
+    await slowApiGet('/never', { timeoutMs: 150 });
+    check('request times out with ApiError TIMEOUT', false);
+  } catch (err) {
+    check('request times out with ApiError TIMEOUT', err instanceof ApiError && err.code === 'TIMEOUT');
+  }
+
+  const external = new AbortController();
+  const aborted = slowApiGet('/never', { signal: external.signal }).then(
+    () => false,
+    (err: unknown) => err instanceof ApiError && err.code === 'ABORTED',
+  );
+  external.abort();
+  check('external AbortSignal cancels the fetch (ABORTED)', await aborted);
+  await new Promise<void>((resolve) => slow.close(() => resolve()));
 
   // ── Phase 3: live local server (DB down → graceful 503 ApiError) ────────
   process.env.EXPO_PUBLIC_API_URL = 'http://127.0.0.1:5000';

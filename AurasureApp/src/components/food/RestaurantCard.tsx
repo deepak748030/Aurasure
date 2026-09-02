@@ -60,7 +60,7 @@ export function RestaurantCard({ restaurant, onPress }: RestaurantCardProps): Re
         </View>
         <View style={styles.footRow}>
           <Text variant="caption" color={colors.textSecondary}>
-            ₹{formatINR(restaurant.priceForTwo)} for two
+            {formatINR(restaurant.priceForTwo)} for two
           </Text>
           <Text variant="caption" color={restaurant.deliveryFee === 0 ? colors.success : colors.textTertiary} weight="semibold">
             {restaurant.deliveryFee === 0 ? 'Free delivery' : `₹${restaurant.deliveryFee} delivery`}

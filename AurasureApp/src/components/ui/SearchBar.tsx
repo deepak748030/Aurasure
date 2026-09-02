@@ -10,6 +10,8 @@ interface SearchBarProps {
   placeholder?: string;
   onSubmit?: () => void;
   autoFocus?: boolean;
+  autoCorrect?: boolean;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   style?: StyleProp<ViewStyle>;
 }
 
@@ -19,6 +21,8 @@ export function SearchBar({
   placeholder = 'Search Aurasure',
   onSubmit,
   autoFocus = false,
+  autoCorrect = true,
+  autoCapitalize = 'sentences',
   style,
 }: SearchBarProps): React.ReactElement {
   return (
@@ -54,6 +58,8 @@ export function SearchBar({
         returnKeyType="search"
         onSubmitEditing={onSubmit}
         autoFocus={autoFocus}
+        autoCorrect={autoCorrect}
+        autoCapitalize={autoCapitalize}
         blurOnSubmit={false}
       />
       {value.length > 0 ? (

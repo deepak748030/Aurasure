@@ -14,13 +14,16 @@ export const spacing = {
   section: 24,
 };
 
+// Compact, flat radius scale: corners are subtle, not rounded-boxes. CTAs and
+// round icon buttons keep `pill`; everything else (cards, images, sheets)
+// picks from this smaller scale so surfaces read tighter on the phone.
 export const radius = {
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  xxl: 26,
+  xs: 3,
+  sm: 6,
+  md: 8,
+  lg: 10,
+  xl: 14,
+  xxl: 18,
   pill: 999,
 };
 

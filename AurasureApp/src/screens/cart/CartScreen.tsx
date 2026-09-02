@@ -4,6 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Text } from '../../components/ui/Text';
 import { Icon } from '@/lib/icons';
 import { Button } from '../../components/ui/Button';
+import { Skeleton } from '../../components/ui/Skeleton';
 import { SmartImage } from '../../components/ui/SmartImage';
 import { BottomSheet } from '../../components/ui/BottomSheet';
 import { useCart } from '../../context/CartContext';
@@ -32,11 +33,11 @@ const UNAVAILABLE_OPTIONS = [
 type Props = NativeStackScreenProps<CartStackParamList, 'Cart'>;
 
 export function CartScreen({ navigation }: Props): React.ReactElement {
-  const { setQty, remove } = useCart();
+  const { setQty, remove, availPrefFor, setAvailPref } = useCart();
   const { module, items, subtotal } = useModuleCart();
   const [loading, setLoading] = useState(true);
   const [sheet, setSheet] = useState(false);
-  const [selected, setSelected] = useState<string | null>(null);
+  const selected = availPrefFor(module);
 
   useEffect(() => {
     const t = setTimeout(() => setLoading(false), 450);
@@ -64,20 +65,14 @@ export function CartScreen({ navigation }: Props): React.ReactElement {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <View style={styles.itemsHead}>
-          <Icon name="cart" size={20} color="#9C005E" />
-          <Text variant="title" weight="bold" color="#9C005E" style={{ marginLeft: 8 }}>
-            Cart Items ({items.length})
-          </Text>
-        </View>
-
         {loading
           ? [1, 2].map((k) => (
-              <View key={k} style={[styles.itemCard, { opacity: 0.5 }]}>
-                <View style={styles.itemThumb} />
-                <View style={{ flex: 1, marginLeft: 12 }}>
-                  <View style={[styles.skeleton, { width: '50%' }]} />
-                  <View style={[styles.skeleton, { width: '35%', marginTop: 8 }]} />
+              <View key={k} style={styles.itemCard}>
+                <Skeleton width={78} height={78} radius={10} />
+                <View style={{ flex: 1, marginLeft: 12, paddingVertical: 4 }}>
+                  <Skeleton width="52%" height={15} />
+                  <Skeleton width="38%" height={13} style={{ marginTop: 10 }} />
+                  <Skeleton width={70} height={13} style={{ marginTop: 12, alignSelf: 'flex-end' }} />
                 </View>
               </View>
             ))
@@ -113,6 +108,15 @@ export function CartScreen({ navigation }: Props): React.ReactElement {
                 <Icon name="chevronDown" size={18} color="#9C005E" />
               </View>
             </Pressable>
+
+            {selected ? (
+              <View style={styles.availNote}>
+                <Icon name="check" size={14} color="#2C9B4D" />
+                <Text variant="caption" color="#2C9B4D" weight="semibold" style={{ marginLeft: 6, flex: 1 }}>
+                  We'll follow this for your order: {selected}
+                </Text>
+              </View>
+            ) : null}
 
             <View style={styles.priceCard}>
               <View style={styles.priceHead}>
@@ -178,7 +182,7 @@ export function CartScreen({ navigation }: Props): React.ReactElement {
                 key={opt}
                 onPress={() => {
                   haptic.selection();
-                  setSelected(opt);
+                  setAvailPref(module, opt);
                 }}
                 style={({ pressed }) => [styles.sheetOption, on ? styles.sheetOptionOn : null, { opacity: pressed ? 0.92 : 1 }]}
               >
@@ -188,7 +192,23 @@ export function CartScreen({ navigation }: Props): React.ReactElement {
               </Pressable>
             );
           })}
-          <Button title="Apply" variant="login" fullWidth size="lg" style={{ marginTop: 18 }} onPress={() => setSheet(false)} />
+          {!selected ? (
+            <Text variant="caption" color={colors.textTertiary} style={{ textAlign: 'center', marginTop: 14 }}>
+              Pick one so we know how to handle it.
+            </Text>
+          ) : null}
+          <Button
+            title="Apply"
+            variant="login"
+            fullWidth
+            size="lg"
+            disabled={!selected}
+            style={{ marginTop: 18 }}
+            onPress={() => {
+              haptic.success();
+              setSheet(false);
+            }}
+          />
         </View>
       </BottomSheet>
     </SafeAreaView>
@@ -220,9 +240,6 @@ function CartRow({
             </View>
           ) : null}
         </View>
-        <Text variant="subtitle" weight="bold" color={colors.text} style={{ marginTop: 4 }}>
-          {formatINR(item.unitPrice)}
-        </Text>
 
         <View style={styles.itemActions}>
           <Pressable onPress={onRemove} hitSlop={8} style={styles.deleteBtn}>
@@ -244,7 +261,8 @@ function CartRow({
           </View>
         </View>
 
-        <Text variant="title" weight="bold" color={colors.text} style={{ marginTop: 8, textAlign: 'right' }}>
+        {/* Single price per line - shows the line total (== unit price when qty is 1). */}
+        <Text variant="title" weight="bold" color={colors.text} style={{ marginTop: 6, textAlign: 'right' }}>
           {formatINR(item.unitPrice * item.qty)}
         </Text>
       </View>
@@ -263,29 +281,20 @@ const styles = StyleSheet.create({
   },
   headerBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   scroll: { paddingHorizontal: 6, paddingBottom: 30 },
-  itemsHead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F7E8F5',
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    marginTop: 4,
-  },
   itemCard: {
     flexDirection: 'row',
     backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 16,
-    marginTop: 14,
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 10,
     borderWidth: 1,
     borderColor: '#EFE7F0',
   },
-  itemThumb: { width: 78, height: 78, borderRadius: 16, backgroundColor: '#F7E2F1' },
+  itemThumb: { width: 78, height: 78, borderRadius: 10, backgroundColor: '#F7E2F1' },
   itemInfo: { flex: 1, marginLeft: 14 },
   unitBadge: {
     backgroundColor: '#F7E2F1',
-    borderRadius: 8,
+    borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 2,
     marginLeft: 8,
@@ -297,9 +306,9 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   deleteBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: '#FCEAF3',
     alignItems: 'center',
     justifyContent: 'center',
@@ -314,7 +323,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: 8,
   },
-  skeleton: { height: 13, borderRadius: 6, backgroundColor: '#E7E4E9' },
   empty: { alignItems: 'center', paddingVertical: 60 },
   // Same box as the gradient CTA under it: stretches the card column, 56 tall,
   // pill - so the two stacked actions read as one pair.
@@ -323,7 +331,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'stretch',
-    marginTop: 22,
+    marginTop: 16,
     minHeight: 56,
     paddingHorizontal: 24,
     paddingVertical: 12,
@@ -345,11 +353,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: 18,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#EFE7F0',
-    padding: 16,
-    marginTop: 22,
+    padding: 12,
+    marginTop: 16,
   },
   chevBox: {
     width: 34,
@@ -361,9 +369,9 @@ const styles = StyleSheet.create({
   },
   priceCard: {
     backgroundColor: '#10111D',
-    borderRadius: 22,
-    padding: 18,
-    marginTop: 24,
+    borderRadius: 14,
+    padding: 16,
+    marginTop: 18,
   },
   priceHead: { flexDirection: 'row', alignItems: 'center' },
   priceHeadIcon: {
@@ -374,15 +382,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  priceRule: { height: 1, backgroundColor: 'rgba(255,255,255,0.16)', marginVertical: 14 },
+  priceRule: { height: 1, backgroundColor: 'rgba(255,255,255,0.16)', marginVertical: 12 },
   priceRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 },
   freeDelivery: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFF3E0',
-    borderRadius: 16,
-    padding: 12,
-    marginTop: 16,
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 14,
   },
   freeDeliveryIcon: {
     width: 32,
@@ -405,7 +413,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 18,
+    marginTop: 14,
   },
   sheetOption: {
     borderRadius: radius.lg,
@@ -415,6 +423,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     marginTop: 10,
     backgroundColor: colors.surface,
+  },
+  availNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EAF7EE',
+    borderRadius: radius.lg,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 10,
   },
   sheetOptionOn: { borderColor: '#9C005E', backgroundColor: '#FBF3F9' },
 });

@@ -40,4 +40,18 @@ function authenticate({ requireUser = true } = {}) {
   };
 }
 
-module.exports = { authenticate };
+/**
+ * Role guard - use after `authenticate()`: `router.use(authenticate(), requireRole('admin'))`.
+ * Non-matching roles get a clean 403 instead of hitting the handler.
+ */
+function requireRole(...roles) {
+  return (req, res, next) => {
+    if (!req.user) return next(ApiError.unauthorized('Authentication token missing', 'TOKEN_MISSING'));
+    if (!roles.includes(req.user.role)) {
+      return next(ApiError.forbidden('Admin access required', 'ADMIN_ONLY'));
+    }
+    return next();
+  };
+}
+
+module.exports = { authenticate, requireRole };

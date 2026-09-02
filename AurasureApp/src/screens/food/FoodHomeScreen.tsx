@@ -10,9 +10,10 @@ import { Chip } from '../../components/ui/Chip';
 import { BannerCard } from '../../components/common/BannerCard';
 import { Grid } from '../../components/common/Grid';
 import { FoodHero } from '../../components/food/FoodHero';
-import { FoodCategoryCircles } from '../../components/food/FoodCategoryCircles';
+import { FoodCategoryCircles, FoodCategoryCirclesSkeleton } from '../../components/food/FoodCategoryCircles';
+import { JustForYouTileSkeleton } from '../../components/food/JustForYouTile';
 import { JustForYouTile } from '../../components/food/JustForYouTile';
-import { FoodStoreRailCard } from '../../components/food/FoodStoreRailCard';
+import { FoodStoreRailCard, FoodStoreRailCardSkeleton } from '../../components/food/FoodStoreRailCard';
 import { CompactFoodCard, CompactFoodCardSkeleton } from '../../components/food/CompactFoodCard';
 import { RestaurantCard, RestaurantCardSkeleton } from '../../components/food/RestaurantCard';
 import { layout } from '@/theme/tokens';
@@ -124,11 +125,15 @@ export function FoodHomeScreen({ navigation }: Props): React.ReactElement {
 
       <View style={{ height: 22 }} />
       {/* Image-based category circles (filter) */}
-      <FoodCategoryCircles
-        items={data.categories}
-        activeId={activeCat}
-        onSelect={(id) => setActiveCat((prev) => (prev === id ? undefined : id))}
-      />
+      {loading ? (
+        <FoodCategoryCirclesSkeleton />
+      ) : (
+        <FoodCategoryCircles
+          items={data.categories}
+          activeId={activeCat}
+          onSelect={(id) => setActiveCat((prev) => (prev === id ? undefined : id))}
+        />
+      )}
 
       <View style={{ height: 26 }} />
       {/* Just for You - big collection tiles */}
@@ -137,7 +142,11 @@ export function FoodHomeScreen({ navigation }: Props): React.ReactElement {
         subtitle="Curated collections"
         action={<SeeAllArrow onPress={() => openSeeAll('foodPopular', 'Popular items')} />}
       />
-      <Grid columns={3} gap={10} data={data.vibes} renderItem={(v) => <JustForYouTile vibe={v} onPress={openVibe} />} />
+      {loading ? (
+        <Grid columns={3} gap={5} data={[1, 2, 3]} renderItem={() => <JustForYouTileSkeleton />} />
+      ) : (
+        <Grid columns={3} gap={5} data={data.vibes} renderItem={(v) => <JustForYouTile vibe={v} onPress={openVibe} />} />
+      )}
 
       <View style={{ height: 26 }} />
       {/* New on Aurasure - freshly added stores */}
@@ -147,12 +156,21 @@ export function FoodHomeScreen({ navigation }: Props): React.ReactElement {
         action={<SeeAllArrow onPress={() => openSeeAll('foodNew', 'New stores')} />}
       />
       {loading ? (
-        <View style={{ height: 216 }} />
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingRight: layout.contentHorizontalPadding, gap: 8 }}
+          style={{ marginHorizontal: -layout.contentHorizontalPadding }}
+        >
+          {[1, 2].map((k) => (
+            <FoodStoreRailCardSkeleton key={k} />
+          ))}
+        </ScrollView>
       ) : (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingRight: layout.contentHorizontalPadding, gap: 12 }}
+          contentContainerStyle={{ paddingRight: layout.contentHorizontalPadding, gap: 8 }}
           style={{ marginHorizontal: -layout.contentHorizontalPadding }}
         >
           {data.newStores.map((r) => (
@@ -204,16 +222,29 @@ export function FoodHomeScreen({ navigation }: Props): React.ReactElement {
         subtitle="Ratings & distance picked for you"
         action={<SeeAllArrow onPress={() => openSeeAll('foodNearby', 'Best stores nearby')} />}
       />
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingRight: layout.contentHorizontalPadding, gap: 12 }}
-        style={{ marginHorizontal: -layout.contentHorizontalPadding }}
-      >
-        {data.restaurants.map((r) => (
-          <FoodStoreRailCard key={r.id} restaurant={r} onPress={openRestaurant} />
-        ))}
-      </ScrollView>
+      {loading ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingRight: layout.contentHorizontalPadding, gap: 8 }}
+          style={{ marginHorizontal: -layout.contentHorizontalPadding }}
+        >
+          {[1, 2].map((k) => (
+            <FoodStoreRailCardSkeleton key={k} />
+          ))}
+        </ScrollView>
+      ) : (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingRight: layout.contentHorizontalPadding, gap: 8 }}
+          style={{ marginHorizontal: -layout.contentHorizontalPadding }}
+        >
+          {data.restaurants.map((r) => (
+            <FoodStoreRailCard key={r.id} restaurant={r} onPress={openRestaurant} />
+          ))}
+        </ScrollView>
+      )}
 
       <View style={{ height: 26 }} />
       {/* Most Popular Items */}
@@ -224,11 +255,11 @@ export function FoodHomeScreen({ navigation }: Props): React.ReactElement {
         action={<SeeAllArrow onPress={() => openSeeAll('foodPopular', 'Most popular items')} />}
       />
       {loading ? (
-        <Grid columns={3} gap={10} data={[1, 2, 3, 4, 5, 6, 7, 8, 9]} renderItem={() => <CompactFoodCardSkeleton />} />
+        <Grid columns={3} gap={5} data={[1, 2, 3, 4, 5, 6, 7, 8, 9]} renderItem={() => <CompactFoodCardSkeleton />} />
       ) : (
         <Grid
           columns={3}
-          gap={10}
+          gap={5}
           data={popularItems}
           renderItem={(item) => <CompactFoodCard item={item} onPress={openDish} />}
         />
@@ -244,11 +275,11 @@ export function FoodHomeScreen({ navigation }: Props): React.ReactElement {
           action={<SeeAllArrow onPress={() => openSeeAll('foodOffers', 'Special offers')} />}
         />
         {loading ? (
-          <Grid columns={3} gap={10} data={[1, 2, 3, 4, 5, 6, 7, 8, 9]} renderItem={() => <CompactFoodCardSkeleton />} />
+          <Grid columns={3} gap={5} data={[1, 2, 3, 4, 5, 6, 7, 8, 9]} renderItem={() => <CompactFoodCardSkeleton />} />
         ) : (
           <Grid
             columns={3}
-            gap={10}
+            gap={5}
             data={offerItems}
             renderItem={(item) => <CompactFoodCard item={item} onPress={openDish} />}
           />

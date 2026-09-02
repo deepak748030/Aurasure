@@ -95,7 +95,7 @@ export function RestaurantScreen({ route, navigation }: Props): React.ReactEleme
             {formatMinutes(restaurant.deliveryTime)}
           </Text>
           <Text variant="caption" color={colors.textTertiary} style={{ marginLeft: 8 }}>
-            ₹{formatINR(restaurant.priceForTwo)} for two
+            {formatINR(restaurant.priceForTwo)} for two
           </Text>
         </View>
         {restaurant.promo ? (
@@ -135,12 +135,12 @@ export function RestaurantScreen({ route, navigation }: Props): React.ReactEleme
         <View style={{ paddingTop: 14 }}>
           {loading
             ? [1, 2, 3, 4].map((k) => (
-                <View key={k} style={{ marginBottom: 12, paddingHorizontal: layout.contentHorizontalPadding }}>
+                <View key={k} style={{ marginBottom: 8, paddingHorizontal: layout.contentHorizontalPadding }}>
                   <DishCardSkeleton />
                 </View>
               ))
             : dishes.map((d) => (
-                <View key={d.id} style={{ marginBottom: 12, paddingHorizontal: layout.contentHorizontalPadding }}>
+                <View key={d.id} style={{ marginBottom: 8, paddingHorizontal: layout.contentHorizontalPadding }}>
                   <DishCard item={d} onPress={openDish} />
                 </View>
               ))}

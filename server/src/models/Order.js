@@ -34,8 +34,20 @@ const orderSchema = new mongoose.Schema(
     deliveryFee: { type: Number, default: 0, min: 0 },
     discount: { type: Number, default: 0, min: 0 },
     total: { type: Number, required: true, min: 0 },
+    // How the order was paid. `wallet` = deducted from the user's balance.
+    payBy: { type: String, enum: ['wallet', 'cod', 'upi', 'card'], default: 'cod' },
+    // Wallet money actually charged for this order (0 when not wallet-paid).
+    walletPaid: { type: Number, default: 0, min: 0 },
+    // Loyalty points earned by placing this order.
+    loyaltyEarned: { type: Number, default: 0, min: 0 },
     etaMinutes: { type: Number, default: 0, min: 0 },
     address: { type: String, required: true },
+    // Coupon that was redeemed on this order (kept for cancellation restores).
+    couponId: { type: String, default: null },
+    couponCode: { type: String, default: null },
+    // Customer instruction, e.g. the cart's "if any product is not
+    // available → …" preference. Shown to fulfilment in the admin console.
+    instructions: { type: String, default: '' },
   },
   {
     timestamps: true,

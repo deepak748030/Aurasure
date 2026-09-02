@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SmartImage } from '../ui/SmartImage';
 import { Text } from '../ui/Text';
@@ -16,6 +16,7 @@ interface BannerCardProps {
   image: ImageRef;
   height?: number;
   onPress?: () => void;
+  style?: StyleProp<ViewStyle>;
   /**
    * true  -> the banner touches the left/right device edges (negative margin
    *          cancels the screen gutter, no side radius) - the default.
@@ -31,6 +32,7 @@ export function BannerCard({
   image,
   height = 150,
   onPress,
+  style,
   fullBleed = true,
 }: BannerCardProps): React.ReactElement {
   return (
@@ -46,6 +48,7 @@ export function BannerCard({
         fullBleed
           ? { marginHorizontal: -layout.contentHorizontalPadding, borderRadius: 0 }
           : { borderRadius: radius.lg },
+        style,
       ]}
     >
       <SmartImage source={image} style={StyleSheet.absoluteFill} />

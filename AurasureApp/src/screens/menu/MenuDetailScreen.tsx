@@ -1,22 +1,43 @@
-import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Pressable, ScrollView, Share, StyleSheet, Switch, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Screen } from '../../components/ui/Screen';
 import { BackButton } from '../../components/ui/BackButton';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Text } from '../../components/ui/Text';
 import { Icon } from '@/lib/icons';
+import { BottomSheet } from '../../components/ui/BottomSheet';
+import { Input } from '../../components/ui/Input';
+import { Skeleton } from '../../components/ui/Skeleton';
 import { colors } from '@/theme/colors';
 import { radius } from '@/theme/tokens';
 import { formatINR } from '@/lib/format';
 import { haptic } from '@/lib/haptics';
 import { useScreenBars } from '@/lib/systemBars';
 import { useApp } from '@/context/AppContext';
+import { useAppQuery } from '@/hooks/useAppQuery';
+import { ApiError } from '@/api/client';
+import {
+  addAddressToServer,
+  addWalletMoney,
+  applyReferral,
+  deleteAddressFromServer,
+  fetchCoupons,
+  fetchLoyalty,
+  fetchMe,
+  fetchReferral,
+  fetchWallet,
+  redeemLoyalty,
+  submitPartnerApplication,
+  updateProfile,
+} from '@/api/account';
+import { userProfile } from '../../data/mock';
+import { AdminConsoleBody } from '../../components/admin/AdminConsoleBody';
+import { switchTab } from '@/navigation/RootNavigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { IconName } from '@/types';
+import type { Coupon, IconName, LoyaltyData, ReferralInfo, WalletData } from '@/types';
 import type { MenuDetailKey, MenuStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<MenuStackParamList, 'MenuDetail'>;
@@ -40,6 +61,7 @@ const META: Record<MenuDetailKey, Meta> = {
   refer: { title: 'Refer & Earn', subtitle: 'Invite friends, earn rewards', icon: 'share', tint: '#E5F7E5', color: '#2C9B4D', gradient: ['#4CB86A', '#2C9B4D'] },
   delivery: { title: 'Join as a Delivery Man', subtitle: 'Earn flexible income', icon: 'truck', tint: '#E2F1FF', color: '#2E87D6', gradient: ['#4A7BE0', '#2E87D6'] },
   vendor: { title: 'Open Vendor', subtitle: 'Sell on Aurasure', icon: 'store', tint: '#FCE7E4', color: '#D9573F', gradient: ['#E5765F', '#D9573F'] },
+  admin: { title: 'Admin Console', subtitle: 'Orders, fulfilment & partners', icon: 'gauge', tint: '#EDE9FE', color: '#5B4BC4', gradient: ['#4F46A8', '#3730A3'] },
   liveChat: { title: 'Live Chat', subtitle: 'Talk to us in real time', icon: 'message', tint: '#E5F7E5', color: '#2C9B4D', gradient: ['#4CB86A', '#2C9B4D'] },
   help: { title: 'Help & Support', subtitle: 'We are here to help', icon: 'phone', tint: '#E4F1FC', color: '#2E87D6', gradient: ['#4A7BE0', '#2E87D6'] },
   terms: { title: 'Terms & Conditions', subtitle: 'Legal agreement', icon: 'info', tint: '#F0E8FF', color: '#8C5ADB', gradient: ['#A06BE8', '#8C5ADB'] },
@@ -76,9 +98,7 @@ export function MenuDetailScreen({ route, navigation }: Props): React.ReactEleme
   const meta = META[route.params.key];
   const insets = useSafeAreaInsets();
   useScreenBars(meta.gradient[0], { navigationBar: colors.appBar });
-  const openChat = (): void => haptic.success();
-
-  const body = renderBody(route.params.key, meta, { openChat });
+  const body = renderBody(route.params.key, meta, navigation);
 
   return (
     <SafeAreaView style={styles.root} edges={['left', 'right']}>
@@ -116,7 +136,7 @@ export function MenuDetailScreen({ route, navigation }: Props): React.ReactEleme
 function renderBody(
   key: MenuDetailKey,
   meta: Meta,
-  ctx: { openChat: () => void },
+  navigation: Props['navigation'],
 ): React.ReactElement {
   switch (key) {
     case 'editProfile':
@@ -137,10 +157,12 @@ function renderBody(
       return <DeliveryBody />;
     case 'vendor':
       return <VendorBody />;
+    case 'admin':
+      return <AdminConsoleBody />;
     case 'liveChat':
-      return <LiveChatBody onStart={ctx.openChat} />;
+      return <LiveChatBody />;
     case 'help':
-      return <HelpBody />;
+      return <HelpBody navigation={navigation} />;
     case 'terms':
     case 'privacy':
     case 'refund':
@@ -153,8 +175,56 @@ function renderBody(
 /* ---------------------------- profile ---------------------------- */
 
 function EditProfileBody(): React.ReactElement {
-  const { name, phone } = useApp();
-  const [display, setDisplay] = useState(name ?? '');
+  const { phone, login } = useApp();
+  const loggedIn = !!phone;
+  const { data: profile } = useAppQuery(fetchMe, () => userProfile);
+  const [display, setDisplay] = useState(profile?.name ?? '');
+  const [email, setEmail] = useState(profile?.email ?? '');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Populate the fields once the (async) profile arrives - never overwrite
+  // text the user has already typed.
+  useEffect(() => {
+    if (!profile) return;
+    setDisplay((d) => d || profile.name || '');
+    setEmail((e) => e || profile.email || '');
+  }, [profile]);
+
+  const save = async (): Promise<void> => {
+    if (!display.trim()) {
+      setError('Name cannot be empty');
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    setSaved(false);
+    try {
+      await updateProfile({ name: display.trim(), email: email.trim() });
+      // Reflect the new name in the More-screen header instantly.
+      if (phone) login(phone, display.trim());
+      setSaved(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not save changes');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!loggedIn) {
+    return (
+      <Card>
+        <View style={{ alignItems: 'center', paddingVertical: 22 }}>
+          <Icon name="user" size={40} color={colors.textTertiary} />
+          <Text variant="subtitle" color={colors.textSecondary} style={{ marginTop: 12, textAlign: 'center' }}>
+            Sign in to edit your profile
+          </Text>
+        </View>
+      </Card>
+    );
+  }
+
   return (
     <>
       <Card style={styles.profileCard}>
@@ -168,29 +238,37 @@ function EditProfileBody(): React.ReactElement {
         </View>
         <View style={{ flex: 1, marginLeft: 14 }}>
           <Text variant="title" weight="bold" color={colors.text}>
-            {phone ? name ?? 'Guest User' : 'Sign in to edit'}
+            {display || 'Your name'}
           </Text>
           <Text variant="caption" color={colors.textSecondary} style={{ marginTop: 2 }}>
-            {phone ?? 'Not signed in'}
+            {profile?.phone ?? 'Member'}
           </Text>
         </View>
       </Card>
       <Card style={{ marginTop: 14 }}>
         <Field label="Full name" value={display} onChangeText={setDisplay} icon="user" />
-        <Field label="Phone" value={phone ?? ''} onChangeText={() => undefined} icon="phone" disabled />
-        <View style={[styles.fieldWrap, styles.fieldWrapBorder]}>
-          <Text variant="caption" color={colors.textTertiary} style={styles.fieldLabel}>
-            EMAIL
-          </Text>
-          <View style={styles.fieldInputRow}>
-            <Icon name="mail" size={18} color={colors.textSecondary} style={styles.fieldIcon} />
-            <Text variant="body" color={colors.textSecondary}>
-              Add email for receipts
-            </Text>
-          </View>
-        </View>
+        <Field label="Phone" value={profile?.phone ?? ''} onChangeText={() => undefined} icon="phone" disabled />
+        <Field label="Email" value={email} onChangeText={setEmail} icon="mail" />
       </Card>
-      <FullWidthButton label="Save changes" />
+      {error ? (
+        <Text variant="caption" color={colors.danger} style={{ marginTop: 10, marginLeft: 4 }}>
+          {error}
+        </Text>
+      ) : null}
+      {saved ? (
+        <Text variant="caption" color={colors.success} style={{ marginTop: 10, marginLeft: 4 }}>
+          Saved — your profile is up to date ✓
+        </Text>
+      ) : null}
+      <Button
+        title={saving ? 'Saving…' : 'Save changes'}
+        onPress={() => void save()}
+        fullWidth
+        size="lg"
+        loading={saving}
+        style={{ marginTop: 16 }}
+        leftIcon="check"
+      />
     </>
   );
 }
@@ -215,107 +293,547 @@ function SettingsBody(): React.ReactElement {
 
 /* ---------------------------- address ---------------------------- */
 
+const EMPTY_ADDR = { label: '', line: '', city: '', pin: '' };
+
 function AddressBody(): React.ReactElement {
-  const { city } = useApp();
-  const addresses = [
-    { label: 'Home', detail: '12, Shanti Nagar, Indore, MP 452001', icon: 'home' as IconName },
-    { label: 'Work', detail: 'Aurora Tower, Vijay Nagar, Indore, MP 452010', icon: 'store' as IconName },
-  ];
+  const q = useAppQuery(fetchMe, () => userProfile);
+  const addresses = q.data?.addresses ?? [];
+  const [sheet, setSheet] = useState(false);
+  const [form, setForm] = useState(EMPTY_ADDR);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const refresh = (): void => q.refresh();
+
+  const addAddress = async (): Promise<void> => {
+    if (!form.label.trim() || !form.line.trim() || !form.city.trim() || !form.pin.trim()) {
+      setMsg('Fill every field (label, address, city, PIN)');
+      return;
+    }
+    setSaving(true);
+    setMsg(null);
+    try {
+      await addAddressToServer({
+        label: form.label.trim(),
+        line: form.line.trim(),
+        city: form.city.trim(),
+        pin: form.pin.trim(),
+      });
+      setSheet(false);
+      setForm(EMPTY_ADDR);
+      refresh();
+    } catch (err) {
+      setMsg(err instanceof ApiError ? err.message : 'Could not save the address');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const removeAddress = async (id: string): Promise<void> => {
+    try {
+      await deleteAddressFromServer(id);
+      refresh();
+    } catch {
+      setMsg('Could not delete the address');
+    }
+  };
+
   return (
     <>
-      <Card>
-        {addresses.map((a, i) => (
-          <View key={a.label} style={[styles.row, i > 0 ? styles.rowTop : null]}>
-            <View style={styles.rowIcon}><Icon name={a.icon} size={18} color="#9C005E" filled /></View>
-            <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text variant="title" weight="bold" color={colors.text}>{a.label}</Text>
-                {i === 0 ? <Badge label="Default" tone="brand" style={{ marginLeft: 8 }} /> : null}
+      {addresses.length === 0 ? (
+        <Card>
+          <Text variant="body" color={colors.textSecondary} style={{ textAlign: 'center', paddingVertical: 18 }}>
+            No saved addresses yet — add one below.
+          </Text>
+        </Card>
+      ) : (
+        <Card>
+          {addresses.map((a, i) => (
+            <View key={a.id} style={[styles.row, i > 0 ? styles.rowTop : null]}>
+              <View style={styles.rowIcon}><Icon name={a.isDefault ? 'home' : 'mapPin'} size={18} color="#9C005E" filled /></View>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text variant="title" weight="bold" color={colors.text}>{a.label}</Text>
+                  {a.isDefault ? <Badge label="Default" tone="brand" size="sm" style={{ marginLeft: 8 }} /> : null}
+                </View>
+                <Text variant="caption" color={colors.textSecondary} style={{ marginTop: 2 }}>
+                  {a.line}, {a.city} {a.pin}
+                </Text>
               </View>
-              <Text variant="caption" color={colors.textSecondary} style={{ marginTop: 2 }}>{a.detail}</Text>
+              {!a.isDefault ? (
+                <Pressable onPress={() => void removeAddress(a.id)} hitSlop={8} style={styles.deleteMini}>
+                  <Icon name="trash" size={16} color={colors.danger} />
+                </Pressable>
+              ) : null}
             </View>
+          ))}
+        </Card>
+      )}
+      <Button
+        title="+ Add new address"
+        onPress={() => {
+          setMsg(null);
+          setSheet(true);
+        }}
+        fullWidth
+        size="lg"
+        style={{ marginTop: 16 }}
+        leftIcon="plusCircle"
+      />
+      {msg ? (
+        <Text variant="caption" color={colors.danger} style={{ marginTop: 10, marginLeft: 4 }}>
+          {msg}
+        </Text>
+      ) : null}
+
+      <BottomSheet visible={sheet} onClose={() => setSheet(false)} title="Add new address">
+        <Input label="Label (Home/Work)" value={form.label} onChangeText={(t) => setForm((s) => ({ ...s, label: t }))} placeholder="Home" leftIcon="tag" />
+        <Input label="Address line" value={form.line} onChangeText={(t) => setForm((s) => ({ ...s, line: t }))} placeholder="House / flat, street, landmark" leftIcon="mapPin" />
+        <View style={{ flexDirection: 'row', gap: 0 }}>
+          <View style={{ flex: 1, marginRight: 10 }}>
+            <Input label="City" value={form.city} onChangeText={(t) => setForm((s) => ({ ...s, city: t }))} placeholder="Indore" leftIcon="mapPinned" />
           </View>
-        ))}
-      </Card>
-      <FullWidthButton label="+ Add new address" />
+          <View style={{ flex: 1 }}>
+            <Input label="PIN" value={form.pin} onChangeText={(t) => setForm((s) => ({ ...s, pin: t }))} placeholder="452001" keyboardType="number-pad" leftIcon="mapPin" />
+          </View>
+        </View>
+        <Button
+          title={saving ? 'Saving…' : 'Save address'}
+          onPress={() => void addAddress()}
+          fullWidth
+          size="lg"
+          loading={saving}
+          style={{ marginTop: 4 }}
+          leftIcon="check"
+        />
+      </BottomSheet>
     </>
   );
 }
 
 /* ---------------------------- coupon ---------------------------- */
 
+const MOCK_COUPONS: Coupon[] = [
+  { id: 'c1', code: 'AURA50', title: '₹50 off on your first order', subtitle: 'Welcome coupon', minOrder: 199, offType: 'flat', offValue: 50, expiresAt: null, usedAt: null },
+  { id: 'c2', code: 'FOOD25', title: '25% off on food delivery', subtitle: 'Up to ₹120', minOrder: 349, offType: 'percent', offValue: 25, expiresAt: null, usedAt: null },
+  { id: 'c3', code: 'FREEDEL', title: 'Free delivery on all orders', subtitle: 'No minimum', minOrder: 0, offType: 'flat', offValue: 0, expiresAt: null, usedAt: null },
+];
+
+function SkeletonListRow(): React.ReactElement {
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowIcon}>
+        <Skeleton width={34} height={34} radius={17} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Skeleton width="55%" height={13} />
+        <Skeleton width="70%" height={11} style={{ marginTop: 6 }} />
+      </View>
+      <Skeleton width={58} height={14} />
+    </View>
+  );
+}
+
+function SkeletonBalanceCard(): React.ReactElement {
+  return (
+    <View style={[styles.balanceCard, { backgroundColor: '#EFE7EE' }]}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+        <Skeleton width={22} height={22} radius={11} />
+        <Skeleton width={92} height={16} radius={8} />
+      </View>
+      <Skeleton width="46%" height={34} style={{ marginTop: 16 }} />
+      <Skeleton width="72%" height={12} style={{ marginTop: 12 }} />
+    </View>
+  );
+}
+
+const fmtDay = (iso?: string | null): string => {
+  if (!iso) return '';
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  } catch {
+    return '';
+  }
+};
+
 function CouponsBody(): React.ReactElement {
-  const coupons = [
-    { code: 'AURA50', label: '₹50 off on your first order', min: 'Min order ₹199' },
-    { code: 'FOOD25', label: '25% off on food delivery', min: 'Min order ₹349' },
-    { code: 'FREEDEL', label: 'Free delivery on all orders', min: 'No minimum' },
-  ];
+  const q = useAppQuery(fetchCoupons, () => MOCK_COUPONS);
+  const coupons: Coupon[] = (q.data ?? MOCK_COUPONS).filter((c) => !c.usedAt);
   return (
     <View>
-      {coupons.map((c) => (
-        <Card key={c.code} style={{ marginBottom: 12 }}>
-          <View style={styles.couponRow}>
-            <View style={{ flex: 1 }}>
-              <Text variant="title" weight="extrabold" color="#9C005E">{c.label}</Text>
-              <Text variant="caption" color={colors.textSecondary} style={{ marginTop: 3 }}>{c.min}</Text>
-            </View>
-            <View style={styles.couponCode}>
-              <Text variant="caption" weight="bold" color="#9C005E">{c.code}</Text>
-            </View>
-          </View>
+      {q.loading ? (
+        <>
+          {[1, 2].map((k) => (
+            <Card key={k} style={{ marginBottom: 10 }}>
+              <View style={styles.couponRow}>
+                <View style={{ flex: 1 }}>
+                  <Skeleton width="58%" height={16} />
+                  <Skeleton width="84%" height={11} style={{ marginTop: 8 }} />
+                </View>
+                <Skeleton width={82} height={28} radius={8} />
+              </View>
+            </Card>
+          ))}
+        </>
+      ) : coupons.length === 0 ? (
+        <Card>
+          <Text variant="body" color={colors.textSecondary} style={{ textAlign: 'center', paddingVertical: 18 }}>
+            No active coupons right now.
+          </Text>
         </Card>
-      ))}
-      <FullWidthButton label="Apply coupon" />
+      ) : (
+        coupons.map((c) => (
+          <Card key={c.code} style={{ marginBottom: 10 }}>
+            <View style={styles.couponRow}>
+              <View style={{ flex: 1 }}>
+                <Text variant="title" weight="extrabold" color="#9C005E">{c.title}</Text>
+                <Text variant="caption" color={colors.textSecondary} style={{ marginTop: 3 }}>
+                  {c.subtitle}
+                  {c.minOrder > 0 ? ` · Min order ₹${c.minOrder}` : ''}
+                  {c.expiresAt ? ` · Till ${fmtDay(c.expiresAt)}` : ''}
+                </Text>
+              </View>
+              <View style={[styles.couponCode, q.source === 'api' && { borderColor: '#B78FD0' }]}>
+                <Text variant="caption" weight="bold" color="#9C005E">{c.code}</Text>
+              </View>
+            </View>
+          </Card>
+        ))
+      )}
+      <Text variant="caption" color={colors.textTertiary} style={{ textAlign: 'center', marginTop: 4 }}>
+        Codes auto-apply at checkout when you spend above the minimum.
+      </Text>
     </View>
   );
 }
 
 /* ---------------------------- loyalty ---------------------------- */
 
+const MOCK_LOYALTY = (): LoyaltyData => ({
+  points: 1240,
+  tier: 'Silver',
+  activity: [
+    { id: 'l1', type: 'earned', title: 'Order reward', note: '₹580 spent → points', points: 290, balanceAfter: 1240, createdAt: new Date().toISOString() },
+    { id: 'l2', type: 'earned', title: 'Order reward', note: '₹780 spent → points', points: 390, balanceAfter: 950, createdAt: new Date().toISOString() },
+    { id: 'l3', type: 'earned', title: 'Referral bonus', note: 'Friend joined', points: 250, balanceAfter: 560, createdAt: new Date().toISOString() },
+  ],
+});
+
+const REDEEM_CHOICES = [100, 200, 500, 1000];
+
 function LoyaltyBody(): React.ReactElement {
-  const [redeem] = useState(false);
+  const q = useAppQuery(fetchLoyalty, MOCK_LOYALTY);
+  const points = q.data?.points ?? 0;
+  const tier = q.data?.tier ?? 'Bronze';
+  const [sheet, setSheet] = useState(false);
+  const [choice, setChoice] = useState<number>(100);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const confirmRedeem = async (): Promise<void> => {
+    setBusy(true);
+    setErr(null);
+    try {
+      await redeemLoyalty(choice);
+      setSheet(false);
+      q.refresh();
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : 'Could not redeem points');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const activity = q.data?.activity ?? MOCK_LOYALTY().activity;
+
   return (
     <>
-      <BalanceCard icon="star" value="1,240" unit="points" hint="Earn 5 points on every ₹100 spent" cta="Redeem now" gradient={['#F2B63C', '#E5A710']} />
-      <SectionLabel label="Recent activity" />
-      <Card>
-        <ActivityRow title="Order #AUR-2291" sub="Food delivery" amount="+120 pts" />
-        <ActivityRow title="Referral bonus" sub="Friend joined" amount="+250 pts" positive />
-        <ActivityRow title="Redeemed" sub="₹50 coupon" amount="-200 pts" />
-      </Card>
+      {q.loading ? (
+        <>
+          <SkeletonBalanceCard />
+          <SectionLabel label="Recent activity" />
+          <Card>
+            {[1, 2, 3, 4].map((k) => (
+              <SkeletonListRow key={k} />
+            ))}
+          </Card>
+        </>
+      ) : (
+        <>
+          <LinearGradient colors={['#F2B63C', '#E5A710']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.balanceCard}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              <Icon name="star" size={22} color={colors.white} />
+              <View style={styles.tierPill}>
+                <Text variant="overline" weight="bold" color="#7A5200">{tier.toUpperCase()} MEMBER</Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: 14 }}>
+              <Text variant="display" weight="extrabold" color={colors.white}>{points.toLocaleString('en-IN')}</Text>
+              <Text variant="title" weight="bold" color="rgba(255,255,255,0.9)" style={{ marginLeft: 6 }}>points</Text>
+            </View>
+            <Text variant="caption" color="rgba(255,255,255,0.9)" style={{ marginTop: 6 }}>
+              Earn 5 points on every ₹100 spent · 100 pts = ₹10 wallet money
+            </Text>
+            <Pressable onPress={() => { setChoice(100); setErr(null); setSheet(true); }} style={styles.balanceCta}>
+              <Text variant="caption" weight="bold" color="#B8860B">REDEEM POINTS</Text>
+            </Pressable>
+          </LinearGradient>
+
+          <SectionLabel label="Recent activity" />
+          <Card>
+            {activity.length === 0 ? (
+              <Text variant="body" color={colors.textSecondary} style={{ paddingVertical: 14, textAlign: 'center' }}>
+                No activity yet — order food or shop to start earning.
+              </Text>
+            ) : (
+              activity.slice(0, 8).map((t) => (
+                <ActivityRow
+                  key={t.id}
+                  title={t.title}
+                  sub={`${t.note ?? ''} · ${fmtDay(t.createdAt)}`}
+                  amount={`${t.type === 'earned' ? '+' : '-'}${Math.abs(t.points)} pts`}
+                  positive={t.type === 'earned'}
+                />
+              ))
+            )}
+          </Card>
+        </>
+      )}
+
+      <BottomSheet visible={sheet} onClose={() => setSheet(false)} title="Redeem points">
+        <View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 0 }}>
+            {REDEEM_CHOICES.map((c) => {
+              const on = choice === c;
+              const disabled = c > points;
+              return (
+                <Pressable
+                  key={c}
+                  disabled={disabled}
+                  onPress={() => { haptic.selection(); setChoice(c); }}
+                  style={[styles.chip, on && styles.chipOn, disabled && { opacity: 0.35 }]}
+                >
+                  <Text variant="caption" weight="bold" color={on ? colors.white : colors.text}>
+                    {c} pts
+                  </Text>
+                  <Text variant="overline" color={on ? 'rgba(255,255,255,0.85)' : colors.textTertiary} style={{ marginLeft: 4 }}>
+                    = ₹{c / 10}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          {err ? (
+            <Text variant="caption" color={colors.danger} style={{ marginTop: 10 }}>
+              {err}
+            </Text>
+          ) : null}
+          <Button
+            title={busy ? 'Redeeming…' : `Redeem ${choice} points → ₹${choice / 10}`}
+            onPress={() => void confirmRedeem()}
+            fullWidth
+            size="lg"
+            loading={busy}
+            disabled={choice > points}
+            style={{ marginTop: 18 }}
+          />
+        </View>
+      </BottomSheet>
     </>
   );
 }
 
 /* ---------------------------- wallet ---------------------------- */
 
+const MOCK_WALLET = (): WalletData => ({
+  balance: 480,
+  transactions: [
+    { id: 'w1', type: 'credit', title: 'Money added', note: 'Instant top-up · UPI', amount: 250, balanceAfter: 250, createdAt: new Date().toISOString() },
+    { id: 'w2', type: 'credit', title: 'Referral bonus', note: 'Friend joined with your code', amount: 300, balanceAfter: 550, createdAt: new Date().toISOString() },
+    { id: 'w3', type: 'debit', title: 'Order AUR-FD-88K2', note: 'Food delivery', amount: 120, balanceAfter: 430, createdAt: new Date().toISOString() },
+    { id: 'w4', type: 'credit', title: 'Cashback', note: 'Coupon AURA50', amount: 50, balanceAfter: 480, createdAt: new Date().toISOString() },
+  ],
+});
+
+const TOPUP_CHOICES = [100, 250, 500, 1000];
+
 function WalletBody(): React.ReactElement {
+  const q = useAppQuery(fetchWallet, MOCK_WALLET);
+  const balance = q.data?.balance ?? 0;
+  const [sheet, setSheet] = useState(false);
+  const [amount, setAmount] = useState<number>(250);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const addMoney = async (): Promise<void> => {
+    setBusy(true);
+    setErr(null);
+    try {
+      await addWalletMoney(amount);
+      setSheet(false);
+      q.refresh();
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : 'Could not add money');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const transactions = q.data?.transactions ?? [];
+
   return (
     <>
-      <BalanceCard icon="wallet" value={formatINR(480)} unit="" hint="Stored value you can spend instantly" cta="Add money" gradient={['#F0A93C', '#D98E12']} />
-      <SectionLabel label="Transactions" />
-      <Card>
-        <ActivityRow title="Money added" sub="UPI · 12 Aug" amount="+₹250" positive />
-        <ActivityRow title="Order #AUR-2288" sub="Food delivery" amount="-₹120" />
-        <ActivityRow title="Cashback" sub="Coupon AURA50" amount="+₹50" positive />
-        <ActivityRow title="Refund" sub="Order #AUR-2250" amount="+₹300" positive />
-      </Card>
+      {q.loading ? (
+        <>
+          <SkeletonBalanceCard />
+          <SectionLabel label="Transactions" />
+          <Card>
+            {[1, 2, 3, 4].map((k) => (
+              <SkeletonListRow key={k} />
+            ))}
+          </Card>
+        </>
+      ) : (
+        <>
+          <LinearGradient colors={['#F0A93C', '#D98E12']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.balanceCard}>
+            <Icon name="wallet" size={22} color={colors.white} />
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: 14 }}>
+              <Text variant="display" weight="extrabold" color={colors.white}>{formatINR(balance)}</Text>
+            </View>
+            <Text variant="caption" color="rgba(255,255,255,0.9)" style={{ marginTop: 6 }}>
+              {q.source === 'api' ? 'Live balance · synced with your account' : 'Stored value you can spend instantly'}
+            </Text>
+            <Pressable onPress={() => { setErr(null); setSheet(true); }} style={styles.balanceCta}>
+              <Text variant="caption" weight="bold" color="#B07000">+ ADD MONEY</Text>
+            </Pressable>
+          </LinearGradient>
+
+          <SectionLabel label="Transactions" />
+          <Card>
+            {transactions.length === 0 ? (
+              <Text variant="body" color={colors.textSecondary} style={{ paddingVertical: 14, textAlign: 'center' }}>
+                No transactions yet — add money or place an order to see activity here.
+              </Text>
+            ) : (
+              transactions.slice(0, 12).map((t) => (
+                <ActivityRow
+                  key={t.id}
+                  title={t.title}
+                  sub={`${t.note ?? ''} · ${fmtDay(t.createdAt)}`}
+                  amount={`${t.type === 'credit' ? '+' : '-'}${formatINR(t.amount)}`}
+                  positive={t.type === 'credit'}
+                />
+              ))
+            )}
+          </Card>
+        </>
+      )}
+
+      <BottomSheet visible={sheet} onClose={() => setSheet(false)} title="Add money to wallet">
+        <View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 0 }}>
+            {TOPUP_CHOICES.map((c) => {
+              const on = amount === c;
+              return (
+                <Pressable
+                  key={c}
+                  onPress={() => { haptic.selection(); setAmount(c); }}
+                  style={[styles.chip, on && styles.chipOn]}
+                >
+                  <Text variant="subtitle" weight="bold" color={on ? colors.white : colors.text}>
+                    {formatINR(c)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text variant="caption" color={colors.textTertiary} style={{ marginTop: 12 }}>
+            Instant top-up via UPI · money is ready to spend right away.
+          </Text>
+          {err ? (
+            <Text variant="caption" color={colors.danger} style={{ marginTop: 10 }}>
+              {err}
+            </Text>
+          ) : null}
+          <Button
+            title={busy ? 'Adding…' : `Add ${formatINR(amount)}`}
+            onPress={() => void addMoney()}
+            fullWidth
+            size="lg"
+            loading={busy}
+            style={{ marginTop: 18 }}
+            leftIcon="plus"
+          />
+        </View>
+      </BottomSheet>
     </>
   );
 }
 
 /* ---------------------------- refer ---------------------------- */
 
+const MOCK_REFERRAL: ReferralInfo = { code: 'AAR3210', earnings: 300, friends: 2, referredBy: null };
+
 function ReferBody(): React.ReactElement {
-  const [copied, setCopied] = useState(false);
-  const code = 'DEEPRAK08';
-  const copy = (): void => {
-    haptic.success();
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1600);
+  const q = useAppQuery(fetchReferral, () => MOCK_REFERRAL);
+  const code = q.data?.code ?? 'AURASURE';
+  const [shared, setShared] = useState(false);
+  const [applyOpen, setApplyOpen] = useState(false);
+  const [applyCode, setApplyCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const share = async (): Promise<void> => {
+    setShared(false);
+    setSharing(true);
+    try {
+      await Share.share({
+        title: 'Aurasure — you get ₹50 off',
+        message: `I'm inviting you to Aurasure 🎉 Food delivery + shopping in one app. Use my code ${code} at sign-up and get ₹50 off your first order — I earn ₹100 too! Download Aurasure today.`,
+      });
+      setShared(true);
+      setTimeout(() => setShared(false), 1600);
+    } catch {
+      setMsg({ ok: true, text: `Your code is ${code} — share it with friends.` });
+    } finally {
+      setSharing(false);
+    }
   };
+
+  const apply = async (): Promise<void> => {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await applyReferral(applyCode.trim());
+      setApplyOpen(false);
+      setApplyCode('');
+      setMsg({ ok: true, text: `Welcome gift added ✓ +₹${res.reward} wallet & ${res.points} points.` });
+      q.refresh();
+    } catch (e) {
+      setMsg({ ok: false, text: e instanceof ApiError ? e.message : 'Could not apply the code' });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const earnings = q.data?.earnings ?? 0;
+  const friends = q.data?.friends ?? 0;
+
   return (
     <View>
+      {q.loading ? (
+        <Card>
+          <View style={styles.referHero}>
+            <Skeleton width="52%" height={20} style={{ alignSelf: 'center', marginTop: 12 }} />
+            <Skeleton width="74%" height={12} style={{ alignSelf: 'center', marginTop: 10 }} />
+          </View>
+          <Skeleton width="62%" height={44} radius={10} style={{ alignSelf: 'center', marginTop: 14 }} />
+          <Skeleton width="100%" height={50} radius={25} style={{ marginTop: 14 }} />
+        </Card>
+      ) : (
+        <>
       <Card>
         <View style={styles.referHero}>
           <Icon name="gift" size={30} color="#2C9B4D" />
@@ -324,20 +842,170 @@ function ReferBody(): React.ReactElement {
             Share your code with friends — they get ₹50 off, you get ₹100 in wallet.
           </Text>
         </View>
-        <Pressable onPress={copy} style={({ pressed }) => [styles.codeBox, { opacity: pressed ? 0.9 : 1 }]}>
+        <View style={styles.codeBox}>
           <Text variant="h3" weight="extrabold" color="#2C9B4D" style={{ letterSpacing: 2 }}>{code}</Text>
           <View style={styles.copyPill}>
-            <Icon name={copied ? 'check' : 'tag'} size={14} color="#2C9B4D" />
-            <Text variant="caption" weight="bold" color="#2C9B4D" style={{ marginLeft: 4 }}>{copied ? 'Copied' : 'Copy'}</Text>
+            <Icon name="share" size={14} color="#2C9B4D" />
+            <Text variant="caption" weight="bold" color="#2C9B4D" style={{ marginLeft: 4 }}>YOUR CODE</Text>
           </View>
-        </Pressable>
+        </View>
+        <Button title="Share my code" loading={sharing} onPress={() => void share()} fullWidth size="lg" style={{ marginTop: 14 }} leftIcon="share" />
       </Card>
-      <FullWidthButton label="Share my code" />
+
+      <Card style={{ marginTop: 14 }}>
+        <View style={{ flexDirection: 'row' }}>
+          <View style={{ flex: 1 }}>
+            <Text variant="h3" weight="extrabold" color="#2C9B4D">{formatINR(earnings)}</Text>
+            <Text variant="caption" color={colors.textSecondary} style={{ marginTop: 2 }}>Earned so far</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={{ flex: 1 }}>
+            <Text variant="h3" weight="extrabold" color="#2C9B4D">{friends}</Text>
+            <Text variant="caption" color={colors.textSecondary} style={{ marginTop: 2 }}>Friends joined</Text>
+          </View>
+        </View>
+        {q.data?.referredBy ? (
+          <Text variant="caption" color={colors.success} style={{ marginTop: 12 }}>
+            You joined with code {q.data.referredBy} — welcome bonus applied ✓
+          </Text>
+        ) : (
+          <Pressable
+            onPress={() => { setApplyCode(''); setMsg(null); setApplyOpen(true); }}
+            style={({ pressed }) => [styles.inviteRow, { opacity: pressed ? 0.9 : 1 }]}
+          >
+            <Text variant="caption" weight="bold" color={colors.brand[700]}>Have a friend's code? Apply it here</Text>
+            <Icon name="arrowRight" size={14} color={colors.brand[700]} />
+          </Pressable>
+        )}
+      </Card>
+        </>
+      )}
+
+      {shared ? (
+        <Text variant="caption" color={colors.success} style={{ marginTop: 10, textAlign: 'center' }}>
+          Shared ✓ Thanks for spreading the word!
+        </Text>
+      ) : null}
+      {msg && !applyOpen ? (
+        <Text variant="caption" color={msg.ok ? colors.success : colors.danger} style={{ marginTop: 10, textAlign: 'center' }}>
+          {msg.text}
+        </Text>
+      ) : null}
+
+      <BottomSheet visible={applyOpen} onClose={() => setApplyOpen(false)} title="Have a referral code?">
+        <View>
+          <Text variant="body" color={colors.textSecondary} style={{ marginBottom: 12 }}>
+            Enter your friend's code to get ₹50 in wallet + 250 points as a welcome gift.
+          </Text>
+          <Input label="Referral code" value={applyCode} onChangeText={setApplyCode} placeholder="e.g. AAR3210" leftIcon="tag" autoCapitalize="characters" />
+          {msg && applyOpen ? (
+            <Text variant="caption" color={msg.ok ? colors.success : colors.danger} style={{ marginTop: 8 }}>
+              {msg.text}
+            </Text>
+          ) : null}
+          <Button
+            title={busy ? 'Applying…' : 'Apply code'}
+            onPress={() => void apply()}
+            fullWidth
+            size="lg"
+            loading={busy}
+            style={{ marginTop: 16 }}
+            leftIcon="gift"
+          />
+        </View>
+      </BottomSheet>
     </View>
   );
 }
 
 /* ---------------------------- delivery / vendor ---------------------------- */
+
+function PartnerApplySheet({ kind }: { kind: 'delivery' | 'vendor' }): React.ReactElement {
+  const { phone, name } = useApp();
+  const [open, setOpen] = useState(false);
+  const [fName, setFName] = useState(name ?? '');
+  const [city, setCity] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const submit = async (): Promise<void> => {
+    if (!fName.trim() || !city.trim()) {
+      setErr('Fill your name and city');
+      return;
+    }
+    setBusy(true);
+    setErr(null);
+    try {
+      await submitPartnerApplication(kind, { name: fName.trim(), city: city.trim() });
+      setDone(true);
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : 'Could not submit — try again');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const close = (): void => {
+    setOpen(false);
+    setDone(false);
+    setErr(null);
+  };
+
+  return (
+    <>
+      <Button
+        title={kind === 'delivery' ? 'Apply as Delivery Partner' : 'Register as Vendor'}
+        onPress={() => { setDone(false); setErr(null); setOpen(true); }}
+        fullWidth
+        size="lg"
+        style={{ marginTop: 16 }}
+        leftIcon={kind === 'delivery' ? 'truck' : 'store'}
+      />
+      <BottomSheet visible={open} onClose={close} title={kind === 'delivery' ? 'Join as a Delivery Partner' : 'Open your shop on Aurasure'}>
+        {done ? (
+          <View style={{ alignItems: 'center', paddingVertical: 18 }}>
+            <View style={styles.doneIcon}>
+              <Icon name="circleCheck" size={30} color={colors.success} />
+            </View>
+            <Text variant="h3" weight="bold" color={colors.text} style={{ marginTop: 10 }}>
+              Application submitted ✓
+            </Text>
+            <Text variant="body" color={colors.textSecondary} style={{ textAlign: 'center', marginTop: 6 }}>
+              Our team will call {phone ?? 'you'} within 48 hours to complete onboarding.
+            </Text>
+            <Button title="Done" onPress={close} fullWidth size="lg" style={{ marginTop: 18 }} />
+          </View>
+        ) : (
+          <View>
+            <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: 12 }}>
+              We review every application and usually reach out within 48 hours.
+            </Text>
+            <Input label="Full name" value={fName} onChangeText={setFName} placeholder="Your name" leftIcon="user" />
+            <Input label="City" value={city} onChangeText={setCity} placeholder="e.g. Indore" leftIcon="mapPinned" />
+            <Text variant="caption" color={colors.textSecondary} style={{ marginTop: 8 }}>
+              Phone on file: {phone ?? '— sign in to prefill'}
+            </Text>
+            {err ? (
+              <Text variant="caption" color={colors.danger} style={{ marginTop: 8 }}>
+                {err}
+              </Text>
+            ) : null}
+            <Button
+              title={busy ? 'Submitting…' : 'Submit application'}
+              onPress={() => void submit()}
+              fullWidth
+              size="lg"
+              loading={busy}
+              style={{ marginTop: 16 }}
+              leftIcon="check"
+            />
+          </View>
+        )}
+      </BottomSheet>
+    </>
+  );
+}
 
 function DeliveryBody(): React.ReactElement {
   return (
@@ -349,7 +1017,7 @@ function DeliveryBody(): React.ReactElement {
         <StatRow label="Fuel support" value="₹500/week" />
         <StatRow label="Ride support" value="24×7" />
       </Card>
-      <FullWidthButton label="Apply as Delivery Partner" />
+      <PartnerApplySheet kind="delivery" />
     </>
   );
 }
@@ -363,40 +1031,216 @@ function VendorBody(): React.ReactElement {
         <StatRow label="Payouts" value="T+1 settlement" />
         <StatRow label="Onboarding" value="Within 48 hrs" />
       </Card>
-      <FullWidthButton label="Register as Vendor" />
+      <PartnerApplySheet kind="vendor" />
     </>
   );
 }
 
 /* ---------------------------- chat / help ---------------------------- */
 
-function LiveChatBody({ onStart }: { onStart: () => void }): React.ReactElement {
+interface ChatMsg {
+  id: number;
+  from: 'user' | 'bot';
+  text: string;
+}
+
+function botReplyTo(raw: string): string {
+  const t = raw.toLowerCase();
+  if (/(order|track|where)/.test(t)) {
+    return "You can track any order from the Orders tab — status updates appear there as soon as the store confirms it. 📦";
+  }
+  if (/(cancel)/.test(t)) {
+    return 'Cancelling is free until the store starts preparing. Open the order and tap Cancel — wallet payments are refunded instantly. ✅';
+  }
+  if (/(pay|refund|wallet|money)/.test(t)) {
+    return 'Payment issues are usually resolved within a few hours. Share your order code here and we will check it for you right away. 💳';
+  }
+  if (/(deliver|eta|late|time)/.test(t)) {
+    return 'Your estimated delivery time shows on the order tracker. If it runs late, tell us here and we will prioritise it with the rider. 🛵';
+  }
+  if (/(account|login|otp|number|phone)/.test(t)) {
+    return 'For account or OTP help, sign out once and sign back in with your mobile number — a fresh code is sent instantly. 🔐';
+  }
+  return 'Thanks for reaching out! A support agent will reply here shortly. You can also reach us on the helpline from Help & Support. 💬';
+}
+
+function LiveChatBody(): React.ReactElement {
+  const { phone, name } = useApp();
+  const [open, setOpen] = useState(false);
+  const [msgs, setMsgs] = useState<ChatMsg[]>([]);
+  const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
+  const listRef = useRef<ScrollView>(null);
+  const nextId = useRef(1);
+
+  const openChat = (): void => {
+    setOpen(true);
+    if (msgs.length === 0) {
+      setMsgs([
+        {
+          id: nextId.current++,
+          from: 'bot',
+          text: `Hi${name && name !== 'User' ? ` ${name.split(' ')[0]}` : ' there'}! 👋 I'm the Aurasure assistant. Ask me about orders, cancellations, payments or delivery.`,
+        },
+      ]);
+    }
+  };
+
+  const send = async (raw?: string): Promise<void> => {
+    const msg = (raw ?? text).trim();
+    if (!msg || sending) return;
+    setMsgs((prev) => [...prev, { id: nextId.current++, from: 'user', text: msg }]);
+    setText('');
+    setSending(true);
+    await new Promise((r) => setTimeout(r, 900 + Math.random() * 500));
+    setMsgs((prev) => [...prev, { id: nextId.current++, from: 'bot', text: botReplyTo(msg) }]);
+    setSending(false);
+  };
+
+  const close = (): void => {
+    if (sending) return;
+    setOpen(false);
+  };
+
+  const QUICK = ['Track my order', 'Cancel an order', 'Payment issue'];
+
   return (
     <>
       <InfoHero icon="message" title="We reply in minutes" desc="Our team is available 24×7 to resolve any issue." />
       <Card>
         <ActivityRow title="Start a conversation" sub="Chat with a support agent" amount="Chat now" positive />
       </Card>
-      <FullWidthButton label="Open live chat" />
+      <Button
+        title="Open live chat"
+        variant="login"
+        fullWidth
+        size="lg"
+        leftIcon="message"
+        onPress={openChat}
+        style={{ marginTop: 18 }}
+      />
+
+      <BottomSheet visible={open} onClose={close} title="Live chat" dismissDistance={700}>
+        <View style={{ paddingBottom: 8 }}>
+          <View style={styles.chatStatusRow}>
+            <View style={styles.chatStatusDot} />
+            <Text variant="caption" color={colors.success} weight="semibold">
+              Typically replies in under a minute{phone ? ` · +91 ${phone}` : ''}
+            </Text>
+          </View>
+
+          <View style={styles.chatQuickRow}>
+            {QUICK.map((q) => (
+              <Pressable
+                key={q}
+                onPress={() => void send(q)}
+                disabled={sending}
+                style={({ pressed }) => [styles.chatChip, { opacity: pressed || sending ? 0.7 : 1 }]}
+              >
+                <Text variant="caption" weight="semibold" color="#2C9B4D">
+                  {q}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <View style={styles.chatBox}>
+            <ScrollView
+              ref={listRef}
+              style={{ flexGrow: 0 }}
+              contentContainerStyle={{ padding: 12, gap: 8 }}
+              onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+              keyboardShouldPersistTaps="handled"
+            >
+              {msgs.map((m) => (
+                <View key={m.id} style={[styles.chatBubble, m.from === 'user' ? styles.chatBubbleUser : styles.chatBubbleBot]}>
+                  <Text variant="caption" color={m.from === 'user' ? colors.white : colors.text} style={{ lineHeight: 18 }}>
+                    {m.text}
+                  </Text>
+                </View>
+              ))}
+              {sending ? (
+                <View style={[styles.chatBubble, styles.chatBubbleBot]}>
+                  <Text variant="caption" color={colors.textTertiary}>
+                    Agent is typing…
+                  </Text>
+                </View>
+              ) : null}
+            </ScrollView>
+          </View>
+
+          <View style={styles.chatInputRow}>
+            <View style={{ flex: 1 }}>
+              <Input
+                value={text}
+                onChangeText={setText}
+                placeholder="Type your message…"
+                leftIcon="message"
+                containerStyle={{ marginBottom: 0 }}
+                returnKeyType="send"
+                onSubmitEditing={() => void send()}
+              />
+            </View>
+            <Button
+              title="Send"
+              size="sm"
+              fullWidth={false}
+              loading={sending}
+              disabled={text.trim().length === 0}
+              onPress={() => void send()}
+              style={{ marginLeft: 8, minWidth: 96 }}
+            />
+          </View>
+        </View>
+      </BottomSheet>
     </>
   );
 }
 
-function HelpBody(): React.ReactElement {
+function HelpBody({ navigation }: { navigation: Props['navigation'] }): React.ReactElement {
   const items = [
-    { label: 'Track my order', icon: 'package' as IconName },
-    { label: 'Cancel an order', icon: 'close' as IconName },
-    { label: 'Payment issues', icon: 'wallet' as IconName },
-    { label: 'Report a problem', icon: 'circleAlert' as IconName },
+    {
+      label: 'Track my order',
+      icon: 'package' as IconName,
+      onPress: (): void => {
+        navigation.popToTop();
+        switchTab('Orders');
+      },
+    },
+    {
+      label: 'Cancel an order',
+      icon: 'x' as IconName,
+      onPress: (): void => {
+        navigation.popToTop();
+        switchTab('Orders');
+      },
+    },
+    {
+      label: 'Payment issues',
+      icon: 'wallet' as IconName,
+      onPress: (): void => navigation.push('MenuDetail', { key: 'wallet' }),
+    },
+    {
+      label: 'Report a problem',
+      icon: 'circleAlert' as IconName,
+      onPress: (): void => navigation.push('MenuDetail', { key: 'liveChat' }),
+    },
   ];
   return (
     <Card>
       {items.map((it, i) => (
-        <View key={it.label} style={[styles.row, i > 0 ? styles.rowTop : null]}>
+        <Pressable
+          key={it.label}
+          onPress={() => {
+            haptic.light();
+            it.onPress();
+          }}
+          style={({ pressed }) => [styles.row, i > 0 ? styles.rowTop : null, { opacity: pressed ? 0.7 : 1 }]}
+        >
           <View style={styles.rowIcon}><Icon name={it.icon} size={18} color="#2E87D6" filled /></View>
           <Text variant="subtitle" weight="semibold" color={colors.text} style={{ flex: 1, marginLeft: 12 }}>{it.label}</Text>
           <Icon name="chevronRight" size={18} color="#C0B6C0" />
-        </View>
+        </Pressable>
       ))}
     </Card>
   );
@@ -457,22 +1301,6 @@ function ToggleRow({ label, desc, value, onChange, last, icon, tint }: { label: 
   );
 }
 
-function BalanceCard({ icon, value, unit, hint, cta, gradient }: { icon: IconName; value: string; unit: string; hint: string; cta: string; gradient: [string, string] }): React.ReactElement {
-  return (
-    <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.balanceCard}>
-      <Icon name={icon} size={22} color={colors.white} />
-      <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: 14 }}>
-        <Text variant="display" weight="extrabold" color={colors.white}>{value}</Text>
-        {unit ? <Text variant="title" weight="bold" color="rgba(255,255,255,0.9)" style={{ marginLeft: 6 }}>{unit}</Text> : null}
-      </View>
-      <Text variant="caption" color="rgba(255,255,255,0.9)" style={{ marginTop: 6 }}>{hint}</Text>
-      <Pressable onPress={() => haptic.light()} style={styles.balanceCta}>
-        <Text variant="caption" weight="bold" color={gradient[1]}>{cta}</Text>
-      </Pressable>
-    </LinearGradient>
-  );
-}
-
 function ActivityRow({ title, sub, amount, positive }: { title: string; sub: string; amount: string; positive?: boolean }): React.ReactElement {
   return (
     <View style={styles.row}>
@@ -511,10 +1339,6 @@ function StatRow({ label, value }: { label: string; value: string }): React.Reac
 
 function SectionLabel({ label }: { label: string }): React.ReactElement {
   return <Text variant="overline" color="#A9A2AD" style={styles.sectionLabel}>{label.toUpperCase()}</Text>;
-}
-
-function FullWidthButton({ label }: { label: string }): React.ReactElement {
-  return <Button title={label} variant="login" fullWidth size="lg" style={{ marginTop: 18 }} />;
 }
 
 /* ---------------------------- styles ---------------------------- */
@@ -662,5 +1486,114 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     paddingVertical: 5,
     paddingHorizontal: 10,
+  },
+  deleteMini: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#FDECEC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.pill,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginRight: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  chipOn: {
+    backgroundColor: colors.brand[600],
+    borderColor: colors.brand[600],
+  },
+  tierPill: {
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderRadius: radius.pill,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: colors.border,
+    marginHorizontal: 16,
+  },
+  inviteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.brand[50],
+    borderRadius: radius.md,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 14,
+  },
+  doneIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.successBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chatStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  chatStatusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.success,
+    marginRight: 8,
+  },
+  chatQuickRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 12,
+  },
+  chatChip: {
+    backgroundColor: '#EAF7EE',
+    borderRadius: radius.pill,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#CFEBD8',
+  },
+  chatBox: {
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    minHeight: 120,
+    maxHeight: 320,
+  },
+  chatBubble: {
+    borderRadius: radius.lg,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    maxWidth: '82%',
+  },
+  chatBubbleUser: {
+    backgroundColor: '#2C9B4D',
+    alignSelf: 'flex-end',
+  },
+  chatBubbleBot: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignSelf: 'flex-start',
+  },
+  chatInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
   },
 });

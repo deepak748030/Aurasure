@@ -7,7 +7,7 @@ import { CartButton } from '../../components/ui/CartButton';
 import { Text } from '../../components/ui/Text';
 import { Grid } from '../../components/common/Grid';
 import { CompactProductCard, CompactProductCardSkeleton } from '../../components/shop/CompactProductCard';
-import { StoreGridCard } from '../../components/shop/StoreCard';
+import { StoreGridCard, StoreGridCardSkeleton } from '../../components/shop/StoreCard';
 import { CompactFoodCard, CompactFoodCardSkeleton } from '../../components/food/CompactFoodCard';
 import { RestaurantCard, RestaurantCardSkeleton } from '../../components/food/RestaurantCard';
 import { SectionHeader } from '../../components/ui/SectionHeader';
@@ -123,14 +123,11 @@ export function ShopSeeAllScreen({ route, navigation }: Props): React.ReactEleme
 
       {loading ? (
         kind === 'shopStores' ? (
-          <Grid
-            data={[1, 2, 3, 4]}
-            renderItem={() => <View style={{ height: 210, borderRadius: 16, backgroundColor: colors.brand[50] }} />}
-          />
+          <Grid data={[1, 2, 3, 4]} renderItem={() => <StoreGridCardSkeleton />} />
         ) : kind === 'foodStores' ? (
           <Grid data={[1, 2, 3, 4]} renderItem={() => <RestaurantCardSkeleton />} />
         ) : (
-          <Grid columns={3} gap={10} data={[1, 2, 3, 4, 5, 6]} renderItem={() => (kind === 'foodItems' ? <CompactFoodCardSkeleton /> : <CompactProductCardSkeleton />)} />
+          <Grid columns={3} gap={5} data={[1, 2, 3, 4, 5, 6]} renderItem={() => (kind === 'foodItems' ? <CompactFoodCardSkeleton /> : <CompactProductCardSkeleton />)} />
         )
       ) : kind === 'shopStores' ? (
         <Grid
@@ -153,7 +150,7 @@ export function ShopSeeAllScreen({ route, navigation }: Props): React.ReactEleme
       ) : kind === 'foodItems' ? (
         <Grid
           columns={3}
-          gap={10}
+          gap={5}
           data={data.data as FoodItem[]}
           renderItem={(item) => (
             <CompactFoodCard
@@ -165,7 +162,7 @@ export function ShopSeeAllScreen({ route, navigation }: Props): React.ReactEleme
       ) : (
         <Grid
           columns={3}
-          gap={10}
+          gap={5}
           data={data.data as Product[]}
           renderItem={(p) => (
             <CompactProductCard product={p} onPress={(product) => navigation.navigate('Product', { productId: product.id })} />

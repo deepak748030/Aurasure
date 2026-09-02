@@ -8,6 +8,7 @@ const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { ok, created } = require('../utils/response');
 const { newId } = require('../utils/id');
+const { applyWelcomePerks } = require('./rewards.controller');
 
 function signToken(user) {
   return jwt.sign({ sub: user._id.toString(), phone: user.phone }, config.auth.jwtSecret, {
@@ -34,6 +35,10 @@ const register = asyncHandler(async (req, res) => {
     email: email || undefined,
     passwordHash,
   });
+
+  // Starter perks: referral code, welcome points, coupons (kept idempotent).
+  await applyWelcomePerks(user);
+  await user.save();
 
   const token = signToken(user);
   return created(res, { user: publicUser(user), token }, { message: 'Account created' });

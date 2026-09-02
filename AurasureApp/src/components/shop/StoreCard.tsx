@@ -10,6 +10,7 @@ import { colors } from '@/theme/colors';
 import { radius } from '@/theme/tokens';
 import { formatMinutes } from '@/lib/format';
 import { haptic } from '@/lib/haptics';
+import { Skeleton } from '../ui/Skeleton';
 import type { ShopStore } from '@/types';
 
 interface StoreCardProps {
@@ -161,6 +162,50 @@ export function StoreGridCard({
 
 export function StoreCardSkeleton({ variant = 'grid' }: { variant?: 'grid' | 'rec' | 'pop' }): React.ReactElement {
   return <View style={[variant === 'pop' ? styles.popCard : variant === 'rec' ? styles.recCard : styles.gridCard, styles.skeleton]} />;
+}
+
+/** Shape-faithful skeleton for the recommended-store rail (cover + lines). */
+export function RecommendedStoreCardSkeleton(): React.ReactElement {
+  return (
+    <View style={[styles.recCard, { padding: 0 }]}>
+      <Skeleton height={110} radius={0} />
+      <View style={styles.recInfo}>
+        <Skeleton width="70%" height={13} />
+        <Skeleton width="45%" height={11} style={{ marginTop: 6 }} />
+        <Skeleton width="55%" height={10} style={{ marginTop: 10 }} />
+      </View>
+    </View>
+  );
+}
+
+/** Shape-faithful skeleton for the popular-store row rail. */
+export function PopularStoreCardSkeleton(): React.ReactElement {
+  return (
+    <View style={styles.popCard}>
+      <Skeleton width={74} height={74} radius={radius.md} />
+      <View style={styles.popInfo}>
+        <Skeleton width="80%" height={13} />
+        <Skeleton width="60%" height={10} style={{ marginTop: 6 }} />
+        <Skeleton width="45%" height={10} style={{ marginTop: 4 }} />
+        <Skeleton width="55%" height={11} style={{ marginTop: 10 }} />
+      </View>
+    </View>
+  );
+}
+
+/** Shape-faithful skeleton for the grid store card (2-column lists). */
+export function StoreGridCardSkeleton(): React.ReactElement {
+  return (
+    <View style={styles.gridCard}>
+      <Skeleton height={116} radius={0} />
+      <View style={styles.gridInfo}>
+        <Skeleton width="75%" height={13} />
+        <Skeleton width="60%" height={10} style={{ marginTop: 6 }} />
+        <Skeleton width="40%" height={10} style={{ marginTop: 4 }} />
+        <Skeleton width="50%" height={12} style={{ marginTop: 12 }} />
+      </View>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({

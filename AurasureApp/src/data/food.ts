@@ -301,6 +301,19 @@ export const searchFood = (query: string): FoodItem[] => {
   );
 };
 
+/** Restaurant matches for a search term (keeps "Search restaurants" honest). */
+export const searchRestaurants = (query: string): Restaurant[] => {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  return restaurants.filter(
+    (r) =>
+      r.name.toLowerCase().includes(q) ||
+      r.cuisines.some((c) => c.toLowerCase().includes(q)) ||
+      (r.line ?? '').toLowerCase().includes(q) ||
+      (r.offer ?? '').toLowerCase().includes(q),
+  );
+};
+
 export const cartItemFromFood = (item: FoodItem, qty: number, meta?: string): CartItem => ({
   id: `${item.id}-${meta ?? 'default'}`,
   refId: item.id,

@@ -12,6 +12,7 @@ import { useAppQuery } from '../../hooks/useAppQuery';
 import { fetchShopCategory } from '@/api/shop';
 import { getCategoryById, getProductsByCategory } from '../../data/mock';
 import { colors } from '@/theme/colors';
+import { layout } from '@/theme/tokens';
 import type { HomeStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'ShopCategory'>;
@@ -62,11 +63,11 @@ export function ShopCategoryScreen({ route, navigation }: Props): React.ReactEle
 
       <View style={{ height: data.items.length ? 18 : 0 }} />
       {loading ? (
-        <Grid columns={3} gap={10} data={[1, 2, 3, 4, 5, 6]} renderItem={() => <CompactProductCardSkeleton />} />
+        <Grid columns={3} gap={5} data={[1, 2, 3, 4, 5, 6]} renderItem={() => <CompactProductCardSkeleton />} />
       ) : (
         <Grid
           columns={3}
-          gap={10}
+          gap={5}
           data={data.items}
           renderItem={(p) => (
             <CompactProductCard
@@ -91,9 +92,11 @@ const styles = StyleSheet.create({
   },
   hero: {
     position: 'relative',
-    width: '100%',
     height: 150,
-    borderRadius: 16,
+    // Full-bleed: stretch + negative margin cancels the screen gutter so the
+    // category photo touches the device edges.
+    marginHorizontal: -layout.contentHorizontalPadding,
+    borderRadius: 0,
     overflow: 'hidden',
     backgroundColor: colors.brand[50],
   },

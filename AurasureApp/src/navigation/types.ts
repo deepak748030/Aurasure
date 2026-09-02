@@ -77,6 +77,7 @@ export type MenuDetailKey =
   | 'refer'
   | 'delivery'
   | 'vendor'
+  | 'admin'
   | 'liveChat'
   | 'help'
   | 'terms'

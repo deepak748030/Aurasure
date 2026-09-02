@@ -224,6 +224,33 @@ const banners = [
   createdAt: daysAgo(20 - i),
 }));
 
+const promos = [
+  ['WELCOME50', 'Flat ₹50 off your first order', 'On orders above ₹199', 'all', 'flat', 50, 0, 199, 0, 1],
+  ['FOOD25', '25% off on food orders', 'Up to ₹120 off', 'food', 'percent', 25, 120, 249, 500, 1],
+  ['SHOP150', 'Flat ₹150 off electronics', 'On orders above ₹999', 'shop', 'flat', 150, 0, 999, 200, 1],
+  ['WEEKEND10', '10% weekend saver', 'Every Saturday & Sunday', 'all', 'percent', 10, 80, 0, 0, 2],
+].map(([code, title, subtitle, module, offType, offValue, maxDiscount, minOrder, usageLimit, perUserLimit], i) => ({
+  id: `promo_${i + 1}`,
+  code,
+  title,
+  subtitle,
+  description: 'Cannot be clubbed with other offers.',
+  module,
+  offType,
+  offValue,
+  maxDiscount,
+  minOrder,
+  startsAt: null,
+  expiresAt: i === 3 ? daysAgo(2) : new Date(Date.now() + (30 + i * 10) * 86400000).toISOString(),
+  usageLimit,
+  perUserLimit,
+  issuedCount: [12, 48, 7, 0][i],
+  redeemedCount: [5, 21, 2, 0][i],
+  selfClaim: true,
+  active: true,
+  createdAt: daysAgo(25 - i * 5),
+}));
+
 const users = [
   ['Aurasure Admin', '8888888888', 'admin'],
   ['Nisha Patel', '9876543210', 'customer'],
@@ -648,6 +675,16 @@ const resources = {
   'shop/stores': { rows: stores, key: 'stores', prefix: 'str', fields: null, search: ['name', 'brand', 'city', 'id'] },
   'shop/products': { rows: products, key: 'products', prefix: 'prd', fields: null, search: ['name', 'brand', 'id'] },
   banners: { rows: banners, key: 'banners', prefix: 'bnr', fields: null, search: ['title', 'subtitle', 'id'] },
+  promos: { rows: promos, key: 'promos', prefix: 'promo', fields: null, search: ['code', 'title', 'subtitle', 'id'] },
+};
+
+/** Live / scheduled / expired state of a promo row (mirrors the API). */
+const promoStatus = (row) => {
+  const now = Date.now();
+  if (!row.active) return 'paused';
+  if (row.expiresAt && new Date(row.expiresAt).getTime() < now) return 'expired';
+  if (row.startsAt && new Date(row.startsAt).getTime() > now) return 'scheduled';
+  return 'live';
 };
 
 const asBool = (value) => (value === 'true' ? true : value === 'false' ? false : undefined);
@@ -658,7 +695,8 @@ for (const [path, resource] of Object.entries(resources)) {
     for (const [field, value] of Object.entries(req.query)) {
       if (['q', 'page', 'limit'].includes(field)) continue;
       const bool = asBool(value);
-      if (field === 'category') rows = rows.filter((r) => (r.categoryIds ?? []).includes(value));
+      if (field === 'status' && path === 'promos') rows = rows.filter((r) => promoStatus(r) === value);
+      else if (field === 'category') rows = rows.filter((r) => (r.categoryIds ?? []).includes(value));
       else if (field === 'veg') rows = rows.filter((r) => Boolean(r.isVeg) === bool);
       else if (field === 'closed') rows = rows.filter((r) => Boolean(r.isClosed) === bool);
       else if (bool !== undefined) rows = rows.filter((r) => Boolean(r[field]) === bool);
@@ -669,7 +707,9 @@ for (const [path, resource] of Object.entries(resources)) {
   });
 
   app.post(`/api/v1/admin/${path}`, (req, res) => {
-    const row = { ...req.body, id: id(resource.prefix), createdAt: new Date().toISOString() };
+    const extras = path === 'promos' ? { issuedCount: 0, redeemedCount: 0 } : {};
+    const row = { ...extras, ...req.body, id: id(resource.prefix), createdAt: new Date().toISOString() };
+    if (path === 'promos') row.code = String(row.code || '').trim().toUpperCase();
     resource.rows.unshift(row);
     return res.status(201).json({ success: true, data: { [resource.key.replace(/ies$/, 'y').replace(/s$/, '')]: row } });
   });
@@ -690,6 +730,61 @@ for (const [path, resource] of Object.entries(resources)) {
     return ok(res, { deleted: req.params.id });
   });
 }
+
+/* ------------------------------ promo codes ------------------------------ */
+
+app.post('/api/v1/admin/promos/:id/issue', (req, res) => {
+  const promo = promos.find((p) => p.id === req.params.id);
+  if (!promo) return fail(res, 404, 'NOT_FOUND', 'Promo code not found');
+  if (promoStatus(promo) !== 'live') return fail(res, 400, 'PROMO_UNAVAILABLE', 'This promo code is not live');
+
+  const target = req.body.target === 'selected' ? 'selected' : 'all';
+  const ids = Array.isArray(req.body.userIds) ? req.body.userIds : [];
+  if (target === 'selected' && ids.length === 0) return fail(res, 400, 'NO_CUSTOMERS', 'Pick at least one customer');
+
+  const pool = users.filter((u) => (target === 'selected' ? ids.includes(u.id) : u.role === 'customer'));
+  let remaining = promo.usageLimit > 0 ? Math.max(promo.usageLimit - promo.issuedCount, 0) : Infinity;
+  let issued = 0;
+  let skipped = 0;
+
+  for (const user of pool) {
+    user.coupons = user.coupons || [];
+    const held = user.coupons.filter((c) => c.code === promo.code).length;
+    if (remaining <= 0 || held >= promo.perUserLimit) {
+      skipped += 1;
+      continue;
+    }
+    user.coupons.push({
+      id: id('cpn'),
+      code: promo.code,
+      title: promo.title,
+      subtitle: promo.subtitle,
+      minOrder: promo.minOrder,
+      offType: promo.offType,
+      offValue: promo.offValue,
+      expiresAt: promo.expiresAt,
+      usedAt: null,
+    });
+    issued += 1;
+    remaining -= 1;
+  }
+  promo.issuedCount += issued;
+
+  return ok(res, {
+    promo,
+    issued,
+    skipped,
+    message: `Issued to ${issued} customer${issued === 1 ? '' : 's'}${skipped ? `, ${skipped} skipped` : ''}`,
+  });
+});
+
+app.get('/api/v1/admin/promos/:id/stats', (req, res) => {
+  const promo = promos.find((p) => p.id === req.params.id);
+  if (!promo) return fail(res, 404, 'NOT_FOUND', 'Promo code not found');
+  const holders = users.filter((u) => (u.coupons || []).some((c) => c.code === promo.code)).length;
+  const redeemed = users.filter((u) => (u.coupons || []).some((c) => c.code === promo.code && c.usedAt)).length;
+  return ok(res, { promo, stats: { holders, redeemed, unused: holders - redeemed, status: promoStatus(promo) } });
+});
 
 /* ------------------------- uploads (same as server) ---------------------- */
 

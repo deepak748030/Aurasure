@@ -158,6 +158,21 @@ Error envelope: `{ "success": false, "error": { code, message, details? } }`
 | GET | `/admin/lookups`, `/admin/system` | dropdown data, runtime info |
 | GET/POST/PUT/PATCH/DELETE | `/admin/food/categories`, `/admin/food/vibes`, `/admin/food/restaurants`, `/admin/food/items`, `/admin/shop/categories`, `/admin/shop/stores`, `/admin/shop/products`, `/admin/banners` | catalogue CRUD |
 
+### Promo codes (auth, `role: admin`)
+
+Discount campaigns created from the admin panel. A code becomes spendable when
+a copy lands in a customer's `coupons[]` — either issued by an admin or claimed
+by the customer — so checkout logic is unchanged.
+
+| Method | Route | Notes |
+| --- | --- | --- |
+| GET | `/admin/promos` | `?q=&status=live\|scheduled\|expired&module=&offType=&page=&limit=` |
+| POST | `/admin/promos` | create (`code`, `title`, `offType`, `offValue`, `minOrder`, `maxDiscount`, `startsAt`, `expiresAt`, `usageLimit`, `perUserLimit`, `selfClaim`, `active`) |
+| GET/PUT/PATCH/DELETE | `/admin/promos/:id` | read / edit / remove |
+| POST | `/admin/promos/:id/issue` | `{ target: 'all' \| 'selected', userIds?: [] }` → drops the coupon into wallets (idempotent per `perUserLimit`) |
+| GET | `/admin/promos/:id/stats` | holders / redeemed / unused |
+| POST | `/users/me/coupons/claim` | **customer** enters a code → coupon in their wallet |
+
 ### Image uploads (auth, `role: admin`)
 
 Images are stored **on this server** with [multer](https://github.com/expressjs/multer)

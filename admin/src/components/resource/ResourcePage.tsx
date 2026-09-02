@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Plus, Pencil, Trash2, Download } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -19,7 +19,16 @@ import { downloadCsv, toCsv } from '@/lib/csv';
 import { imageUrl } from '@/lib/format';
 import type { CatalogRecord } from '@/lib/types';
 
-export type FieldType = 'text' | 'textarea' | 'number' | 'toggle' | 'select' | 'tags' | 'image' | 'color';
+export type FieldType =
+  | 'text'
+  | 'textarea'
+  | 'number'
+  | 'toggle'
+  | 'select'
+  | 'tags'
+  | 'image'
+  | 'color'
+  | 'date';
 
 export interface FieldDef {
   name: string;
@@ -54,6 +63,10 @@ interface ResourcePageProps<T extends CatalogRecord> {
   searchPlaceholder?: string;
   /** Extra static query sent with every list request. */
   baseQuery?: Record<string, string | number | boolean | undefined>;
+  /** Buttons rendered before Edit/Delete on every row (e.g. "Issue"). */
+  rowActions?: (row: T) => ReactNode;
+  /** Extra buttons next to Export / Add in the page header. */
+  headerActions?: ReactNode;
 }
 
 function emptyForm(fields: FieldDef[]): Record<string, unknown> {
@@ -74,6 +87,7 @@ function rowToForm(fields: FieldDef[], row: CatalogRecord): Record<string, unkno
     if (field.type === 'tags') form[field.name] = Array.isArray(raw) ? raw.join(', ') : (raw ?? '');
     else if (field.type === 'image') form[field.name] = imageUrl(raw) ?? '';
     else if (field.type === 'toggle') form[field.name] = Boolean(raw);
+    else if (field.type === 'date') form[field.name] = raw ? String(raw).slice(0, 10) : '';
     else form[field.name] = raw === null || raw === undefined ? '' : raw;
   }
   return form;
@@ -94,6 +108,9 @@ function formToPayload(fields: FieldDef[], form: Record<string, unknown>): Recor
       payload[field.name] = value ? { kind: 'uri', uri: String(value).trim() } : null;
     } else if (field.type === 'toggle') {
       payload[field.name] = Boolean(value);
+    } else if (field.type === 'date') {
+      // Empty date = "no bound"; the API stores null.
+      payload[field.name] = value ? new Date(`${String(value)}T00:00:00`).toISOString() : null;
     } else {
       payload[field.name] = typeof value === 'string' ? value.trim() : value;
     }
@@ -117,6 +134,8 @@ export function ResourcePage<T extends CatalogRecord>({
   filters = [],
   searchPlaceholder = 'Search…',
   baseQuery,
+  rowActions,
+  headerActions,
 }: ResourcePageProps<T>) {
   const toast = useToast();
   const { user } = useAuth();
@@ -284,6 +303,14 @@ export function ResourcePage<T extends CatalogRecord>({
                   <Input value={String(value ?? '')} onChange={(event) => setValue(field.name, event.target.value)} />
                 </div>
               );
+            case 'date':
+              return (
+                <Input
+                  type="date"
+                  value={String(value ?? '')}
+                  onChange={(event) => setValue(field.name, event.target.value)}
+                />
+              );
             case 'image':
               return (
                 <ImageUpload
@@ -325,6 +352,7 @@ export function ResourcePage<T extends CatalogRecord>({
         subtitle={subtitle}
         actions={
           <>
+            {headerActions}
             <Button variant="secondary" icon={<Download size={16} />} onClick={exportCsv} disabled={!data?.rows.length}>
               Export
             </Button>
@@ -378,6 +406,7 @@ export function ResourcePage<T extends CatalogRecord>({
               }
               actions={(row) => (
                 <>
+                  {rowActions?.(row)}
                   <Button size="sm" variant="ghost" icon={<Pencil size={15} />} onClick={() => openEdit(row)}>
                     Edit
                   </Button>

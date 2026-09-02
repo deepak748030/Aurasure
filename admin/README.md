@@ -90,6 +90,7 @@ attached by `src/lib/api.ts`; a `401` clears it and bounces you to `/login`.
 | Shop | **Products** | Full CRUD, store / category / stock filters, colours, sizes, highlight flags |
 | Shop | **Shop categories** | Full CRUD, tagline, icon, sort order |
 | Promotions | **Banners** | Full CRUD, module + visibility filters, live preview of the artwork |
+| Promotions | **Promo codes** | Create discount campaigns (flat ₹ / %, caps, min order, validity window, total + per-customer limits), status filters, and **Issue** them to all or hand-picked customers |
 | Everywhere | **Image upload** | Click or drag-and-drop a file in any catalogue form — it is uploaded to *our own* Node server (multer, disk storage), with progress, preview, replace and delete |
 | Users | **Customers** | Search, role filter, lifetime value, masked phone with click-to-reveal, CSV export |
 | Users | **Customer profile** | Order history, wallet ledger, loyalty ledger, coupons, addresses, wallet & points adjustment, promote/revoke admin |
@@ -170,6 +171,8 @@ added **additively** — no existing route, controller or model was modified:
 
 - `server/src/controllers/adminCatalog.controller.js` *(new)* — catalogue CRUD,
   customers, wallet/loyalty adjustments, reports, lookups, system info.
+- `server/src/models/Promo.js` + `server/src/controllers/promo.controller.js`
+  *(new)* — promo-code campaigns, issuing to customers, customer self-claim.
 - `server/src/middlewares/upload.js` + `server/src/controllers/upload.controller.js`
   *(new)* — multer disk storage, type/size validation, delete endpoint.
 - `server/src/routes/admin.routes.js` *(extended)* — mounts the above under the

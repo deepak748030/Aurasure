@@ -23,6 +23,7 @@ const ShopCategory = require('./models/ShopCategory');
 const ShopStore = require('./models/ShopStore');
 const Product = require('./models/Product');
 const Banner = require('./models/Banner');
+const Promo = require('./models/Promo');
 const User = require('./models/User');
 const Order = require('./models/Order');
 
@@ -226,6 +227,7 @@ async function main() {
       ShopStore.deleteMany({}),
       Product.deleteMany({}),
       Banner.deleteMany({}),
+      Promo.deleteMany({}),
     ]);
   }
 
@@ -237,6 +239,7 @@ async function main() {
   const shopStores = await upsert(ShopStore, seed.shopStores);
   const products = await upsert(Product, seed.products);
   const banners = await upsert(Banner, seed.banners);
+  const promos = await upsert(Promo, seed.promos);
 
   const demoUser = await seedDemoUser();
   const adminUser = await seedAdminUser();
@@ -257,6 +260,7 @@ async function main() {
   console.log('  shop stores     ', shopStores);
   console.log('  products        ', products);
   console.log('  banners         ', banners);
+  console.log('  promo codes     ', promos);
   console.log(`  demo user       → phone ${demoUser.phone} / password ${process.env.SEED_USER_PASSWORD || 'aurasure123'}`);
 
   await disconnectDB();

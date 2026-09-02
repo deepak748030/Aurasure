@@ -23,6 +23,7 @@ const ShopCategory = require('../models/ShopCategory');
 const ShopStore = require('../models/ShopStore');
 const Product = require('../models/Product');
 const Banner = require('../models/Banner');
+const Promo = require('../models/Promo');
 
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
@@ -279,6 +280,40 @@ const resources = {
       if (req.query.module === 'food' || req.query.module === 'shop') query.module = req.query.module;
       const active = asBool(req.query.active);
       if (active !== undefined) query.active = active;
+    },
+  }),
+
+  // Promo codes / coupon campaigns. Issuing + claiming live in
+  // `promo.controller.js`; this is the plain CRUD surface.
+  promos: crud({
+    model: Promo,
+    key: 'promos',
+    prefix: 'promo',
+    fields: [
+      'code', 'title', 'subtitle', 'description', 'module', 'offType', 'offValue',
+      'maxDiscount', 'minOrder', 'startsAt', 'expiresAt', 'usageLimit', 'perUserLimit',
+      'selfClaim', 'active',
+    ],
+    search: ['code', 'title', 'subtitle', 'id'],
+    sort: { createdAt: -1 },
+    filter: (query, req) => {
+      if (['all', 'food', 'shop'].includes(req.query.module)) query.module = req.query.module;
+      if (['flat', 'percent'].includes(req.query.offType)) query.offType = req.query.offType;
+      const active = asBool(req.query.active);
+      if (active !== undefined) query.active = active;
+      // `status=live|scheduled|expired` on top of the raw active flag.
+      const now = new Date();
+      if (req.query.status === 'live') {
+        query.active = true;
+        query.$and = [
+          { $or: [{ startsAt: null }, { startsAt: { $lte: now } }] },
+          { $or: [{ expiresAt: null }, { expiresAt: { $gte: now } }] },
+        ];
+      } else if (req.query.status === 'scheduled') {
+        query.startsAt = { $gt: now };
+      } else if (req.query.status === 'expired') {
+        query.expiresAt = { $lt: now };
+      }
     },
   }),
 };

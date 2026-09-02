@@ -16,6 +16,7 @@ import {
   Tags,
   ClipboardList,
   ShoppingCart,
+  Ticket,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -72,7 +73,10 @@ export const NAV: NavSection[] = [
   },
   {
     title: 'Promotions',
-    items: [{ label: 'Banners', href: '/banners', icon: ImageIcon }],
+    items: [
+      { label: 'Banners', href: '/banners', icon: ImageIcon },
+      { label: 'Promo codes', href: '/promos', icon: Ticket },
+    ],
   },
   {
     title: 'User management',

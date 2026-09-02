@@ -5,6 +5,7 @@ const { body } = require('express-validator');
 const controller = require('../controllers/admin.controller');
 const console_ = require('../controllers/adminCatalog.controller');
 const uploads = require('../controllers/upload.controller');
+const promos = require('../controllers/promo.controller');
 const { singleImage, manyImages } = require('../middlewares/upload');
 const { authenticate, requireRole } = require('../middlewares/auth');
 const validate = require('../middlewares/validate');
@@ -58,6 +59,10 @@ router.get('/system', console_.systemInfo);
 router.post('/uploads', singleImage, uploads.uploadImage);
 router.post('/uploads/bulk', manyImages, uploads.uploadImages);
 router.delete('/uploads/:bucket/:file', uploads.deleteUpload);
+
+// Promo codes - CRUD comes from the catalogue loop below, these are the extras.
+router.post('/promos/:id/issue', promos.issuePromo);
+router.get('/promos/:id/stats', promos.promoStats);
 
 // Catalogue CRUD - one identical REST surface per resource.
 for (const [path, handlers] of Object.entries(console_.resources)) {

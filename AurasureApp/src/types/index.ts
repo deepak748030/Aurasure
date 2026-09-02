@@ -172,6 +172,10 @@ export interface Order {
   total: number;
   etaMinutes: number;
   address: string;
+  /** Payment channel - wallet orders were deducted from the user balance. */
+  payBy?: 'wallet' | 'cod' | 'upi' | 'card';
+  walletPaid?: number;
+  loyaltyEarned?: number;
 }
 
 export interface Address {

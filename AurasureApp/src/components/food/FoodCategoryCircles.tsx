@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SmartImage } from '../ui/SmartImage';
+import { Skeleton } from '../ui/Skeleton';
 import { Text } from '../ui/Text';
 import { colors } from '@/theme/colors';
 import { layout } from '@/theme/tokens';
@@ -11,6 +12,25 @@ interface FoodCategoryCirclesProps {
   items: FoodCategory[];
   activeId?: string;
   onSelect: (id: string) => void;
+}
+
+/** Skeleton twin of the circle rail - same geometry, shown while loading. */
+export function FoodCategoryCirclesSkeleton(): React.ReactElement {
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ paddingHorizontal: layout.contentHorizontalPadding, gap: 4 }}
+      style={{ marginHorizontal: -layout.contentHorizontalPadding }}
+    >
+      {[1, 2, 3, 4, 5].map((k) => (
+        <View key={k} style={styles.item}>
+          <Skeleton width={68} height={68} radius={34} />
+          <Skeleton width={46} height={10} radius={5} style={{ marginTop: 8 }} />
+        </View>
+      ))}
+    </ScrollView>
+  );
 }
 
 /**

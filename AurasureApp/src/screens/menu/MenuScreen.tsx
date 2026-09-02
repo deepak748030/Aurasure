@@ -5,6 +5,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Text } from '../../components/ui/Text';
+import { Skeleton } from '../../components/ui/Skeleton';
 import { Icon } from '@/lib/icons';
 import { Button } from '../../components/ui/Button';
 import { BottomSheet } from '../../components/ui/BottomSheet';
@@ -192,9 +193,13 @@ export function MenuScreen(): React.ReactElement {
                   <Text variant="overline" color="rgba(255,255,255,0.75)" weight="bold">
                     WALLET
                   </Text>
-                  <Text variant="subtitle" weight="bold" color={colors.white}>
-                    {formatINR(balances.data.wallet)}
-                  </Text>
+                  {balances.loading ? (
+                    <Skeleton width={72} height={15} radius={4} style={{ marginTop: 7, backgroundColor: 'rgba(255,255,255,0.4)' }} />
+                  ) : (
+                    <Text variant="subtitle" weight="bold" color={colors.white}>
+                      {formatINR(balances.data.wallet)}
+                    </Text>
+                  )}
                 </View>
                 <Icon name="chevronRight" size={16} color="rgba(255,255,255,0.7)" />
               </Pressable>
@@ -207,12 +212,20 @@ export function MenuScreen(): React.ReactElement {
                   <Icon name="star" size={16} color="#FFD968" filled />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text variant="overline" color="rgba(255,255,255,0.75)" weight="bold">
-                    {balances.data.tier.toUpperCase()}
-                  </Text>
-                  <Text variant="subtitle" weight="bold" color={colors.white}>
-                    {balances.data.points.toLocaleString('en-IN')} pts
-                  </Text>
+                  {balances.loading ? (
+                    <Skeleton width={52} height={12} radius={4} style={{ marginTop: 3, backgroundColor: 'rgba(255,255,255,0.4)' }} />
+                  ) : (
+                    <Text variant="overline" color="rgba(255,255,255,0.75)" weight="bold">
+                      {balances.data.tier.toUpperCase()}
+                    </Text>
+                  )}
+                  {balances.loading ? (
+                    <Skeleton width={72} height={15} radius={4} style={{ marginTop: 5, backgroundColor: 'rgba(255,255,255,0.4)' }} />
+                  ) : (
+                    <Text variant="subtitle" weight="bold" color={colors.white}>
+                      {balances.data.points.toLocaleString('en-IN')} pts
+                    </Text>
+                  )}
                 </View>
                 <Icon name="chevronRight" size={16} color="rgba(255,255,255,0.7)" />
               </Pressable>

@@ -8,9 +8,16 @@ import { SeeAllArrow } from '../../components/ui/SeeAllArrow';
 import { Grid } from '../../components/common/Grid';
 import { ShopCategoryRow } from '../../components/shop/ShopCategoryCard';
 import { BannerCarousel, BannerCarouselSkeleton } from '../../components/shop/BannerCarousel';
-import { RecommendedStoreCard, PopularStoreCard, StoreGridCard } from '../../components/shop/StoreCard';
+import {
+  RecommendedStoreCard,
+  PopularStoreCard,
+  StoreGridCard,
+  RecommendedStoreCardSkeleton,
+  PopularStoreCardSkeleton,
+  StoreGridCardSkeleton,
+} from '../../components/shop/StoreCard';
 import { CompactProductCard, CompactProductCardSkeleton } from '../../components/shop/CompactProductCard';
-import { CategoryTile } from '../../components/shop/CategoryTile';
+import { CategoryTile, CategoryTileSkeleton } from '../../components/shop/CategoryTile';
 import { layout } from '@/theme/tokens';
 import { colors } from '@/theme/colors';
 import { useAppQuery } from '../../hooks/useAppQuery';
@@ -126,7 +133,16 @@ export function ShopHomeScreen({ navigation }: Props): React.ReactElement {
         action={<SeeAllArrow onPress={() => openSeeAll('recommended', 'Recommended stores')} />}
       />
       {loading ? (
-        <View style={{ height: 176 }} />
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingRight: layout.contentHorizontalPadding, gap: 8 }}
+          style={{ marginHorizontal: -layout.contentHorizontalPadding }}
+        >
+          {[1, 2].map((k) => (
+            <RecommendedStoreCardSkeleton key={k} />
+          ))}
+        </ScrollView>
       ) : (
         <ScrollView
           horizontal
@@ -166,7 +182,16 @@ export function ShopHomeScreen({ navigation }: Props): React.ReactElement {
         action={<SeeAllArrow onPress={() => openSeeAll('stores', 'Popular stores')} />}
       />
       {loading ? (
-        <View style={{ height: 96 }} />
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingRight: layout.contentHorizontalPadding, gap: 8 }}
+          style={{ marginHorizontal: -layout.contentHorizontalPadding }}
+        >
+          {[1, 2, 3].map((k) => (
+            <PopularStoreCardSkeleton key={k} />
+          ))}
+        </ScrollView>
       ) : (
         <ScrollView
           horizontal
@@ -202,7 +227,16 @@ export function ShopHomeScreen({ navigation }: Props): React.ReactElement {
       {/* 7 · Browse categories - big image tiles, right-side scroll */}
       <SectionHeader title="Shop by category" subtitle="Explore what you love" />
       {loading ? (
-        <View style={{ height: 116 }} />
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingRight: layout.contentHorizontalPadding, gap: 8 }}
+          style={{ marginHorizontal: -layout.contentHorizontalPadding }}
+        >
+          {[1, 2, 3].map((k) => (
+            <CategoryTileSkeleton key={k} />
+          ))}
+        </ScrollView>
       ) : (
         <ScrollView
           horizontal
@@ -229,7 +263,7 @@ export function ShopHomeScreen({ navigation }: Props): React.ReactElement {
         action={<SeeAllArrow onPress={() => openSeeAll('stores', 'All stores')} />}
       />
       {loading ? (
-        <Grid data={[1, 2, 3, 4]} renderItem={() => <View style={{ height: 210, borderRadius: 16, backgroundColor: colors.brand[50] }} />} />
+        <Grid data={[1, 2, 3, 4]} renderItem={() => <StoreGridCardSkeleton />} />
       ) : (
         <Grid
           data={storesWithCount}

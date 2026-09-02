@@ -8,6 +8,7 @@ import { colors } from '@/theme/colors';
 import { radius } from '@/theme/tokens';
 import { formatMinutes } from '@/lib/format';
 import { haptic } from '@/lib/haptics';
+import { Skeleton } from '../ui/Skeleton';
 import type { Restaurant } from '@/types';
 
 interface FoodStoreRailCardProps {
@@ -103,6 +104,25 @@ export function FoodStoreRailCard({ restaurant, onPress }: FoodStoreRailCardProp
         </View>
       </View>
     </Pressable>
+  );
+}
+
+/** Shape-faithful skeleton for the "New on Aurasure" / "Best stores nearby" rail. */
+export function FoodStoreRailCardSkeleton(): React.ReactElement {
+  return (
+    <View style={styles.card}>
+      <Skeleton height={124} radius={0} />
+      <View style={styles.info}>
+        <View style={styles.titleRow}>
+          <Skeleton width={40} height={40} radius={radius.md} />
+          <View style={{ flex: 1, marginLeft: 10 }}>
+            <Skeleton width="75%" height={13} />
+            <Skeleton width="55%" height={10} style={{ marginTop: 6 }} />
+          </View>
+        </View>
+        <Skeleton width="55%" height={24} radius={radius.pill} style={{ marginTop: 10 }} />
+      </View>
+    </View>
   );
 }
 

@@ -1,5 +1,7 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ModuleKey } from '@/types';
+import { isApiEnabled } from '@/api/config';
+import { fetchFavorites, syncFavorite } from '@/api/account';
 
 export type LocationStatus = 'unanswered' | 'loading' | 'granted' | 'denied';
 export type GateStep = 'location' | 'module' | 'login' | 'ready';
@@ -71,19 +73,39 @@ export function AppProvider({ children }: { children: React.ReactNode }): React.
     setLikes({ food: [], shop: [] });
   }, []);
 
+  // Hydrate the wishlist from the server favourites once a session exists
+  // (the demo app signs in silently when the API URL is configured).
+  useEffect(() => {
+    if (!phone || !isApiEnabled) return;
+    let alive = true;
+    fetchFavorites().then((favs) => {
+      if (!alive) return;
+      setLikes({
+        food: favs.filter((f) => f.module === 'food').map((f) => f.refId),
+        shop: favs.filter((f) => f.module === 'shop').map((f) => f.refId),
+      });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [phone]);
+
   const isLiked = useCallback((m: ModuleKey, id: string) => likes[m].includes(id), [likes]);
 
   const toggleLike = useCallback(
     (m: ModuleKey, id: string): boolean => {
-      let nowLiked = false;
-      setLikes((prev) => {
-        const has = prev[m].includes(id);
-        nowLiked = !has;
-        return { ...prev, [m]: has ? prev[m].filter((x) => x !== id) : [...prev[m], id] };
-      });
-      return !likes[m].includes(id);
+      const has = likes[m].includes(id);
+      const next = !has;
+      // Instant local feedback…
+      setLikes((prev) => ({
+        ...prev,
+        [m]: next ? [...prev[m], id] : prev[m].filter((x) => x !== id),
+      }));
+      // …and a best-effort server sync so the like survives reloads.
+      if (isApiEnabled && phone) void syncFavorite(m, id, next);
+      return next;
     },
-    [likes],
+    [likes, phone],
   );
 
   const likesFor = useCallback((m: ModuleKey) => likes[m], [likes]);

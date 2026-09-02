@@ -4,6 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Text } from '../../components/ui/Text';
 import { Icon } from '@/lib/icons';
 import { Button } from '../../components/ui/Button';
+import { Skeleton } from '../../components/ui/Skeleton';
 import { SmartImage } from '../../components/ui/SmartImage';
 import { BottomSheet } from '../../components/ui/BottomSheet';
 import { useCart } from '../../context/CartContext';
@@ -66,11 +67,12 @@ export function CartScreen({ navigation }: Props): React.ReactElement {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {loading
           ? [1, 2].map((k) => (
-              <View key={k} style={[styles.itemCard, { opacity: 0.5 }]}>
-                <View style={styles.itemThumb} />
-                <View style={{ flex: 1, marginLeft: 12 }}>
-                  <View style={[styles.skeleton, { width: '50%' }]} />
-                  <View style={[styles.skeleton, { width: '35%', marginTop: 8 }]} />
+              <View key={k} style={styles.itemCard}>
+                <Skeleton width={78} height={78} radius={10} />
+                <View style={{ flex: 1, marginLeft: 12, paddingVertical: 4 }}>
+                  <Skeleton width="52%" height={15} />
+                  <Skeleton width="38%" height={13} style={{ marginTop: 10 }} />
+                  <Skeleton width={70} height={13} style={{ marginTop: 12, alignSelf: 'flex-end' }} />
                 </View>
               </View>
             ))
@@ -106,6 +108,15 @@ export function CartScreen({ navigation }: Props): React.ReactElement {
                 <Icon name="chevronDown" size={18} color="#9C005E" />
               </View>
             </Pressable>
+
+            {selected ? (
+              <View style={styles.availNote}>
+                <Icon name="check" size={14} color="#2C9B4D" />
+                <Text variant="caption" color="#2C9B4D" weight="semibold" style={{ marginLeft: 6, flex: 1 }}>
+                  We'll follow this for your order: {selected}
+                </Text>
+              </View>
+            ) : null}
 
             <View style={styles.priceCard}>
               <View style={styles.priceHead}>
@@ -181,7 +192,23 @@ export function CartScreen({ navigation }: Props): React.ReactElement {
               </Pressable>
             );
           })}
-          <Button title="Apply" variant="login" fullWidth size="lg" style={{ marginTop: 18 }} onPress={() => setSheet(false)} />
+          {!selected ? (
+            <Text variant="caption" color={colors.textTertiary} style={{ textAlign: 'center', marginTop: 14 }}>
+              Pick one so we know how to handle it.
+            </Text>
+          ) : null}
+          <Button
+            title="Apply"
+            variant="login"
+            fullWidth
+            size="lg"
+            disabled={!selected}
+            style={{ marginTop: 18 }}
+            onPress={() => {
+              haptic.success();
+              setSheet(false);
+            }}
+          />
         </View>
       </BottomSheet>
     </SafeAreaView>
@@ -296,7 +323,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: 8,
   },
-  skeleton: { height: 13, borderRadius: 6, backgroundColor: '#E7E4E9' },
   empty: { alignItems: 'center', paddingVertical: 60 },
   // Same box as the gradient CTA under it: stretches the card column, 56 tall,
   // pill - so the two stacked actions read as one pair.
@@ -397,6 +423,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     marginTop: 10,
     backgroundColor: colors.surface,
+  },
+  availNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EAF7EE',
+    borderRadius: radius.lg,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 10,
   },
   sheetOptionOn: { borderColor: '#9C005E', backgroundColor: '#FBF3F9' },
 });

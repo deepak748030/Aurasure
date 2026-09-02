@@ -479,11 +479,12 @@ function LoginStep(): React.ReactElement {
   const [showPassword, setShowPassword] = useState(false);
   const [otpFor, setOtpFor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const validPhone = /^[6-9]\d{9}$/.test(phone);
   const validEmail = /^\S+@\S+\.\S+$/.test(email.trim());
 
-  const submit = (): void => {
+  const submit = async (): Promise<void> => {
     setError(null);
     // Phone login has no password: after a valid number, straight to OTP.
     if (tab === 'phone') {
@@ -492,7 +493,11 @@ function LoginStep(): React.ReactElement {
         setError('Enter a valid 10-digit Indian mobile number.');
         return;
       }
+      // Simulated OTP dispatch so the button visibly works before the OTP step.
+      setBusy(true);
+      await new Promise((r) => setTimeout(r, 750));
       haptic.success();
+      setBusy(false);
       setOtpFor(`+91 ${phone}`);
       return;
     }
@@ -506,6 +511,8 @@ function LoginStep(): React.ReactElement {
       setError('Please enter your password.');
       return;
     }
+    setBusy(true);
+    await new Promise((r) => setTimeout(r, 800));
     haptic.success();
     login(email.trim());
   };
@@ -615,11 +622,12 @@ function LoginStep(): React.ReactElement {
           {error ? <ErrorNote text={error} /> : null}
           <View style={styles.loginActions}>
             <Button
-              title="Login"
+              title={tab === 'phone' ? 'Continue' : 'Login'}
               variant="login"
               leftIcon="login"
               fullWidth
               size="lg"
+              loading={busy}
               onPress={submit}
               style={{ marginTop: 18, height: 58 }}
             />
@@ -651,6 +659,7 @@ function OtpStep({ phone, onBack, onVerify }: { phone: string; onBack: () => voi
   const [otp, setOtp] = useState('');
   const [seconds, setSeconds] = useState(60);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
@@ -659,8 +668,12 @@ function OtpStep({ phone, onBack, onVerify }: { phone: string; onBack: () => voi
     return () => clearTimeout(t);
   }, [seconds]);
 
-  const verify = (): void => {
+  const verify = async (): Promise<void> => {
     if (otp.length !== 6) return;
+    setBusy(true);
+    setError(null);
+    // Short simulated verification round-trip before the session starts.
+    await new Promise((r) => setTimeout(r, 800));
     haptic.success();
     onVerify();
   };
@@ -730,7 +743,7 @@ function OtpStep({ phone, onBack, onVerify }: { phone: string; onBack: () => voi
 
         {error ? <ErrorNote text={error} /> : null}
         <View style={styles.otpActions}>
-          <Button title="Verify" variant="login" fullWidth size="lg" onPress={verify} disabled={otp.length !== 6} style={{ marginTop: 36 }} />
+          <Button title="Verify" variant="login" fullWidth size="lg" loading={busy} onPress={verify} disabled={otp.length !== 6} style={{ marginTop: 36 }} />
         </View>
 
         <View style={styles.otpResendRow}>

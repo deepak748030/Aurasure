@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useFloatingBarBottomInset } from '@/hooks/useBottomInset';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Screen } from '../../components/ui/Screen';
 import { BackButton } from '../../components/ui/BackButton';
@@ -17,6 +17,7 @@ import { BottomSheet } from '../../components/ui/BottomSheet';
 import { useAppQuery } from '../../hooks/useAppQuery';
 import { fetchProduct } from '@/api/shop';
 import { useCart } from '../../context/CartContext';
+import { Skeleton } from '../../components/ui/Skeleton';
 import { cartItemFromProduct, getProductById, getStoreById } from '../../data/mock';
 import { colors } from '@/theme/colors';
 import { layout, radius } from '@/theme/tokens';
@@ -35,6 +36,23 @@ export function ProductScreen({ route, navigation }: Props): React.ReactElement 
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [successOpen, setSuccessOpen] = useState(false);
   const [warn, setWarn] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
+
+  const shareProduct = async (): Promise<void> => {
+    if (!product || sharing) return;
+    setSharing(true);
+    try {
+      const meta = [selectedSize, selectedColor].filter(Boolean).join(' · ');
+      await Share.share({
+        title: `${product.name} on Aurasure`,
+        message: `${product.name}${meta ? ` (${meta})` : ''} — ${formatINR(product.price)} on Aurasure. Order food & shopping in one app!`,
+      });
+    } catch {
+      /* user closed the share sheet — nothing to do */
+    } finally {
+      setSharing(false);
+    }
+  };
 
   const { data, loading, refreshing, refresh } = useAppQuery(
     () => fetchProduct(productId),
@@ -66,8 +84,13 @@ export function ProductScreen({ route, navigation }: Props): React.ReactElement 
     <View style={styles.topBar}>
       <BackButton onPress={() => navigation.goBack()} />
       <View style={{ flexDirection: 'row' }}>
-        <Pressable onPress={() => navigation.navigate('Search')} hitSlop={10} style={styles.roundBtn}>
-          <Icon name="share" size={18} color={colors.text} />
+        <Pressable
+          onPress={() => void shareProduct()}
+          disabled={!product || sharing}
+          hitSlop={10}
+          style={[styles.roundBtn, { opacity: !product || sharing ? 0.5 : 1 }]}
+        >
+          {sharing ? <ActivityIndicator size="small" color={colors.text} /> : <Icon name="share" size={18} color={colors.text} />}
         </Pressable>
         <View style={{ width: 10 }} />
         <CartButton />
@@ -209,6 +232,8 @@ export function ProductScreen({ route, navigation }: Props): React.ReactElement 
 
             <View style={{ height: 16 }} />
           </>
+        ) : loading ? (
+          <ProductDetailSkeleton />
         ) : (
           <Text variant="body" color={colors.textSecondary} style={{ textAlign: 'center', marginTop: 40 }}>
             Product not found.
@@ -264,6 +289,32 @@ export function ProductScreen({ route, navigation }: Props): React.ReactElement 
         </View>
       </BottomSheet>
     </View>
+  );
+}
+
+function ProductDetailSkeleton(): React.ReactElement {
+  return (
+    <>
+      <View style={styles.imageWrap}>
+        <Skeleton width="100%" height={300} radius={0} />
+      </View>
+      <Card style={{ marginTop: 16 }}>
+        <Skeleton width="32%" height={12} />
+        <Skeleton width="76%" height={22} style={{ marginTop: 10 }} />
+        <Skeleton width="48%" height={14} style={{ marginTop: 12 }} />
+        <Skeleton width={110} height={26} style={{ marginTop: 14 }} />
+      </Card>
+      <Card variant="alt" style={{ marginTop: 12 }}>
+        <Skeleton width="26%" height={16} />
+        <Skeleton width="92%" height={13} style={{ marginTop: 10 }} />
+        <Skeleton width="86%" height={13} style={{ marginTop: 6 }} />
+      </Card>
+      <Card variant="alt" style={{ marginTop: 12 }}>
+        <Skeleton width="46%" height={13} />
+        <Skeleton width="46%" height={13} style={{ marginTop: 12 }} />
+        <Skeleton width="46%" height={13} style={{ marginTop: 12 }} />
+      </Card>
+    </>
   );
 }
 

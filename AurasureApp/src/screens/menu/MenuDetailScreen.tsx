@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, Switch, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,6 +10,7 @@ import { Text } from '../../components/ui/Text';
 import { Icon } from '@/lib/icons';
 import { BottomSheet } from '../../components/ui/BottomSheet';
 import { Input } from '../../components/ui/Input';
+import { Skeleton } from '../../components/ui/Skeleton';
 import { colors } from '@/theme/colors';
 import { radius } from '@/theme/tokens';
 import { formatINR } from '@/lib/format';
@@ -33,6 +34,7 @@ import {
   updateProfile,
 } from '@/api/account';
 import { userProfile } from '../../data/mock';
+import { switchTab } from '@/navigation/RootNavigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { Coupon, IconName, LoyaltyData, ReferralInfo, WalletData } from '@/types';
 import type { MenuDetailKey, MenuStackParamList } from '../../navigation/types';
@@ -94,9 +96,7 @@ export function MenuDetailScreen({ route, navigation }: Props): React.ReactEleme
   const meta = META[route.params.key];
   const insets = useSafeAreaInsets();
   useScreenBars(meta.gradient[0], { navigationBar: colors.appBar });
-  const openChat = (): void => haptic.success();
-
-  const body = renderBody(route.params.key, meta, { openChat });
+  const body = renderBody(route.params.key, meta, navigation);
 
   return (
     <SafeAreaView style={styles.root} edges={['left', 'right']}>
@@ -134,7 +134,7 @@ export function MenuDetailScreen({ route, navigation }: Props): React.ReactEleme
 function renderBody(
   key: MenuDetailKey,
   meta: Meta,
-  ctx: { openChat: () => void },
+  navigation: Props['navigation'],
 ): React.ReactElement {
   switch (key) {
     case 'editProfile':
@@ -156,9 +156,9 @@ function renderBody(
     case 'vendor':
       return <VendorBody />;
     case 'liveChat':
-      return <LiveChatBody onStart={ctx.openChat} />;
+      return <LiveChatBody />;
     case 'help':
-      return <HelpBody />;
+      return <HelpBody navigation={navigation} />;
     case 'terms':
     case 'privacy':
     case 'refund':
@@ -405,6 +405,34 @@ const MOCK_COUPONS: Coupon[] = [
   { id: 'c3', code: 'FREEDEL', title: 'Free delivery on all orders', subtitle: 'No minimum', minOrder: 0, offType: 'flat', offValue: 0, expiresAt: null, usedAt: null },
 ];
 
+function SkeletonListRow(): React.ReactElement {
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowIcon}>
+        <Skeleton width={34} height={34} radius={17} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Skeleton width="55%" height={13} />
+        <Skeleton width="70%" height={11} style={{ marginTop: 6 }} />
+      </View>
+      <Skeleton width={58} height={14} />
+    </View>
+  );
+}
+
+function SkeletonBalanceCard(): React.ReactElement {
+  return (
+    <View style={[styles.balanceCard, { backgroundColor: '#EFE7EE' }]}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+        <Skeleton width={22} height={22} radius={11} />
+        <Skeleton width={92} height={16} radius={8} />
+      </View>
+      <Skeleton width="46%" height={34} style={{ marginTop: 16 }} />
+      <Skeleton width="72%" height={12} style={{ marginTop: 12 }} />
+    </View>
+  );
+}
+
 const fmtDay = (iso?: string | null): string => {
   if (!iso) return '';
   try {
@@ -420,30 +448,45 @@ function CouponsBody(): React.ReactElement {
   const coupons: Coupon[] = (q.data ?? MOCK_COUPONS).filter((c) => !c.usedAt);
   return (
     <View>
-      {coupons.length === 0 ? (
+      {q.loading ? (
+        <>
+          {[1, 2].map((k) => (
+            <Card key={k} style={{ marginBottom: 10 }}>
+              <View style={styles.couponRow}>
+                <View style={{ flex: 1 }}>
+                  <Skeleton width="58%" height={16} />
+                  <Skeleton width="84%" height={11} style={{ marginTop: 8 }} />
+                </View>
+                <Skeleton width={82} height={28} radius={8} />
+              </View>
+            </Card>
+          ))}
+        </>
+      ) : coupons.length === 0 ? (
         <Card>
           <Text variant="body" color={colors.textSecondary} style={{ textAlign: 'center', paddingVertical: 18 }}>
             No active coupons right now.
           </Text>
         </Card>
-      ) : null}
-      {coupons.map((c) => (
-        <Card key={c.code} style={{ marginBottom: 10 }}>
-          <View style={styles.couponRow}>
-            <View style={{ flex: 1 }}>
-              <Text variant="title" weight="extrabold" color="#9C005E">{c.title}</Text>
-              <Text variant="caption" color={colors.textSecondary} style={{ marginTop: 3 }}>
-                {c.subtitle}
-                {c.minOrder > 0 ? ` · Min order ₹${c.minOrder}` : ''}
-                {c.expiresAt ? ` · Till ${fmtDay(c.expiresAt)}` : ''}
-              </Text>
+      ) : (
+        coupons.map((c) => (
+          <Card key={c.code} style={{ marginBottom: 10 }}>
+            <View style={styles.couponRow}>
+              <View style={{ flex: 1 }}>
+                <Text variant="title" weight="extrabold" color="#9C005E">{c.title}</Text>
+                <Text variant="caption" color={colors.textSecondary} style={{ marginTop: 3 }}>
+                  {c.subtitle}
+                  {c.minOrder > 0 ? ` · Min order ₹${c.minOrder}` : ''}
+                  {c.expiresAt ? ` · Till ${fmtDay(c.expiresAt)}` : ''}
+                </Text>
+              </View>
+              <View style={[styles.couponCode, q.source === 'api' && { borderColor: '#B78FD0' }]}>
+                <Text variant="caption" weight="bold" color="#9C005E">{c.code}</Text>
+              </View>
             </View>
-            <View style={[styles.couponCode, q.source === 'api' && { borderColor: '#B78FD0' }]}>
-              <Text variant="caption" weight="bold" color="#9C005E">{c.code}</Text>
-            </View>
-          </View>
-        </Card>
-      ))}
+          </Card>
+        ))
+      )}
       <Text variant="caption" color={colors.textTertiary} style={{ textAlign: 'center', marginTop: 4 }}>
         Codes auto-apply at checkout when you spend above the minimum.
       </Text>
@@ -492,43 +535,57 @@ function LoyaltyBody(): React.ReactElement {
 
   return (
     <>
-      <LinearGradient colors={['#F2B63C', '#E5A710']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.balanceCard}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-          <Icon name="star" size={22} color={colors.white} />
-          <View style={styles.tierPill}>
-            <Text variant="overline" weight="bold" color="#7A5200">{tier.toUpperCase()} MEMBER</Text>
-          </View>
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: 14 }}>
-          <Text variant="display" weight="extrabold" color={colors.white}>{points.toLocaleString('en-IN')}</Text>
-          <Text variant="title" weight="bold" color="rgba(255,255,255,0.9)" style={{ marginLeft: 6 }}>points</Text>
-        </View>
-        <Text variant="caption" color="rgba(255,255,255,0.9)" style={{ marginTop: 6 }}>
-          Earn 5 points on every ₹100 spent · 100 pts = ₹10 wallet money
-        </Text>
-        <Pressable onPress={() => { setChoice(100); setErr(null); setSheet(true); }} style={styles.balanceCta}>
-          <Text variant="caption" weight="bold" color="#B8860B">REDEEM POINTS</Text>
-        </Pressable>
-      </LinearGradient>
+      {q.loading ? (
+        <>
+          <SkeletonBalanceCard />
+          <SectionLabel label="Recent activity" />
+          <Card>
+            {[1, 2, 3, 4].map((k) => (
+              <SkeletonListRow key={k} />
+            ))}
+          </Card>
+        </>
+      ) : (
+        <>
+          <LinearGradient colors={['#F2B63C', '#E5A710']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.balanceCard}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              <Icon name="star" size={22} color={colors.white} />
+              <View style={styles.tierPill}>
+                <Text variant="overline" weight="bold" color="#7A5200">{tier.toUpperCase()} MEMBER</Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: 14 }}>
+              <Text variant="display" weight="extrabold" color={colors.white}>{points.toLocaleString('en-IN')}</Text>
+              <Text variant="title" weight="bold" color="rgba(255,255,255,0.9)" style={{ marginLeft: 6 }}>points</Text>
+            </View>
+            <Text variant="caption" color="rgba(255,255,255,0.9)" style={{ marginTop: 6 }}>
+              Earn 5 points on every ₹100 spent · 100 pts = ₹10 wallet money
+            </Text>
+            <Pressable onPress={() => { setChoice(100); setErr(null); setSheet(true); }} style={styles.balanceCta}>
+              <Text variant="caption" weight="bold" color="#B8860B">REDEEM POINTS</Text>
+            </Pressable>
+          </LinearGradient>
 
-      <SectionLabel label="Recent activity" />
-      <Card>
-        {activity.length === 0 ? (
-          <Text variant="body" color={colors.textSecondary} style={{ paddingVertical: 14, textAlign: 'center' }}>
-            No activity yet — order food or shop to start earning.
-          </Text>
-        ) : (
-          activity.slice(0, 8).map((t) => (
-            <ActivityRow
-              key={t.id}
-              title={t.title}
-              sub={`${t.note ?? ''} · ${fmtDay(t.createdAt)}`}
-              amount={`${t.type === 'earned' ? '+' : '-'}${Math.abs(t.points)} pts`}
-              positive={t.type === 'earned'}
-            />
-          ))
-        )}
-      </Card>
+          <SectionLabel label="Recent activity" />
+          <Card>
+            {activity.length === 0 ? (
+              <Text variant="body" color={colors.textSecondary} style={{ paddingVertical: 14, textAlign: 'center' }}>
+                No activity yet — order food or shop to start earning.
+              </Text>
+            ) : (
+              activity.slice(0, 8).map((t) => (
+                <ActivityRow
+                  key={t.id}
+                  title={t.title}
+                  sub={`${t.note ?? ''} · ${fmtDay(t.createdAt)}`}
+                  amount={`${t.type === 'earned' ? '+' : '-'}${Math.abs(t.points)} pts`}
+                  positive={t.type === 'earned'}
+                />
+              ))
+            )}
+          </Card>
+        </>
+      )}
 
       <BottomSheet visible={sheet} onClose={() => setSheet(false)} title="Redeem points">
         <View>
@@ -613,37 +670,51 @@ function WalletBody(): React.ReactElement {
 
   return (
     <>
-      <LinearGradient colors={['#F0A93C', '#D98E12']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.balanceCard}>
-        <Icon name="wallet" size={22} color={colors.white} />
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: 14 }}>
-          <Text variant="display" weight="extrabold" color={colors.white}>{formatINR(balance)}</Text>
-        </View>
-        <Text variant="caption" color="rgba(255,255,255,0.9)" style={{ marginTop: 6 }}>
-          {q.source === 'api' ? 'Live balance · synced with your account' : 'Stored value you can spend instantly'}
-        </Text>
-        <Pressable onPress={() => { setErr(null); setSheet(true); }} style={styles.balanceCta}>
-          <Text variant="caption" weight="bold" color="#B07000">+ ADD MONEY</Text>
-        </Pressable>
-      </LinearGradient>
+      {q.loading ? (
+        <>
+          <SkeletonBalanceCard />
+          <SectionLabel label="Transactions" />
+          <Card>
+            {[1, 2, 3, 4].map((k) => (
+              <SkeletonListRow key={k} />
+            ))}
+          </Card>
+        </>
+      ) : (
+        <>
+          <LinearGradient colors={['#F0A93C', '#D98E12']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.balanceCard}>
+            <Icon name="wallet" size={22} color={colors.white} />
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: 14 }}>
+              <Text variant="display" weight="extrabold" color={colors.white}>{formatINR(balance)}</Text>
+            </View>
+            <Text variant="caption" color="rgba(255,255,255,0.9)" style={{ marginTop: 6 }}>
+              {q.source === 'api' ? 'Live balance · synced with your account' : 'Stored value you can spend instantly'}
+            </Text>
+            <Pressable onPress={() => { setErr(null); setSheet(true); }} style={styles.balanceCta}>
+              <Text variant="caption" weight="bold" color="#B07000">+ ADD MONEY</Text>
+            </Pressable>
+          </LinearGradient>
 
-      <SectionLabel label="Transactions" />
-      <Card>
-        {transactions.length === 0 ? (
-          <Text variant="body" color={colors.textSecondary} style={{ paddingVertical: 14, textAlign: 'center' }}>
-            No transactions yet — add money or place an order to see activity here.
-          </Text>
-        ) : (
-          transactions.slice(0, 12).map((t) => (
-            <ActivityRow
-              key={t.id}
-              title={t.title}
-              sub={`${t.note ?? ''} · ${fmtDay(t.createdAt)}`}
-              amount={`${t.type === 'credit' ? '+' : '-'}${formatINR(t.amount)}`}
-              positive={t.type === 'credit'}
-            />
-          ))
-        )}
-      </Card>
+          <SectionLabel label="Transactions" />
+          <Card>
+            {transactions.length === 0 ? (
+              <Text variant="body" color={colors.textSecondary} style={{ paddingVertical: 14, textAlign: 'center' }}>
+                No transactions yet — add money or place an order to see activity here.
+              </Text>
+            ) : (
+              transactions.slice(0, 12).map((t) => (
+                <ActivityRow
+                  key={t.id}
+                  title={t.title}
+                  sub={`${t.note ?? ''} · ${fmtDay(t.createdAt)}`}
+                  amount={`${t.type === 'credit' ? '+' : '-'}${formatINR(t.amount)}`}
+                  positive={t.type === 'credit'}
+                />
+              ))
+            )}
+          </Card>
+        </>
+      )}
 
       <BottomSheet visible={sheet} onClose={() => setSheet(false)} title="Add money to wallet">
         <View>
@@ -688,7 +759,7 @@ function WalletBody(): React.ReactElement {
 
 /* ---------------------------- refer ---------------------------- */
 
-const MOCK_REFERRAL: ReferralInfo = { code: 'DEEPRAK08', earnings: 300, friends: 2, referredBy: null };
+const MOCK_REFERRAL: ReferralInfo = { code: 'AAR3210', earnings: 300, friends: 2, referredBy: null };
 
 function ReferBody(): React.ReactElement {
   const q = useAppQuery(fetchReferral, () => MOCK_REFERRAL);
@@ -697,10 +768,12 @@ function ReferBody(): React.ReactElement {
   const [applyOpen, setApplyOpen] = useState(false);
   const [applyCode, setApplyCode] = useState('');
   const [busy, setBusy] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const share = async (): Promise<void> => {
     setShared(false);
+    setSharing(true);
     try {
       await Share.share({
         title: 'Aurasure — you get ₹50 off',
@@ -710,6 +783,8 @@ function ReferBody(): React.ReactElement {
       setTimeout(() => setShared(false), 1600);
     } catch {
       setMsg({ ok: true, text: `Your code is ${code} — share it with friends.` });
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -734,6 +809,17 @@ function ReferBody(): React.ReactElement {
 
   return (
     <View>
+      {q.loading ? (
+        <Card>
+          <View style={styles.referHero}>
+            <Skeleton width="52%" height={20} style={{ alignSelf: 'center', marginTop: 12 }} />
+            <Skeleton width="74%" height={12} style={{ alignSelf: 'center', marginTop: 10 }} />
+          </View>
+          <Skeleton width="62%" height={44} radius={10} style={{ alignSelf: 'center', marginTop: 14 }} />
+          <Skeleton width="100%" height={50} radius={25} style={{ marginTop: 14 }} />
+        </Card>
+      ) : (
+        <>
       <Card>
         <View style={styles.referHero}>
           <Icon name="gift" size={30} color="#2C9B4D" />
@@ -749,7 +835,7 @@ function ReferBody(): React.ReactElement {
             <Text variant="caption" weight="bold" color="#2C9B4D" style={{ marginLeft: 4 }}>YOUR CODE</Text>
           </View>
         </View>
-        <Button title="Share my code" onPress={() => void share()} fullWidth size="lg" style={{ marginTop: 14 }} leftIcon="share" />
+        <Button title="Share my code" loading={sharing} onPress={() => void share()} fullWidth size="lg" style={{ marginTop: 14 }} leftIcon="share" />
       </Card>
 
       <Card style={{ marginTop: 14 }}>
@@ -778,6 +864,8 @@ function ReferBody(): React.ReactElement {
           </Pressable>
         )}
       </Card>
+        </>
+      )}
 
       {shared ? (
         <Text variant="caption" color={colors.success} style={{ marginTop: 10, textAlign: 'center' }}>
@@ -936,33 +1024,209 @@ function VendorBody(): React.ReactElement {
 
 /* ---------------------------- chat / help ---------------------------- */
 
-function LiveChatBody({ onStart }: { onStart: () => void }): React.ReactElement {
+interface ChatMsg {
+  id: number;
+  from: 'user' | 'bot';
+  text: string;
+}
+
+function botReplyTo(raw: string): string {
+  const t = raw.toLowerCase();
+  if (/(order|track|where)/.test(t)) {
+    return "You can track any order from the Orders tab — status updates appear there as soon as the store confirms it. 📦";
+  }
+  if (/(cancel)/.test(t)) {
+    return 'Cancelling is free until the store starts preparing. Open the order and tap Cancel — wallet payments are refunded instantly. ✅';
+  }
+  if (/(pay|refund|wallet|money)/.test(t)) {
+    return 'Payment issues are usually resolved within a few hours. Share your order code here and we will check it for you right away. 💳';
+  }
+  if (/(deliver|eta|late|time)/.test(t)) {
+    return 'Your estimated delivery time shows on the order tracker. If it runs late, tell us here and we will prioritise it with the rider. 🛵';
+  }
+  if (/(account|login|otp|number|phone)/.test(t)) {
+    return 'For account or OTP help, sign out once and sign back in with your mobile number — a fresh code is sent instantly. 🔐';
+  }
+  return 'Thanks for reaching out! A support agent will reply here shortly. You can also reach us on the helpline from Help & Support. 💬';
+}
+
+function LiveChatBody(): React.ReactElement {
+  const { phone, name } = useApp();
+  const [open, setOpen] = useState(false);
+  const [msgs, setMsgs] = useState<ChatMsg[]>([]);
+  const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
+  const listRef = useRef<ScrollView>(null);
+  const nextId = useRef(1);
+
+  const openChat = (): void => {
+    setOpen(true);
+    if (msgs.length === 0) {
+      setMsgs([
+        {
+          id: nextId.current++,
+          from: 'bot',
+          text: `Hi${name && name !== 'User' ? ` ${name.split(' ')[0]}` : ' there'}! 👋 I'm the Aurasure assistant. Ask me about orders, cancellations, payments or delivery.`,
+        },
+      ]);
+    }
+  };
+
+  const send = async (raw?: string): Promise<void> => {
+    const msg = (raw ?? text).trim();
+    if (!msg || sending) return;
+    setMsgs((prev) => [...prev, { id: nextId.current++, from: 'user', text: msg }]);
+    setText('');
+    setSending(true);
+    await new Promise((r) => setTimeout(r, 900 + Math.random() * 500));
+    setMsgs((prev) => [...prev, { id: nextId.current++, from: 'bot', text: botReplyTo(msg) }]);
+    setSending(false);
+  };
+
+  const close = (): void => {
+    if (sending) return;
+    setOpen(false);
+  };
+
+  const QUICK = ['Track my order', 'Cancel an order', 'Payment issue'];
+
   return (
     <>
       <InfoHero icon="message" title="We reply in minutes" desc="Our team is available 24×7 to resolve any issue." />
       <Card>
         <ActivityRow title="Start a conversation" sub="Chat with a support agent" amount="Chat now" positive />
       </Card>
-      <FullWidthButton label="Open live chat" />
+      <Button
+        title="Open live chat"
+        variant="login"
+        fullWidth
+        size="lg"
+        leftIcon="message"
+        onPress={openChat}
+        style={{ marginTop: 18 }}
+      />
+
+      <BottomSheet visible={open} onClose={close} title="Live chat" dismissDistance={700}>
+        <View style={{ paddingBottom: 8 }}>
+          <View style={styles.chatStatusRow}>
+            <View style={styles.chatStatusDot} />
+            <Text variant="caption" color={colors.success} weight="semibold">
+              Typically replies in under a minute{phone ? ` · +91 ${phone}` : ''}
+            </Text>
+          </View>
+
+          <View style={styles.chatQuickRow}>
+            {QUICK.map((q) => (
+              <Pressable
+                key={q}
+                onPress={() => void send(q)}
+                disabled={sending}
+                style={({ pressed }) => [styles.chatChip, { opacity: pressed || sending ? 0.7 : 1 }]}
+              >
+                <Text variant="caption" weight="semibold" color="#2C9B4D">
+                  {q}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <View style={styles.chatBox}>
+            <ScrollView
+              ref={listRef}
+              style={{ flexGrow: 0 }}
+              contentContainerStyle={{ padding: 12, gap: 8 }}
+              onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+              keyboardShouldPersistTaps="handled"
+            >
+              {msgs.map((m) => (
+                <View key={m.id} style={[styles.chatBubble, m.from === 'user' ? styles.chatBubbleUser : styles.chatBubbleBot]}>
+                  <Text variant="caption" color={m.from === 'user' ? colors.white : colors.text} style={{ lineHeight: 18 }}>
+                    {m.text}
+                  </Text>
+                </View>
+              ))}
+              {sending ? (
+                <View style={[styles.chatBubble, styles.chatBubbleBot]}>
+                  <Text variant="caption" color={colors.textTertiary}>
+                    Agent is typing…
+                  </Text>
+                </View>
+              ) : null}
+            </ScrollView>
+          </View>
+
+          <View style={styles.chatInputRow}>
+            <View style={{ flex: 1 }}>
+              <Input
+                value={text}
+                onChangeText={setText}
+                placeholder="Type your message…"
+                leftIcon="message"
+                containerStyle={{ marginBottom: 0 }}
+                returnKeyType="send"
+                onSubmitEditing={() => void send()}
+              />
+            </View>
+            <Button
+              title="Send"
+              size="sm"
+              fullWidth={false}
+              loading={sending}
+              disabled={text.trim().length === 0}
+              onPress={() => void send()}
+              style={{ marginLeft: 8, minWidth: 96 }}
+            />
+          </View>
+        </View>
+      </BottomSheet>
     </>
   );
 }
 
-function HelpBody(): React.ReactElement {
+function HelpBody({ navigation }: { navigation: Props['navigation'] }): React.ReactElement {
   const items = [
-    { label: 'Track my order', icon: 'package' as IconName },
-    { label: 'Cancel an order', icon: 'close' as IconName },
-    { label: 'Payment issues', icon: 'wallet' as IconName },
-    { label: 'Report a problem', icon: 'circleAlert' as IconName },
+    {
+      label: 'Track my order',
+      icon: 'package' as IconName,
+      onPress: (): void => {
+        navigation.popToTop();
+        switchTab('Orders');
+      },
+    },
+    {
+      label: 'Cancel an order',
+      icon: 'close' as IconName,
+      onPress: (): void => {
+        navigation.popToTop();
+        switchTab('Orders');
+      },
+    },
+    {
+      label: 'Payment issues',
+      icon: 'wallet' as IconName,
+      onPress: (): void => navigation.push('MenuDetail', { key: 'wallet' }),
+    },
+    {
+      label: 'Report a problem',
+      icon: 'circleAlert' as IconName,
+      onPress: (): void => navigation.push('MenuDetail', { key: 'liveChat' }),
+    },
   ];
   return (
     <Card>
       {items.map((it, i) => (
-        <View key={it.label} style={[styles.row, i > 0 ? styles.rowTop : null]}>
+        <Pressable
+          key={it.label}
+          onPress={() => {
+            haptic.light();
+            it.onPress();
+          }}
+          style={({ pressed }) => [styles.row, i > 0 ? styles.rowTop : null, { opacity: pressed ? 0.7 : 1 }]}
+        >
           <View style={styles.rowIcon}><Icon name={it.icon} size={18} color="#2E87D6" filled /></View>
           <Text variant="subtitle" weight="semibold" color={colors.text} style={{ flex: 1, marginLeft: 12 }}>{it.label}</Text>
           <Icon name="chevronRight" size={18} color="#C0B6C0" />
-        </View>
+        </Pressable>
       ))}
     </Card>
   );
@@ -1061,10 +1325,6 @@ function StatRow({ label, value }: { label: string; value: string }): React.Reac
 
 function SectionLabel({ label }: { label: string }): React.ReactElement {
   return <Text variant="overline" color="#A9A2AD" style={styles.sectionLabel}>{label.toUpperCase()}</Text>;
-}
-
-function FullWidthButton({ label }: { label: string }): React.ReactElement {
-  return <Button title={label} variant="login" fullWidth size="lg" style={{ marginTop: 18 }} />;
 }
 
 /* ---------------------------- styles ---------------------------- */
@@ -1266,5 +1526,60 @@ const styles = StyleSheet.create({
     backgroundColor: colors.successBg,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  chatStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  chatStatusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.success,
+    marginRight: 8,
+  },
+  chatQuickRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 12,
+  },
+  chatChip: {
+    backgroundColor: '#EAF7EE',
+    borderRadius: radius.pill,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#CFEBD8',
+  },
+  chatBox: {
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    minHeight: 120,
+    maxHeight: 320,
+  },
+  chatBubble: {
+    borderRadius: radius.lg,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    maxWidth: '82%',
+  },
+  chatBubbleUser: {
+    backgroundColor: '#2C9B4D',
+    alignSelf: 'flex-end',
+  },
+  chatBubbleBot: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignSelf: 'flex-start',
+  },
+  chatInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
   },
 });

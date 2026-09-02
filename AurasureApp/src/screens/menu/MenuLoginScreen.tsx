@@ -26,6 +26,7 @@ export function MenuLoginScreen({ navigation }: Props): React.ReactElement {
   const [otp, setOtp] = useState('');
   const [seconds, setSeconds] = useState(60);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const otpInput = useRef<TextInput>(null);
 
   const validPhone = /^[6-9]\d{9}$/.test(phone);
@@ -36,24 +37,32 @@ export function MenuLoginScreen({ navigation }: Props): React.ReactElement {
     return () => clearTimeout(t);
   }, [step, seconds]);
 
-  const sendOtp = (): void => {
+  const sendOtp = async (): Promise<void> => {
     if (!validPhone) {
       haptic.error();
       setError('Enter a valid 10-digit mobile number.');
       return;
     }
-    haptic.success();
+    setBusy(true);
     setError(null);
+    // Simulated SMS round-trip so the button shows its busy state; an OTP
+    // would be dispatched by the backend in a real deployment.
+    await new Promise((r) => setTimeout(r, 750));
+    haptic.success();
+    setBusy(false);
     setStep('otp');
     setSeconds(60);
   };
 
-  const verify = (): void => {
+  const verify = async (): Promise<void> => {
     if (otp.length !== 6) {
       haptic.error();
       setError('Enter the 6-digit code.');
       return;
     }
+    setBusy(true);
+    setError(null);
+    await new Promise((r) => setTimeout(r, 800));
     haptic.success();
     login(`+91 ${phone}`, 'Aurasure User');
     navigation.goBack();
@@ -115,7 +124,7 @@ export function MenuLoginScreen({ navigation }: Props): React.ReactElement {
               </View>
 
               {error ? <ErrorNote text={error} /> : null}
-              <Button title="Get OTP" variant="login" fullWidth size="lg" onPress={sendOtp} style={{ marginTop: 18 }} />
+              <Button title="Get OTP" variant="login" fullWidth size="lg" loading={busy} onPress={sendOtp} style={{ marginTop: 18 }} />
             </>
           ) : (
             <>
@@ -142,7 +151,7 @@ export function MenuLoginScreen({ navigation }: Props): React.ReactElement {
               />
 
               {error ? <ErrorNote text={error} /> : null}
-              <Button title="Verify & Sign in" variant="login" fullWidth size="lg" onPress={verify} disabled={otp.length !== 6} style={{ marginTop: 18 }} />
+              <Button title="Verify & Sign in" variant="login" fullWidth size="lg" loading={busy} onPress={verify} disabled={otp.length !== 6} style={{ marginTop: 18 }} />
 
               <Pressable onPress={resend} style={{ marginTop: 18, alignItems: 'center' }}>
                 <Text variant="subtitle" color={seconds > 0 ? colors.textTertiary : '#A4006B'} weight={seconds > 0 ? 'medium' : 'bold'}>

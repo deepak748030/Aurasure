@@ -52,7 +52,7 @@ function Shell({ children }: { children: React.ReactNode }): React.ReactElement 
   return (
     <ScrollView contentContainerStyle={styles.shell} keyboardShouldPersistTaps="handled">
       <View style={styles.brandRow}>
-        <SmartImage source={{ kind: 'asset', source: Images.logo }} placeholderIcon="sparkles" style={styles.logo} />
+        <SmartImage source={{ kind: 'asset', source: Images.logoMark }} placeholderIcon="sparkles" style={styles.logo} />
         <View>
           <Text variant="h2" weight="extrabold" color={colors.text}>
             Aurasure
@@ -863,7 +863,7 @@ const styles = StyleSheet.create({
   dotActive: { backgroundColor: colors.brand[600] },
   shell: { paddingHorizontal: 6, paddingBottom: 40 },
   brandRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.xl },
-  logo: { width: 44, height: 44, borderRadius: radius.md, marginRight: 12 },
+  logo: { width: 44, height: 44, marginRight: 12 },
   titleIcon: {
     width: 44,
     height: 44,
@@ -882,10 +882,11 @@ const styles = StyleSheet.create({
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   loginLogo: {
     width: '100%',
-    maxWidth: 230,
-    height: 92,
+    // Matches the lockup's 3.76:1 aspect so "contain" leaves no dead space.
+    maxWidth: 244,
+    height: 65,
     alignSelf: 'center',
-    marginTop: 22,
+    marginTop: 26,
   },
   loginTitle: { textAlign: 'center', marginTop: 14, fontSize: 23 },
   tabs: {

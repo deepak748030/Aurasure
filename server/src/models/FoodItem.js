@@ -14,6 +14,7 @@ const foodItemSchema = new mongoose.Schema(
     reviews: { type: Number, default: 0, min: 0 },
     prepTime: { type: Number, default: 0, min: 0 },
     isVeg: { type: Boolean, default: true },
+    isAvailable: { type: Boolean, default: true },
     isBestseller: { type: Boolean, default: false },
     isPopular: { type: Boolean, default: false },
     isSpecial: { type: Boolean, default: false },

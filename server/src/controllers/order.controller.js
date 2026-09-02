@@ -4,6 +4,8 @@ const Order = require('../models/Order');
 const User = require('../models/User');
 const FoodItem = require('../models/FoodItem');
 const Product = require('../models/Product');
+const Restaurant = require('../models/Restaurant');
+const ShopStore = require('../models/ShopStore');
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { ok, created, paginate, listMeta } = require('../utils/response');
@@ -48,6 +50,12 @@ async function verifyAndRepriceItems(items) {
         `"${line.name || line.refId}" is no longer available - remove it from your cart`,
         'ITEM_UNAVAILABLE',
       );
+    }
+    if (line.kind === 'shop' && source.inStock === false) {
+      throw ApiError.badRequest(`"${source.name}" is out of stock`, 'ITEM_UNAVAILABLE');
+    }
+    if (line.kind === 'food' && source.isAvailable === false) {
+      throw ApiError.badRequest(`"${source.name}" is not available right now`, 'ITEM_UNAVAILABLE');
     }
     return {
       id: line.id,
@@ -126,6 +134,26 @@ const createOrder = asyncHandler(async (req, res) => {
   if (!address || !address.trim()) throw ApiError.badRequest('Delivery address is required', 'ADDRESS_REQUIRED');
 
   const pricedItems = await verifyAndRepriceItems(items);
+
+  let outletId = null;
+  let vendorId = null;
+  if (module === 'food') {
+    const first = await FoodItem.findOne({ id: pricedItems[0].refId }).lean();
+    outletId = first?.restaurantId || null;
+    if (outletId) {
+      const rst = await Restaurant.findOne({ id: outletId }).select('vendorId isClosed').lean();
+      vendorId = rst?.vendorId || null;
+      if (rst?.isClosed) throw ApiError.badRequest('This kitchen is closed right now', 'OUTLET_CLOSED');
+    }
+  } else {
+    const first = await Product.findOne({ id: pricedItems[0].refId }).lean();
+    outletId = first?.storeId || null;
+    if (outletId) {
+      const store = await ShopStore.findOne({ id: outletId }).select('vendorId isClosed').lean();
+      vendorId = store?.vendorId || null;
+      if (store?.isClosed) throw ApiError.badRequest('This store is closed right now', 'OUTLET_CLOSED');
+    }
+  }
   const { itemTotal } = computeTotals(
     pricedItems.reduce((sum, i) => sum + Number(i.unitPrice) * Number(i.qty), 0),
     0,
@@ -175,6 +203,8 @@ const createOrder = asyncHandler(async (req, res) => {
     code: orderCode,
     user: user._id,
     module,
+    vendorId,
+    outletId,
     items: pricedItems,
     itemTotal,
     deliveryFee,

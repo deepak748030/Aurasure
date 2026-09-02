@@ -66,6 +66,12 @@ const deleteAddress = asyncHandler(async (req, res) => {
 /** POST /api/v1/users/me/partner-application - body { kind, name?, city? } */
 const savePartnerApplication = asyncHandler(async (req, res) => {
   const { kind, name, city } = req.body;
+  if (kind === 'vendor') {
+    throw ApiError.badRequest(
+      'Vendors onboard in the Aurasure Vendor app — one phone, one module, full KYC. This customer number cannot become a vendor.',
+      'USE_VENDOR_APP',
+    );
+  }
   const existing = req.user.partnerApplication && req.user.partnerApplication.kind === kind
     ? req.user.partnerApplication
     : null;

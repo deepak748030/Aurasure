@@ -71,7 +71,58 @@ export interface Stats {
   cancelledOrders: number;
   walletCollected: number;
   pendingPartners: number;
+  pendingVendors?: number;
   partnerKinds: Record<string, number>;
+}
+
+export type VendorStatus =
+  | 'onboarding'
+  | 'submitted'
+  | 'under_review'
+  | 'needs_info'
+  | 'approved'
+  | 'rejected'
+  | 'suspended';
+
+export interface VendorDoc {
+  key: string;
+  label: string;
+  uri: string;
+  verified: boolean;
+  note: string;
+}
+
+export interface Vendor {
+  id: string;
+  userId: string;
+  phone: string;
+  module: Module;
+  status: VendorStatus;
+  ownerName: string;
+  email: string;
+  outletName: string;
+  legalName: string;
+  description: string;
+  address: string;
+  landmark: string;
+  city: string;
+  pin: string;
+  gstin: string;
+  pan: string;
+  fssai: string;
+  tradeLicense: string;
+  cuisines: string[];
+  bank?: { accountName: string; accountNumber: string; ifsc: string; bankName: string; upi: string };
+  hours?: { open: string; close: string };
+  documents: VendorDoc[];
+  reviewNote: string;
+  reviewedAt: string | null;
+  reviewedBy: string;
+  submittedAt: string | null;
+  isOpen: boolean;
+  outletId: string | null;
+  payoutBalance: number;
+  issues?: { id: string; title: string; body: string; status: string; createdAt: string }[];
 }
 
 export interface PartnerApplication {
@@ -87,7 +138,7 @@ export interface PartnerApplication {
 
 export interface CustomerRow {
   id: string;
-  role: 'admin' | 'customer';
+  role: 'admin' | 'customer' | 'vendor' | 'delivery';
   name: string;
   email: string;
   phone: string;
@@ -134,7 +185,7 @@ export interface Address {
 
 export interface CustomerDetail {
   id: string;
-  role: 'admin' | 'customer';
+  role: 'admin' | 'customer' | 'vendor' | 'delivery';
   name: string;
   phone: string;
   email?: string;

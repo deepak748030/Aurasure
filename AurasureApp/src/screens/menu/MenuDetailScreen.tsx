@@ -1025,13 +1025,22 @@ function DeliveryBody(): React.ReactElement {
 function VendorBody(): React.ReactElement {
   return (
     <>
-      <InfoHero icon="store" title="Sell to millions" desc="List your shop or restaurant on Aurasure and reach customers near you." />
+      <InfoHero
+        icon="store"
+        title="Sell from the Vendor app"
+        desc="Kitchens and shops onboard in Aurasure Vendor — not this customer account."
+      />
       <Card>
-        <StatRow label="Commission" value="As low as 5%" />
-        <StatRow label="Payouts" value="T+1 settlement" />
-        <StatRow label="Onboarding" value="Within 48 hrs" />
+        <StatRow label="Rule" value="1 phone = 1 module" />
+        <StatRow label="Modules" value="Food or Shop" />
+        <StatRow label="Go live" value="After every KYC photo is verified" />
+        <StatRow label="Commission" value="5% on item total" />
       </Card>
-      <PartnerApplySheet kind="vendor" />
+      <Text variant="body" color={colors.textSecondary} style={{ marginTop: 14, lineHeight: 21 }}>
+        This mobile number is a customer wallet. A vendor outlet needs a different number in the Vendor
+        app (FSSAI or GST, bank proof, outlet photos). Delivery partners will use a third, separate app
+        later — the same phone cannot be all three.
+      </Text>
     </>
   );
 }

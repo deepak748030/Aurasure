@@ -25,7 +25,7 @@ export interface NavItem {
   icon: LucideIcon;
   /** Match child routes too (e.g. /orders/ord_1). */
   exact?: boolean;
-  badge?: 'liveOrders' | 'pendingPartners';
+  badge?: 'liveOrders' | 'pendingPartners' | 'pendingVendors';
 }
 
 export interface NavSection {
@@ -82,6 +82,7 @@ export const NAV: NavSection[] = [
     title: 'User management',
     items: [
       { label: 'Customers', href: '/customers', icon: Users },
+      { label: 'Vendors (KYC)', href: '/vendors', icon: Store, badge: 'pendingVendors' },
       { label: 'Partner applications', href: '/partners', icon: UserCheck, badge: 'pendingPartners' },
     ],
   },

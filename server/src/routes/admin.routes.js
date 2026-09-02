@@ -3,6 +3,7 @@
 const { Router } = require('express');
 const { body } = require('express-validator');
 const controller = require('../controllers/admin.controller');
+const vendorsAdmin = require('../controllers/adminVendors.controller');
 const console_ = require('../controllers/adminCatalog.controller');
 const uploads = require('../controllers/upload.controller');
 const promos = require('../controllers/promo.controller');

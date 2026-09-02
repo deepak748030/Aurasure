@@ -22,6 +22,8 @@ const orderSchema = new mongoose.Schema(
     code: { type: String, required: true, unique: true, index: true },
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     module: { type: String, enum: ['food', 'shop'], required: true, index: true },
+    vendorId: { type: String, default: null, index: true },
+    outletId: { type: String, default: null, index: true },
     placedAt: { type: Date, default: Date.now },
     status: {
       type: String,
@@ -48,6 +50,7 @@ const orderSchema = new mongoose.Schema(
     // Customer instruction, e.g. the cart's "if any product is not
     // available → …" preference. Shown to fulfilment in the admin console.
     instructions: { type: String, default: '' },
+    payoutCredited: { type: Boolean, default: false },
   },
   {
     timestamps: true,

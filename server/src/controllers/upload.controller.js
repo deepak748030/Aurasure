@@ -25,7 +25,7 @@ function baseUrl(req) {
 }
 
 /** Turn a multer file into the API's public payload. */
-function describe(req, file) {
+function describeUpload(req, file) {
   const relative = path
     .relative(config.uploads.dir, file.path)
     .split(path.sep)
@@ -47,14 +47,14 @@ function describe(req, file) {
 /** POST /api/v1/admin/uploads  (multipart field: `image`) */
 const uploadImage = asyncHandler(async (req, res) => {
   if (!req.file) throw ApiError.badRequest('No image received - send a file in the `image` field', 'NO_FILE');
-  return ok(res, describe(req, req.file), undefined, 201);
+  return ok(res, describeUpload(req, req.file), undefined, 201);
 });
 
 /** POST /api/v1/admin/uploads/bulk  (multipart field: `images`) */
 const uploadImages = asyncHandler(async (req, res) => {
   const files = req.files || [];
   if (!files.length) throw ApiError.badRequest('No images received', 'NO_FILE');
-  return ok(res, { uploads: files.map((file) => describe(req, file)) }, undefined, 201);
+  return ok(res, { uploads: files.map((file) => describeUpload(req, file)) }, undefined, 201);
 });
 
 /**
@@ -81,4 +81,4 @@ const deleteUpload = asyncHandler(async (req, res) => {
   return ok(res, { deleted: relative.split(path.sep).join('/') });
 });
 
-module.exports = { uploadImage, uploadImages, deleteUpload };
+module.exports = { uploadImage, uploadImages, deleteUpload, describeUpload };

@@ -19,6 +19,7 @@ const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { ok, paginate, listMeta } = require('../utils/response');
 const { applyOrderCancellation } = require('./order.controller');
+const { creditVendorPayout } = require('../utils/payout');
 
 const LIVE_STATUSES = ['placed', 'confirmed', 'preparing', 'out_for_delivery'];
 const TERMINAL_STATUSES = ['delivered', 'cancelled'];
@@ -69,6 +70,7 @@ const getStats = asyncHandler(async (req, res) => {
   ]);
 
   const pendingPartners = await User.countDocuments({ 'partnerApplication.status': 'submitted' });
+  const pendingVendors = await Vendor.countDocuments({ status: { $in: ['submitted', 'under_review'] } });
   const partnerTally = await User.aggregate([
     { $match: { 'partnerApplication': { $ne: null } } },
     { $group: { _id: '$partnerApplication.kind', count: { $sum: 1 } } },
@@ -91,6 +93,7 @@ const getStats = asyncHandler(async (req, res) => {
     cancelledOrders: money ? money.cancelledOrders : 0,
     walletCollected: money ? money.walletCollected : 0,
     pendingPartners,
+    pendingVendors,
     partnerKinds: byKind,
   });
 });
@@ -177,7 +180,10 @@ const setOrderStatus = asyncHandler(async (req, res) => {
   if (status === 'out_for_delivery' && order.module === 'food' && !order.etaMinutes) {
     order.etaMinutes = 15;
   }
-  if (status === 'delivered') order.etaMinutes = 0;
+  if (status === 'delivered') {
+    order.etaMinutes = 0;
+    await creditVendorPayout(order);
+  }
   await order.save();
   return ok(res, { order: publicOrder(order) });
 });

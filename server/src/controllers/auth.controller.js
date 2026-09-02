@@ -54,6 +54,19 @@ const login = asyncHandler(async (req, res) => {
   const matches = await bcrypt.compare(password, user.passwordHash);
   if (!matches) throw ApiError.unauthorized('Incorrect password', 'INVALID_CREDENTIALS');
 
+  if (user.role === 'vendor') {
+    throw ApiError.forbidden(
+      'This number is a vendor account. Open the Aurasure Vendor app to sign in.',
+      'USE_VENDOR_APP',
+    );
+  }
+  if (user.role === 'delivery') {
+    throw ApiError.forbidden(
+      'This number is a delivery-partner account. Open the rider app when it launches.',
+      'USE_DELIVERY_APP',
+    );
+  }
+
   const token = signToken(user);
   return ok(res, { user: publicUser(user), token });
 });

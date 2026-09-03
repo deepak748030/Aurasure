@@ -22,6 +22,9 @@ export function useStats(refetchMs = 60000) {
     queryKey: ['stats'],
     queryFn: () => api<Stats>('/admin/stats'),
     refetchInterval: refetchMs,
+    // Keep the previous snapshot on screen while the 60 s background refresh
+    // runs, so navigating around never flashes empty skeletons.
+    placeholderData: (prev) => prev,
   });
 }
 
@@ -29,6 +32,7 @@ export function useReport(days: number) {
   return useQuery({
     queryKey: ['report', days],
     queryFn: () => api<ReportOverview>('/admin/reports/overview', { query: { days } }),
+    placeholderData: (prev) => prev,
   });
 }
 
@@ -37,11 +41,16 @@ export function useLookups() {
     queryKey: ['lookups'],
     queryFn: () => api<Lookups>('/admin/lookups'),
     staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 }
 
 export function useSystemInfo() {
-  return useQuery({ queryKey: ['system'], queryFn: () => api<SystemInfo>('/admin/system') });
+  return useQuery({
+    queryKey: ['system'],
+    queryFn: () => api<SystemInfo>('/admin/system'),
+    placeholderData: (prev) => prev,
+  });
 }
 
 export function useAuditLog(query: { q?: string; page?: number; limit?: number } = {}, refetchMs?: number) {
@@ -94,6 +103,7 @@ export function useVendors(query: { status?: string; module?: string; q?: string
       });
       return { vendors: res.data.vendors, pending: res.data.pending, meta: res.meta };
     },
+    placeholderData: (prev) => prev,
   });
 }
 
@@ -141,6 +151,7 @@ export function useRiders(query: { status?: string; dutyState?: string; q?: stri
       });
       return { riders: res.data.riders, pending: res.data.pending, meta: res.meta };
     },
+    placeholderData: (prev) => prev,
   });
 }
 
@@ -235,6 +246,7 @@ export function usePartners() {
   return useQuery({
     queryKey: ['partners'],
     queryFn: () => api<{ applications: PartnerApplication[] }>('/admin/partners'),
+    placeholderData: (prev) => prev,
   });
 }
 
@@ -338,7 +350,24 @@ export function usePartnerDecision() {
   return useMutation({
     mutationFn: ({ userId, status, note }: { userId: string; status: 'approved' | 'rejected'; note?: string }) =>
       api(`/admin/partners/${userId}`, { method: 'PATCH', body: { status, note } }),
-    onSuccess: () => {
+    // Flip the row immediately so approve/reject feels instant, then reconcile
+    // with the server response once it lands.
+    onMutate: async ({ userId, status, note }) => {
+      await qc.cancelQueries({ queryKey: ['partners'] });
+      const previous = qc.getQueryData<{ applications: PartnerApplication[] }>(['partners']);
+      if (previous) {
+        qc.setQueryData<{ applications: PartnerApplication[] }>(['partners'], {
+          applications: previous.applications.map((app) =>
+            app.userId === userId ? { ...app, status, note: note ?? app.note } : app,
+          ),
+        });
+      }
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(['partners'], context.previous);
+    },
+    onSettled: () => {
       void qc.invalidateQueries({ queryKey: ['partners'] });
       void qc.invalidateQueries({ queryKey: ['stats'] });
       void qc.invalidateQueries({ queryKey: ['audit'] });

@@ -4,8 +4,10 @@ import Link from 'next/link';
 import clsx from 'clsx';
 import { usePathname } from 'next/navigation';
 import { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Search, X, ShieldCheck } from 'lucide-react';
 import { NAV } from '@/lib/nav';
+import { prefetchRoute } from '@/lib/prefetch';
 import type { Stats } from '@/lib/types';
 
 function useActive(pathname: string) {
@@ -33,6 +35,7 @@ export function SidebarContent({
   const pathname = usePathname();
   const isActive = useActive(pathname);
   const [filter, setFilter] = useState('');
+  const queryClient = useQueryClient();
 
   const sections = useMemo(() => {
     const needle = filter.trim().toLowerCase();
@@ -105,6 +108,9 @@ export function SidebarContent({
                     <Link
                       href={item.href}
                       onClick={onNavigate}
+                      onMouseEnter={() => prefetchRoute(queryClient, item.href)}
+                      onFocus={() => prefetchRoute(queryClient, item.href)}
+                      onPointerDown={() => prefetchRoute(queryClient, item.href)}
                       className={clsx(
                         'group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13.5px] font-medium transition-colors',
                         active ? 'bg-brand-50 text-brand-700' : 'text-ink-600 hover:bg-ink-50 hover:text-ink-900',

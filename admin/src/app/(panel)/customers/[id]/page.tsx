@@ -246,7 +246,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
 
           {tab === 'wallet' || tab === 'loyalty' ? (
             <ul className="divide-y divide-[var(--color-line)]">
-              {(tab === 'wallet' ? customer.walletTxs : customer.loyaltyTxs).map((tx) => {
+              {(tab === 'wallet' ? customer.walletTxs ?? [] : customer.loyaltyTxs ?? []).map((tx) => {
                 const positive = tx.type === 'credit' || tx.type === 'earned';
                 return (
                   <li key={tx.id} className="flex items-center gap-3 px-4 py-3 sm:px-5">

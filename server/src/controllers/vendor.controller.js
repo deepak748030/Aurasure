@@ -19,6 +19,17 @@ const { createDeliveryTaskForOrder } = require('../utils/delivery');
 async function loadVendor(req) {
   const vendor = await Vendor.findOne({ userId: req.user.id });
   if (!vendor) throw ApiError.notFound('Vendor profile missing', 'VENDOR_MISSING');
+  if (vendor.pauseUntil && vendor.pauseUntil <= new Date() && !vendor.isOpen) {
+    vendor.isOpen = true;
+    vendor.acceptingOrders = true;
+    vendor.pauseUntil = null;
+    vendor.pauseReason = '';
+    await vendor.save();
+    if (vendor.outletId) {
+      const Model = vendor.module === 'food' ? Restaurant : ShopStore;
+      await Model.updateOne({ id: vendor.outletId }, { $set: { isClosed: false } });
+    }
+  }
   return vendor;
 }
 
@@ -179,6 +190,8 @@ const setOpen = asyncHandler(async (req, res) => {
   requireApproved(vendor);
   vendor.isOpen = Boolean(req.body.isOpen);
   vendor.acceptingOrders = vendor.isOpen;
+  vendor.pauseUntil = null;
+  vendor.pauseReason = '';
   await vendor.save();
   if (vendor.outletId) {
     if (vendor.module === 'food') {
@@ -304,9 +317,14 @@ const partialAcceptOrder = asyncHandler(async (req, res) => {
   requireApproved(vendor);
   const order = await Order.findOne({ id: req.params.id, vendorId: vendor.id });
   if (!order) throw ApiError.notFound('Order not found', 'ORDER_NOT_FOUND');
+  if (order.status !== 'placed') throw ApiError.badRequest('Partial acceptance is only available for new orders', 'INVALID_ORDER_STATE');
+  if (order.payBy !== 'cod') throw ApiError.badRequest('Partial acceptance is currently available for cash-on-delivery orders only', 'PARTIAL_PAYMENT_UNSUPPORTED');
   const remove = new Set(Array.isArray(req.body.removeLineIds) ? req.body.removeLineIds : []);
   if (!remove.size) throw ApiError.badRequest('Select at least one item to remove', 'LINES_REQUIRED');
-  order.items = order.items.filter((line) => !remove.has(line.id));
+  const remaining = order.items.filter((line) => !remove.has(line.id));
+  if (!remaining.length) throw ApiError.badRequest('Keep at least one item or reject the order', 'EMPTY_ORDER');
+  if (remaining.length === order.items.length) throw ApiError.badRequest('Select an item from this order', 'LINES_NOT_FOUND');
+  order.items = remaining;
   order.itemTotal = order.items.reduce((sum, line) => sum + line.unitPrice * line.qty, 0);
   order.total = Math.max(0, order.itemTotal + order.deliveryFee - order.discount);
   await order.save();
@@ -327,6 +345,15 @@ const advanceOrder = asyncHandler(async (req, res) => {
   }
   if (['delivered', 'cancelled'].includes(order.status)) {
     throw ApiError.badRequest('Order already finished', 'ORDER_FINISHED');
+  }
+  const allowedNext = {
+    placed: ['confirmed', 'cancelled'],
+    confirmed: ['preparing', 'out_for_delivery', 'cancelled'],
+    preparing: ['out_for_delivery'],
+    out_for_delivery: [],
+  };
+  if (!allowedNext[order.status]?.includes(status)) {
+    throw ApiError.conflict(`Cannot move an ${order.status} order to ${status}`, 'INVALID_TRANSITION');
   }
   if (status === 'cancelled') {
     if (!['placed', 'confirmed'].includes(order.status)) {
@@ -514,6 +541,15 @@ const updateOutlet = asyncHandler(async (req, res) => {
     if (req.body[key] !== undefined) vendor[key] = ['hours', 'geo'].includes(key) ? { ...(vendor[key]?.toObject?.() || vendor[key] || {}), ...req.body[key] } : req.body[key];
   }
   await vendor.save();
+  if (vendor.outletId) {
+    const Model = vendor.module === 'food' ? Restaurant : ShopStore;
+    const outletUpdate = {};
+    if (req.body.deliveryMins !== undefined) outletUpdate[vendor.module === 'food' ? 'deliveryTime' : 'deliveryMins'] = vendor.deliveryMins;
+    for (const key of ['deliveryFee', 'minOrder', 'cover', 'isVeg', 'priceForTwo']) {
+      if (req.body[key] !== undefined) outletUpdate[key] = vendor[key];
+    }
+    if (Object.keys(outletUpdate).length) await Model.updateOne({ id: vendor.outletId }, { $set: outletUpdate });
+  }
   return ok(res, { outlet: { id: vendor.outletId, name: vendor.outletName, hours: vendor.hours, geo: vendor.geo, isOpen: vendor.isOpen }, vendor });
 });
 
@@ -528,7 +564,7 @@ const pauseOutlet = asyncHandler(async (req, res) => {
   await vendor.save();
   if (vendor.outletId) {
     const Model = vendor.module === 'food' ? Restaurant : ShopStore;
-    await Model.updateOne({ id: vendor.outletId, vendorId: vendor.id }, { $set: { isClosed: true } });
+    await Model.updateOne({ id: vendor.outletId }, { $set: { isClosed: true } });
   }
   return ok(res, { vendor, pauseUntil: vendor.pauseUntil });
 });
@@ -543,7 +579,7 @@ const stats = asyncHandler(async (req, res) => {
   start.setDate(start.getDate() - (days - 1));
   const [summary] = await Order.aggregate([
     { $match: { vendorId: vendor.id, placedAt: { $gte: start } } },
-    { $group: { _id: null, orders: { $sum: 1 }, gross: { $sum: '$itemTotal' }, cancelled: { $sum: { $cond: [{ $eq: ['$status', 'cancelled'] }, 1, 0] } } } },
+    { $group: { _id: null, orders: { $sum: 1 }, gross: { $sum: { $cond: [{ $ne: ['$status', 'cancelled'] }, '$itemTotal', 0] } }, cancelled: { $sum: { $cond: [{ $eq: ['$status', 'cancelled'] }, 1, 0] } } } },
   ]);
   return ok(res, { range, orders: summary?.orders || 0, gross: summary?.gross || 0, net: Math.max(0, (summary?.gross || 0) * 0.95), cancelled: summary?.cancelled || 0, averagePrepMins: vendor.deliveryMins || 30, slaBreaches: 0 });
 });

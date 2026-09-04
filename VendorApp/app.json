@@ -22,9 +22,9 @@
       "package": "com.aurasure.vendor",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#5B46E5"
+        "backgroundColor": "#B5165F"
       },
-      "navigationBarColor": "#F5EAF3"
+      "navigationBarColor": "#F8F6F3"
     },
     "web": {
       "bundler": "metro",
@@ -48,6 +48,6 @@
         }
       ]
     ],
-    "backgroundColor": "#F5EAF3"
+    "backgroundColor": "#F8F6F3"
   }
 }

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
@@ -26,7 +26,7 @@ export function WelcomeScreen({ navigation }: Props): React.ReactElement {
   return (
     <Screen scroll padded appBarColor={colors.appBarHero} statusBarStyle="light">
       <Animated.View entering={FadeInDown.duration(420)}>
-        <LinearGradient colors={['#6A0A45', '#C3126A']} style={{ borderRadius: 24, padding: 22, marginTop: 8 }}>
+        <View style={{ backgroundColor: '#16A34A', borderRadius: 20, padding: 22, marginTop: 8 }}>
           <Text variant="overline" color="rgba(255,255,255,0.72)">
             AURASURE DELIVERY PARTNER
           </Text>
@@ -36,7 +36,7 @@ export function WelcomeScreen({ navigation }: Props): React.ReactElement {
           <Text variant="body" color="rgba(255,255,255,0.86)" style={{ marginTop: 10 }}>
             Accept nearby orders, verify pickup and drop OTPs, and keep your COD record clean in one rider profile.
           </Text>
-        </LinearGradient>
+        </View>
       </Animated.View>
 
       <View style={{ marginTop: 18, gap: 10 }}>

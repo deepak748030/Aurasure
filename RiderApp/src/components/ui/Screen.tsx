@@ -111,7 +111,7 @@ export function Screen({
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={[
         padded ? { paddingHorizontal: layout.contentHorizontalPadding } : null,
-        { paddingTop: hasHeader ? 0 : 4, paddingBottom: contentBottom },
+        { paddingTop: 0, paddingBottom: contentBottom },
         contentStyle,
       ]}
       refreshControl={

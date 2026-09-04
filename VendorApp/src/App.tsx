@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { AppNavigator } from './navigation/AppNavigator';
 import { VendorProvider } from './context/VendorContext';
 import { SystemBarHost } from './components/ui/SystemBarHost';
+import { VendorModalProvider } from './components/ui/VendorModal';
 import { loadAppFonts } from './lib/fonts';
 import { colors } from './theme/colors';
 
@@ -21,10 +22,12 @@ export default function App(): React.ReactElement {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <VendorProvider>
-          <View style={{ flex: 1, backgroundColor: colors.background }}>
-            <SystemBarHost />
-            <AppNavigator />
-          </View>
+          <VendorModalProvider>
+            <View style={{ flex: 1, backgroundColor: colors.background }}>
+              <SystemBarHost />
+              <AppNavigator />
+            </View>
+          </VendorModalProvider>
         </VendorProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

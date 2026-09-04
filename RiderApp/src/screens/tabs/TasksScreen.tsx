@@ -186,6 +186,7 @@ export function TasksScreen(): React.ReactElement {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={styles.filterScroller}
         contentContainerStyle={styles.filters}
       >
         {FILTERS.map((item) => {
@@ -291,7 +292,8 @@ export function TasksScreen(): React.ReactElement {
 }
 
 const styles = StyleSheet.create({
-  filters: { paddingHorizontal: 4, paddingVertical: 10, gap: 7 },
+  filterScroller: { flexGrow: 0, flexShrink: 0, height: 58 },
+  filters: { paddingHorizontal: 4, paddingVertical: 7, gap: 7, height: 58 },
   filter: {
     flexDirection: "row",
     alignItems: "center",

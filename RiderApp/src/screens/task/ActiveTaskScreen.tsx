@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Alert,
   Image,
   Linking,
   Pressable,
@@ -13,6 +12,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Screen } from "@/components/ui/Screen";
 import { Text } from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
+import { RiderModal, type RiderModalAction } from "@/components/ui/RiderModal";
 import { Input } from "@/components/ui/Input";
 import { Icon } from "@/lib/icons";
 import { MapSurface, type MapStop } from "@/components/MapSurface";
@@ -33,6 +33,13 @@ import { haptic } from "@/lib/haptics";
 import type { RootStackParamList } from "@/navigation/types";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
+type TaskDialog = {
+  title: string;
+  message: string;
+  icon?: "circleAlert" | "check";
+  iconColor?: string;
+  actions: RiderModalAction[];
+};
 const FLOW = ["accepted", "at_pickup", "picked_up", "at_drop"];
 const STATE_COPY: Record<string, string> = {
   accepted: "Head to pickup",
@@ -55,6 +62,7 @@ export function ActiveTaskScreen(): React.ReactElement {
   const [pod, setPod] = useState("");
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
+  const [dialog, setDialog] = useState<TaskDialog | null>(null);
   const fetchTask = useCallback(async () => {
     try {
       setTask((await riderApi.activeTask()).task);
@@ -126,6 +134,19 @@ export function ActiveTaskScreen(): React.ReactElement {
       setBusy(false);
     }
   };
+  const reportFailure = async (reason: string) => {
+    if (!task) return;
+    setBusy(true);
+    try {
+      await riderApi.fail(task.id, reason);
+      await refresh();
+      navigation.goBack();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not report issue");
+    } finally {
+      setBusy(false);
+    }
+  };
   const fail = () => {
     if (!task) return;
     const reasons = [
@@ -134,70 +155,68 @@ export function ActiveTaskScreen(): React.ReactElement {
       "Wrong or missing item",
       "Vehicle issue",
     ];
-    Alert.alert(
-      "Report a problem",
-      "Choose the reason so operations can help quickly.",
-      [
+    setDialog({
+      title: "Report a problem",
+      message: "Choose the reason so operations can help quickly.",
+      icon: "circleAlert",
+      iconColor: colors.warning,
+      actions: [
         ...reasons.map((reason) => ({
-          text: reason,
-          onPress: () => {
-            setBusy(true);
-            void riderApi
-              .fail(task.id, reason)
-              .then(async () => {
-                await refresh();
-                navigation.goBack();
-              })
-              .catch((err) =>
-                setError(
-                  err instanceof Error ? err.message : "Could not report issue",
-                ),
-              )
-              .finally(() => setBusy(false));
-          },
+          label: reason,
+          variant: "secondary" as const,
+          onPress: () => void reportFailure(reason),
         })),
-        { text: "Cancel", style: "cancel" },
+        { label: "Cancel", variant: "ghost" as const, onPress: () => undefined },
       ],
-    );
+    });
+  };
+  const sendSosRequest = async () => {
+    try {
+      await riderApi.sos({
+        type: "delivery_sos",
+        note: `SOS during ${task?.orderCode ?? "active delivery"}`,
+      });
+      setDialog({
+        title: "SOS sent",
+        message: "Operations has received your alert.",
+        icon: "check",
+        iconColor: colors.success,
+        actions: [
+          { label: "Done", variant: "primary", onPress: () => undefined },
+        ],
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "SOS could not be sent");
+    }
   };
   const sos = () => {
-    Alert.alert(
-      "Send SOS?",
-      "This will notify Aurasure operations with your delivery context.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Send SOS",
-          style: "destructive",
-          onPress: () => {
-            void riderApi
-              .sos({
-                type: "delivery_sos",
-                note: `SOS during ${task?.orderCode ?? "active delivery"}`,
-              })
-              .then(() =>
-                Alert.alert("SOS sent", "Operations has received your alert."),
-              )
-              .catch((err) =>
-                setError(
-                  err instanceof Error ? err.message : "SOS could not be sent",
-                ),
-              );
-          },
-        },
+    setDialog({
+      title: "Send SOS?",
+      message: "This will notify Aurasure operations with your delivery context.",
+      icon: "circleAlert",
+      iconColor: colors.danger,
+      actions: [
+        { label: "Cancel", variant: "secondary", onPress: () => undefined },
+        { label: "Send SOS", variant: "danger", onPress: () => void sendSosRequest() },
       ],
-    );
+    });
+  };
+  const showCallError = (title: string, message: string) => {
+    setDialog({
+      title,
+      message,
+      icon: "circleAlert",
+      iconColor: colors.warning,
+      actions: [{ label: "Got it", variant: "secondary", onPress: () => undefined }],
+    });
   };
   const call = (phone: string, label: string) => {
     if (!phone) {
-      Alert.alert(
-        label,
-        "This contact is not available. Use Help & support instead.",
-      );
+      showCallError(label, "This contact is not available. Use Help & support instead.");
       return;
     }
     Linking.openURL(`tel:${phone}`).catch(() =>
-      Alert.alert(label, "Could not open the phone app."),
+      showCallError(label, "Could not open the phone app."),
     );
   };
   const stops = useMemo<MapStop[]>(() => {
@@ -261,8 +280,9 @@ export function ActiveTaskScreen(): React.ReactElement {
   const isPickup = task.state === "at_pickup";
   const isDrop = task.state === "at_drop";
   return (
-    <Screen
-      title={task.orderCode}
+    <>
+      <Screen
+        title={task.orderCode}
       subtitle={STATE_COPY[task.state] || task.state.replace(/_/g, " ")}
       headerLeft={
         <IconButton icon="chevronLeft" onPress={() => navigation.goBack()} />
@@ -578,7 +598,17 @@ export function ActiveTaskScreen(): React.ReactElement {
           </Pressable>
         </View>
       </ScrollView>
-    </Screen>
+      </Screen>
+      <RiderModal
+        visible={Boolean(dialog)}
+        title={dialog?.title ?? ""}
+        message={dialog?.message}
+        icon={dialog?.icon}
+        iconColor={dialog?.iconColor}
+        actions={dialog?.actions ?? []}
+        onClose={() => setDialog(null)}
+      />
+    </>
   );
 }
 

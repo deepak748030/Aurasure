@@ -6,7 +6,6 @@ import React, {
   useState,
 } from "react";
 import {
-  Alert,
   FlatList,
   Image,
   Pressable,
@@ -19,6 +18,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Screen } from "@/components/ui/Screen";
 import { Text } from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
+import { RiderModal, type RiderModalAction } from "@/components/ui/RiderModal";
 import { Icon } from "@/lib/icons";
 import { MapSurface, type MapStop } from "@/components/MapSurface";
 import {
@@ -38,6 +38,13 @@ import { haptic } from "@/lib/haptics";
 import type { RootStackParamList } from "@/navigation/types";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
+type HomeDialog = {
+  title: string;
+  message: string;
+  icon?: "circleAlert" | "check" | "map";
+  iconColor?: string;
+  actions: RiderModalAction[];
+};
 
 const DEFAULT_MAP = [
   {
@@ -245,6 +252,7 @@ export function HomeScreen(): React.ReactElement {
   const [loading, setLoading] = useState(false);
   const [dutyBusy, setDutyBusy] = useState(false);
   const [error, setError] = useState("");
+  const [dialog, setDialog] = useState<HomeDialog | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const pull = useCallback(async (silent = false) => {
@@ -347,18 +355,21 @@ export function HomeScreen(): React.ReactElement {
       void setDuty("online");
       return;
     }
-    Alert.alert(
-      "Go offline?",
-      "New delivery offers will pause. Your active delivery will not be cancelled.",
-      [
-        { text: "Stay online", style: "cancel" },
+    setDialog({
+      title: "Go offline?",
+      message:
+        "New delivery offers will pause. Your active delivery will not be cancelled.",
+      icon: "circleAlert",
+      iconColor: colors.warning,
+      actions: [
+        { label: "Stay online", variant: "secondary", onPress: () => undefined },
         {
-          text: "Go offline",
-          style: "destructive",
+          label: "Go offline",
+          variant: "danger",
           onPress: () => void setDuty("offline"),
         },
       ],
-    );
+    });
   };
 
   const accept = async (task: DeliveryTask) => {
@@ -370,12 +381,18 @@ export function HomeScreen(): React.ReactElement {
       navigation.navigate("ActiveTask");
     } catch (err) {
       haptic.error();
-      Alert.alert(
-        "Delivery unavailable",
-        err instanceof Error
-          ? err.message
-          : "Another rider may have accepted this offer.",
-      );
+      setDialog({
+        title: "Delivery unavailable",
+        message:
+          err instanceof Error
+            ? err.message
+            : "Another rider may have accepted this offer.",
+        icon: "circleAlert",
+        iconColor: colors.danger,
+        actions: [
+          { label: "Got it", variant: "secondary", onPress: () => undefined },
+        ],
+      });
     } finally {
       setLoading(false);
     }
@@ -411,8 +428,9 @@ export function HomeScreen(): React.ReactElement {
   const shiftProgress = Math.min(1, (rider?.currentDayTrips ?? 0) / 10);
 
   return (
-    <Screen
-      title="Home"
+    <>
+      <Screen
+        title="Home"
       subtitle={
         rider?.name
           ? `Good morning, ${rider.name.split(" ")[0]}`
@@ -736,7 +754,17 @@ export function HomeScreen(): React.ReactElement {
           </View>
         )}
       />
-    </Screen>
+      </Screen>
+      <RiderModal
+        visible={Boolean(dialog)}
+        title={dialog?.title ?? ""}
+        message={dialog?.message}
+        icon={dialog?.icon}
+        iconColor={dialog?.iconColor}
+        actions={dialog?.actions ?? []}
+        onClose={() => setDialog(null)}
+      />
+    </>
   );
 }
 

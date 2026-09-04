@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-  Alert,
   Image,
   Pressable,
   StyleSheet,
@@ -12,6 +11,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Screen } from "@/components/ui/Screen";
 import { Text } from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
+import { RiderModal, type RiderModalAction } from "@/components/ui/RiderModal";
 import { Icon } from "@/lib/icons";
 import {
   Card,
@@ -29,6 +29,13 @@ import { haptic } from "@/lib/haptics";
 import type { RootStackParamList } from "@/navigation/types";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
+type ProfileDialog = {
+  title: string;
+  message: string;
+  icon?: "circleAlert" | "check";
+  iconColor?: string;
+  actions: RiderModalAction[];
+};
 
 export function ProfileScreen(): React.ReactElement {
   const { rider, setRider, refresh, logout } = useRider();
@@ -36,6 +43,7 @@ export function ProfileScreen(): React.ReactElement {
   const [uploading, setUploading] = useState(false);
   const [dutyBusy, setDutyBusy] = useState(false);
   const [error, setError] = useState("");
+  const [dialog, setDialog] = useState<ProfileDialog | null>(null);
   const photo = rider?.documents?.find((doc) => doc.key === "photo");
   const verifiedDocs = rider?.documents?.filter((doc) => doc.uri).length ?? 0;
   const totalDocs = rider?.documents?.length || 5;
@@ -58,41 +66,52 @@ export function ProfileScreen(): React.ReactElement {
       setUploading(false);
     }
   };
-  const sendSos = async () => {
-    Alert.alert(
-      "Send SOS?",
-      "This creates an incident for Aurasure operations. Use it only for an emergency.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Send SOS",
-          style: "destructive",
-          onPress: () => {
-            void (async () => {
-              try {
-                await riderApi.sos({
-                  type: "sos",
-                  note: "SOS raised from rider profile",
-                });
-                haptic.success();
-                Alert.alert("SOS sent", "Operations has received your alert.");
-                await refresh();
-              } catch (err) {
-                setError(
-                  err instanceof Error ? err.message : "SOS could not be sent",
-                );
-              }
-            })();
-          },
-        },
-      ],
-    );
+  const sendSosRequest = async () => {
+    try {
+      await riderApi.sos({
+        type: "sos",
+        note: "SOS raised from rider profile",
+      });
+      haptic.success();
+      setDialog({
+        title: "SOS sent",
+        message: "Operations has received your alert.",
+        icon: "check",
+        iconColor: colors.success,
+        actions: [
+          { label: "Done", variant: "primary", onPress: () => undefined },
+        ],
+      });
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "SOS could not be sent");
+    }
   };
-  const signOut = () =>
-    Alert.alert("Sign out?", "You can sign back in anytime.", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Sign out", style: "destructive", onPress: logout },
-    ]);
+  const sendSos = () => {
+    setDialog({
+      title: "Send SOS?",
+      message:
+        "This creates an incident for Aurasure operations. Use it only for an emergency.",
+      icon: "circleAlert",
+      iconColor: colors.danger,
+      actions: [
+        { label: "Cancel", variant: "secondary", onPress: () => undefined },
+        { label: "Send SOS", variant: "danger", onPress: () => void sendSosRequest() },
+      ],
+    });
+  };
+  const signOut = () => {
+    setDialog({
+      title: "Sign out?",
+      message: "You can sign back in anytime.",
+      icon: "circleAlert",
+      iconColor: colors.warning,
+      actions: [
+        { label: "Cancel", variant: "secondary", onPress: () => undefined },
+        { label: "Sign out", variant: "danger", onPress: logout },
+      ],
+    });
+  };
   const toggleDuty = async () => {
     if (rider?.dutyState === "on_task") {
       setError("Finish your active delivery before going offline.");
@@ -115,8 +134,9 @@ export function ProfileScreen(): React.ReactElement {
     }
   };
   return (
-    <Screen
-      title="Profile"
+    <>
+      <Screen
+        title="Profile"
       subtitle="Your rider account & preferences"
       refreshing={uploading}
       onRefresh={() => void refresh()}
@@ -399,7 +419,17 @@ export function ProfileScreen(): React.ReactElement {
       >
         Aurasure Rider · v1.0.0
       </Text>
-    </Screen>
+      </Screen>
+      <RiderModal
+        visible={Boolean(dialog)}
+        title={dialog?.title ?? ""}
+        message={dialog?.message}
+        icon={dialog?.icon}
+        iconColor={dialog?.iconColor}
+        actions={dialog?.actions ?? []}
+        onClose={() => setDialog(null)}
+      />
+    </>
   );
 }
 

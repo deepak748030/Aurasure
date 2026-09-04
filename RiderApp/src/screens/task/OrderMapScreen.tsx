@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Linking,
   Platform,
   Pressable,
@@ -14,6 +13,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { MapSurface, type MapStop } from "@/components/MapSurface";
 import { Text } from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
+import { RiderModal, type RiderModalAction } from "@/components/ui/RiderModal";
 import { Icon } from "@/lib/icons";
 import { IconButton, StatusPill } from "@/components/ui/RiderUI";
 import { riderApi, type DeliveryTask } from "@/api/rider";
@@ -23,6 +23,11 @@ import { haptic } from "@/lib/haptics";
 import type { RootStackParamList } from "@/navigation/types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "OrderMap">;
+type MapDialog = {
+  title: string;
+  message: string;
+  actions: RiderModalAction[];
+};
 const labels: Record<string, string> = {
   accepted: "Going to pickup",
   at_pickup: "At pickup",
@@ -31,12 +36,15 @@ const labels: Record<string, string> = {
   delivered: "Delivered",
   failed: "Delivery failed",
 };
-function openMaps(task: DeliveryTask): void {
+function openMaps(
+  task: DeliveryTask,
+  onError: (title: string, message: string) => void,
+): void {
   const point = ["available", "accepted", "at_pickup"].includes(task.state)
     ? task.pickup
     : task.drop;
   if (point.lat == null || point.lng == null) {
-    Alert.alert("Navigation", "This delivery has no map pin yet.");
+    onError("Navigation", "This delivery has no map pin yet.");
     return;
   }
   const url = Platform.select({
@@ -45,7 +53,7 @@ function openMaps(task: DeliveryTask): void {
     default: `https://www.google.com/maps/search/?api=1&query=${point.lat},${point.lng}`,
   });
   Linking.openURL(url || "").catch(() =>
-    Alert.alert("Navigation", "Could not open maps."),
+    onError("Navigation", "Could not open maps."),
   );
 }
 export function OrderMapScreen({
@@ -60,6 +68,7 @@ export function OrderMapScreen({
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [dialog, setDialog] = useState<MapDialog | null>(null);
   const load = useCallback(async () => {
     try {
       setTask((await riderApi.task(taskId)).task);
@@ -188,8 +197,15 @@ export function OrderMapScreen({
           ? colors.success
           : colors.brand[600];
   const label = labels[task.state] || task.state.replace(/_/g, " ");
+  const showDialog = (title: string, message: string) =>
+    setDialog({
+      title,
+      message,
+      actions: [{ label: "Got it", variant: "secondary", onPress: () => undefined }],
+    });
   return (
-    <View style={styles.container}>
+    <>
+      <View style={styles.container}>
       <MapSurface height={height} stops={stops} onLocate={() => undefined} />
       <View style={[styles.top, { paddingTop: Math.max(insets.top, 12) }]}>
         <IconButton icon="chevronLeft" onPress={() => navigation.goBack()} />
@@ -206,7 +222,7 @@ export function OrderMapScreen({
           onPress={() =>
             Linking.openURL(
               `tel:${["available", "accepted", "at_pickup"].includes(task.state) ? task.vendorPhone : task.drop.phone}`,
-            ).catch(() => Alert.alert("Call", "Contact unavailable."))
+            ).catch(() => showDialog("Call", "Contact unavailable."))
           }
         />
       </View>
@@ -277,7 +293,7 @@ export function OrderMapScreen({
               variant="secondary"
               size="sm"
               leftIcon="navigation"
-              onPress={() => openMaps(task)}
+              onPress={() => openMaps(task, showDialog)}
             />
           </View>
           <View style={{ flex: 1.4 }}>
@@ -298,7 +314,15 @@ export function OrderMapScreen({
           </View>
         </View>
       </View>
-    </View>
+      </View>
+      <RiderModal
+        visible={Boolean(dialog)}
+        title={dialog?.title ?? ""}
+        message={dialog?.message}
+        actions={dialog?.actions ?? []}
+        onClose={() => setDialog(null)}
+      />
+    </>
   );
 }
 const styles = StyleSheet.create({

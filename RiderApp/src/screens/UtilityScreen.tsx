@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
   Linking,
   Pressable,
   Share,
@@ -11,6 +10,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Screen } from "@/components/ui/Screen";
 import { Text } from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
+import { RiderModal } from "@/components/ui/RiderModal";
 import { Input } from "@/components/ui/Input";
 import { Icon } from "@/lib/icons";
 import {
@@ -37,6 +37,10 @@ type EditForm = {
   vehicleNumber: string;
   vehicleType: string;
 };
+type UtilityDialog = {
+  title: string;
+  message: string;
+};
 const TITLES: Record<Kind, string> = {
   wallet: "Wallet & payouts",
   help: "Help & support",
@@ -62,6 +66,7 @@ export function UtilityScreen({
   const [title, setTitle] = useState("");
   const [details, setDetails] = useState("");
   const [saved, setSaved] = useState("");
+  const [dialog, setDialog] = useState<UtilityDialog | null>(null);
   const [language, setLanguage] = useState("English");
   const [form, setForm] = useState<EditForm>({
     name: rider?.name ?? "",
@@ -155,6 +160,9 @@ export function UtilityScreen({
           saved={saved}
           onSubmit={() => void issue()}
           issues={rider?.issues ?? []}
+          onShowDialog={(dialogTitle, message) =>
+            setDialog({ title: dialogTitle, message })
+          }
         />
       ) : null}
       {kind === "leaderboard" ? (
@@ -179,7 +187,20 @@ export function UtilityScreen({
       {kind === "settings" ? <Settings navigation={navigation} /> : null}
     </Screen>
   );
-  return header;
+  return (
+    <>
+      {header}
+      <RiderModal
+        visible={Boolean(dialog)}
+        title={dialog?.title ?? ""}
+        message={dialog?.message}
+        actions={[
+          { label: "Got it", variant: "secondary", onPress: () => undefined },
+        ]}
+        onClose={() => setDialog(null)}
+      />
+    </>
+  );
 }
 
 function Wallet({
@@ -285,6 +306,7 @@ function Help({
   saved,
   onSubmit,
   issues,
+  onShowDialog,
 }: {
   title: string;
   details: string;
@@ -294,6 +316,7 @@ function Help({
   saved: string;
   onSubmit: () => void;
   issues: { id: string; title: string; body: string; status: string }[];
+  onShowDialog: (title: string, message: string) => void;
 }): React.ReactElement {
   return (
     <>
@@ -316,7 +339,7 @@ function Help({
           subtitle="Available 8:00 AM – 10:00 PM"
           onPress={() =>
             Linking.openURL("tel:18001234567").catch(() =>
-              Alert.alert(
+              onShowDialog(
                 "Support",
                 "Call support from your registered number.",
               ),

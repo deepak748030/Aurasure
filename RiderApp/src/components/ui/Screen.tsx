@@ -86,9 +86,9 @@ export function Screen({
         style={{
           // The band above already reserves the status bar area, so the
           // header only needs its own breathing room.
-          paddingTop: 10,
+          paddingTop: 6,
           paddingHorizontal: layout.contentHorizontalPadding,
-          paddingBottom: 12,
+          paddingBottom: 6,
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 40 }}>
@@ -111,7 +111,7 @@ export function Screen({
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={[
         padded ? { paddingHorizontal: layout.contentHorizontalPadding } : null,
-        { paddingTop: hasHeader ? 8 : 4, paddingBottom: contentBottom },
+        { paddingTop: hasHeader ? 0 : 4, paddingBottom: contentBottom },
         contentStyle,
       ]}
       refreshControl={

@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
 import { Icon } from '@/lib/icons';
@@ -172,17 +172,17 @@ export function HomeScreen(): React.ReactElement {
     >
       {/* Open / Closed switch */}
       {isApproved ? (
-        <LinearGradient
-          colors={isOpen ? ['#14532D', '#16A34A'] : ['#7F1D1D', '#DC2626']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.toggleCard}
+        <View
+          style={[
+            styles.toggleCard,
+            { backgroundColor: isOpen ? '#16A34A' : '#DC2626' },
+          ]}
         >
           <View style={{ flex: 1 }}>
             <Text variant="title" weight="bold" color={colors.white}>
               {isOpen ? 'Accepting Orders' : 'Outlet Paused'}
             </Text>
-            <Text variant="caption" color="rgba(255,255,255,0.72)" style={{ marginTop: 2 }}>
+            <Text variant="caption" color="rgba(255,255,255,0.80)" style={{ marginTop: 2 }}>
               {isOpen
                 ? 'Customers can order right now.'
                 : 'New orders will not come in. Live tickets still finish.'}
@@ -192,11 +192,11 @@ export function HomeScreen(): React.ReactElement {
             value={isOpen}
             onValueChange={(v) => void toggle(v)}
             disabled={busy}
-            trackColor={{ false: 'rgba(255,255,255,0.28)', true: 'rgba(255,255,255,0.28)' }}
+            trackColor={{ false: 'rgba(255,255,255,0.30)', true: 'rgba(255,255,255,0.30)' }}
             thumbColor={colors.white}
-            ios_backgroundColor="rgba(255,255,255,0.3)"
+            ios_backgroundColor="rgba(255,255,255,0.30)"
           />
-        </LinearGradient>
+        </View>
       ) : (
         <View style={[styles.toggleCard, { backgroundColor: colors.warningBg }]}>
           <Icon name="shield" size={20} color={colors.warning} />

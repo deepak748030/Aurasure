@@ -6,7 +6,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
@@ -141,29 +141,24 @@ export function MoreScreen(): React.ReactElement {
   return (
     <Screen title="More" subtitle={vendor?.outletName ?? vendor?.phone}>
       {/* Wallet hero */}
-      <LinearGradient
-        colors={[colors.brand[700], colors.brand[500]]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.walletCard}
-      >
+      <View style={styles.walletCard}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <View style={styles.walletIcon}>
             <Icon name="wallet" size={22} color={colors.brand[700]} />
           </View>
           <View>
-            <Text variant="caption" color="rgba(255,255,255,0.72)" weight="semibold">
+            <Text variant="caption" color={colors.textSecondary} weight="semibold">
               SETTLEMENT WALLET
             </Text>
-            <Text variant="h1" weight="extrabold" color={colors.white}>
+            <Text variant="h1" weight="extrabold" color={colors.brand[700]}>
               ₹{Math.round(vendor?.payoutBalance ?? 0)}
             </Text>
           </View>
         </View>
-        <Text variant="bodySm" color="rgba(255,255,255,0.65)" style={{ marginTop: 10 }}>
+        <Text variant="bodySm" color={colors.textSecondary} style={{ marginTop: 10 }}>
           Credited per delivered order. Platform commission: 5% of item total (not delivery fee).
         </Text>
-      </LinearGradient>
+      </View>
 
       {/* Profile info */}
       <SectionLabel label="OUTLET" />
@@ -305,15 +300,18 @@ export function MoreScreen(): React.ReactElement {
 
 const styles = StyleSheet.create({
   walletCard: {
-    borderRadius: 18,
-    padding: 18,
+    borderRadius: 14,
+    padding: 16,
     marginBottom: 4,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   walletIcon: {
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    backgroundColor: colors.brand[50],
     alignItems: 'center',
     justifyContent: 'center',
   },

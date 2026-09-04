@@ -14,6 +14,8 @@ import { HomeScreen } from '@/screens/tabs/HomeScreen';
 import { OrdersScreen } from '@/screens/tabs/OrdersScreen';
 import { MenuScreen } from '@/screens/tabs/MenuScreen';
 import { MoreScreen } from '@/screens/tabs/MoreScreen';
+import { OrderDetailScreen } from '@/screens/orders/OrderDetailScreen';
+import { AddItemScreen } from '@/screens/orders/AddItemScreen';
 import { VendorTabBar } from '@/components/ui/VendorTabBar';
 import type { RootStackParamList } from './types';
 
@@ -33,13 +35,15 @@ function MainTabs(): React.ReactElement {
 
 export function AppNavigator(): React.ReactElement {
   const { vendor, ready } = useVendor();
+
   if (!ready) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
-        <ActivityIndicator color={colors.brand[600]} />
+        <ActivityIndicator color={colors.brand[600]} size="large" />
       </View>
     );
   }
+
   const authed = Boolean(vendor);
   const live = vendor?.status === 'approved';
   const waiting = authed && ['submitted', 'under_review', 'suspended'].includes(vendor!.status);
@@ -54,7 +58,19 @@ export function AppNavigator(): React.ReactElement {
             <Stack.Screen name="Register" component={RegisterScreen} />
           </>
         ) : live ? (
-          <Stack.Screen name="Main" component={MainTabs} />
+          <>
+            <Stack.Screen name="Main" component={MainTabs} />
+            <Stack.Screen
+              name="OrderDetail"
+              component={OrderDetailScreen}
+              options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
+              name="AddItem"
+              component={AddItemScreen}
+              options={{ animation: 'slide_from_bottom' }}
+            />
+          </>
         ) : waiting ? (
           <Stack.Screen name="Pending" component={PendingScreen} />
         ) : (

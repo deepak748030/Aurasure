@@ -49,8 +49,7 @@ export const colors = {
   // bar) and behind the gesture nav pill. Deliberately the same soft plum as
   // the tab bar so both system bars read as part of the app.
   appBar: '#F5EAF3',
-  // Deep plum used by the gradient heroes (Menu / Gate). Dark enough that the
-  // system-bar contrast flips to white icons on its own.
+  // Deep plum used by the hero section on the Welcome screen.
   appBarHero: '#6A0A45',
 
   // semantic surfaces & text
@@ -80,9 +79,6 @@ export const colors = {
   // module accents
   foodAccent: '#FF6A3D',
   shopAccent: '#5B46E5',
-
-  // gradients (used by expo-linear-gradient)
-  brandGradient: ['#6A5EF5', '#8B5CF6'] as [string, string],
 
 };
 

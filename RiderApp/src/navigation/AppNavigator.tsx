@@ -15,6 +15,8 @@ import { TasksScreen } from '@/screens/tabs/TasksScreen';
 import { EarningsScreen } from '@/screens/tabs/EarningsScreen';
 import { ProfileScreen } from '@/screens/tabs/ProfileScreen';
 import { ActiveTaskScreen } from '@/screens/task/ActiveTaskScreen';
+import { OrderMapScreen } from '@/screens/task/OrderMapScreen';
+import { NotificationScreen } from '@/screens/notifications/NotificationScreen';
 import { RiderTabBar } from '@/components/ui/RiderTabBar';
 import type { RootStackParamList } from './types';
 
@@ -34,13 +36,15 @@ function MainTabs(): React.ReactElement {
 
 export function AppNavigator(): React.ReactElement {
   const { rider, ready } = useRider();
+
   if (!ready) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
-        <ActivityIndicator color={colors.brand[600]} />
+        <ActivityIndicator color={colors.brand[600]} size="large" />
       </View>
     );
   }
+
   const authed = Boolean(rider);
   const live = rider?.status === 'approved';
   const waiting = authed && ['submitted', 'under_review', 'suspended'].includes(rider!.status);
@@ -57,7 +61,21 @@ export function AppNavigator(): React.ReactElement {
         ) : live ? (
           <>
             <Stack.Screen name="Main" component={MainTabs} />
-            <Stack.Screen name="ActiveTask" component={ActiveTaskScreen} />
+            <Stack.Screen
+              name="ActiveTask"
+              component={ActiveTaskScreen}
+              options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
+              name="OrderMap"
+              component={OrderMapScreen}
+              options={{ animation: 'slide_from_bottom', gestureEnabled: true }}
+            />
+            <Stack.Screen
+              name="Notifications"
+              component={NotificationScreen}
+              options={{ animation: 'slide_from_right' }}
+            />
           </>
         ) : waiting ? (
           <Stack.Screen name="Pending" component={PendingScreen} />

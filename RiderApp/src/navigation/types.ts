@@ -6,4 +6,8 @@ export type RootStackParamList = {
   Pending: undefined;
   Main: undefined;
   ActiveTask: undefined;
+  OrderMap: { taskId: string };
+  Notifications: undefined;
+  TaskHistory: undefined;
+  Incentives: undefined;
 };

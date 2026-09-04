@@ -1,3 +1,5 @@
+import type { CatalogItem, VendorOrder } from '@/api/vendor';
+
 export type RootStackParamList = {
   Welcome: undefined;
   Login: undefined;
@@ -5,4 +7,6 @@ export type RootStackParamList = {
   Onboarding: undefined;
   Pending: undefined;
   Main: undefined;
+  OrderDetail: { orderId: string };
+  AddItem: { item?: CatalogItem } | undefined;
 };

@@ -13,6 +13,8 @@ const { newId } = require('../utils/id');
 const { walletTx, loyaltyTx } = require('../utils/ledger');
 const { discountForCoupon, findUsableCoupon } = require('../utils/coupons');
 
+const VISIBLE_APPROVAL = { approvalStatus: { $in: ['approved', null] } };
+
 function makeOrderCode(module) {
   const stamp = Date.now().toString(36).toUpperCase().slice(-6);
   return `AUR-${module === 'shop' ? 'SH' : 'FD'}-${stamp}`;
@@ -37,8 +39,8 @@ async function verifyAndRepriceItems(items) {
   const shopRefs = items.filter((i) => i.kind === 'shop').map((i) => i.refId);
 
   const [foodDocs, productDocs] = await Promise.all([
-    foodRefs.length ? FoodItem.find({ id: { $in: foodRefs } }).lean() : [],
-    shopRefs.length ? Product.find({ id: { $in: shopRefs } }).lean() : [],
+    foodRefs.length ? FoodItem.find({ id: { $in: foodRefs }, ...VISIBLE_APPROVAL }).lean() : [],
+    shopRefs.length ? Product.find({ id: { $in: shopRefs }, ...VISIBLE_APPROVAL }).lean() : [],
   ]);
   const foodById = new Map(foodDocs.map((d) => [d.id, d]));
   const productById = new Map(productDocs.map((d) => [d.id, d]));
@@ -138,7 +140,7 @@ const createOrder = asyncHandler(async (req, res) => {
   let outletId = null;
   let vendorId = null;
   if (module === 'food') {
-    const first = await FoodItem.findOne({ id: pricedItems[0].refId }).lean();
+    const first = await FoodItem.findOne({ id: pricedItems[0].refId, ...VISIBLE_APPROVAL }).lean();
     outletId = first?.restaurantId || null;
     if (outletId) {
       const rst = await Restaurant.findOne({ id: outletId }).select('vendorId isClosed').lean();
@@ -146,7 +148,7 @@ const createOrder = asyncHandler(async (req, res) => {
       if (rst?.isClosed) throw ApiError.badRequest('This kitchen is closed right now', 'OUTLET_CLOSED');
     }
   } else {
-    const first = await Product.findOne({ id: pricedItems[0].refId }).lean();
+    const first = await Product.findOne({ id: pricedItems[0].refId, ...VISIBLE_APPROVAL }).lean();
     outletId = first?.storeId || null;
     if (outletId) {
       const store = await ShopStore.findOne({ id: outletId }).select('vendorId isClosed').lean();

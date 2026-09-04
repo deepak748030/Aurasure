@@ -1,376 +1,47 @@
-import React, { useCallback, useRef, useState } from 'react';
-import {
-  Animated,
-  Pressable,
-  StyleSheet,
-  Switch,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Alert, Pressable, StyleSheet, Switch, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-
 import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
+import { Button } from '@/components/ui/Button';
+import { Badge, Card, IconButton, SectionTitle } from '@/components/ui/VendorUI';
 import { Icon } from '@/lib/icons';
 import { useVendor } from '@/context/VendorContext';
 import { vendorApi, type DashboardStats, type VendorOrder } from '@/api/vendor';
 import { colors } from '@/theme/colors';
+import { spacing, radius } from '@/theme/tokens';
 import { haptic } from '@/lib/haptics';
-import type { IconName } from '@/types';
-import type { RootStackParamList } from '@/navigation/types';
+import type { RootStackParamList, TabParamList } from '@/navigation/types';
 
-type Nav = NativeStackNavigationProp<RootStackParamList>;
+type TabNav = BottomTabNavigationProp<TabParamList>; type RootNav = NativeStackNavigationProp<RootStackParamList>;
+const EMPTY: DashboardStats = { todayOrders: 0, todaySales: 0, liveOrders: 0, menuCount: 0, payoutBalance: 0 };
+function money(value: number): string { return `₹${Math.round(value).toLocaleString('en-IN')}`; }
+function Stat({ icon, label, value, accent }: { icon: 'orders' | 'rupee' | 'timer' | 'utensils'; label: string; value: string; accent: string }): React.ReactElement { return <View style={styles.stat}><View style={[styles.statIcon, { backgroundColor: `${accent}16` }]}><Icon name={icon} size={18} color={accent} /></View><Text variant="h2" weight="bold" style={{ marginTop: 9 }}>{value}</Text><Text variant="caption" color={colors.textSecondary} style={{ marginTop: 2 }}>{label}</Text></View>; }
+function LiveRow({ order, onPress }: { order: VendorOrder; onPress: () => void }): React.ReactElement { const color = order.status === 'placed' ? colors.info : order.status === 'preparing' ? colors.warning : colors.brand[600]; return <Pressable onPress={onPress} style={({ pressed }) => [styles.liveRow, pressed && { opacity: .7 }]}><View style={[styles.liveNumber, { backgroundColor: `${color}16` }]}><Text variant="caption" weight="bold" color={color}>#{order.code.slice(-3)}</Text></View><View style={{ flex: 1 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Text variant="title" weight="bold">{order.code}</Text><Badge label={order.status === 'placed' ? 'NEW' : order.status.replace('_', ' ').toUpperCase()} color={color} background={`${color}16`} /></View><Text variant="caption" color={colors.textSecondary} numberOfLines={1} style={{ marginTop: 3 }}>{order.items.map((item) => `${item.qty}× ${item.name}`).join(' · ')}</Text></View><View style={{ alignItems: 'flex-end' }}><Text variant="title" weight="bold">{money(order.total)}</Text><Icon name="chevronRight" size={18} color={colors.textTertiary} /></View></Pressable>; }
 
-// ─── Stat Tile ──────────────────────────────────────────────────────────────
-function StatTile({
-  label,
-  value,
-  icon,
-  accent,
-}: {
-  label: string;
-  value: string;
-  icon: IconName;
-  accent: string;
-}) {
-  return (
-    <View style={[styles.tile, { borderColor: colors.border }]}>
-      <View style={[styles.tileIcon, { backgroundColor: accent + '18' }]}>
-        <Icon name={icon} size={18} color={accent} />
-      </View>
-      <Text variant="h2" weight="bold" style={{ marginTop: 8 }}>
-        {value}
-      </Text>
-      <Text variant="caption" color={colors.textSecondary}>
-        {label}
-      </Text>
-    </View>
-  );
-}
-
-// ─── Live Order Row ──────────────────────────────────────────────────────────
-function LiveOrderRow({
-  order,
-  onPress,
-}: {
-  order: VendorOrder;
-  onPress: () => void;
-}) {
-  const statusColor = {
-    placed: '#2563EB',
-    confirmed: '#0891B2',
-    preparing: '#D97706',
-    out_for_delivery: '#7C3AED',
-  }[order.status] ?? colors.textSecondary;
-
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.liveRow, pressed && { opacity: 0.85 }]}
-    >
-      <View style={{ flex: 1 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text variant="title" weight="semibold">#{order.code}</Text>
-          <View style={[styles.statusPill, { backgroundColor: statusColor + '18' }]}>
-            <Text variant="caption" weight="bold" style={{ color: statusColor, textTransform: 'capitalize' }}>
-              {order.status.replace(/_/g, ' ')}
-            </Text>
-          </View>
-        </View>
-        <Text variant="bodySm" color={colors.textSecondary} numberOfLines={1} style={{ marginTop: 2 }}>
-          {order.items.map((i) => `${i.qty}× ${i.name}`).join(' · ')}
-        </Text>
-      </View>
-      <View style={{ alignItems: 'flex-end', gap: 4 }}>
-        <Text variant="title" weight="bold">₹{Math.round(order.total)}</Text>
-        <Icon name="chevronRight" size={18} color={colors.textTertiary} />
-      </View>
-    </Pressable>
-  );
-}
-
-// ─── HomeScreen ──────────────────────────────────────────────────────────────
 export function HomeScreen(): React.ReactElement {
-  const { vendor, setVendor } = useVendor();
-  const navigation = useNavigation<Nav>();
-  const [stats, setStats] = useState<DashboardStats>({
-    todayOrders: 0,
-    todaySales: 0,
-    liveOrders: 0,
-    menuCount: 0,
-    payoutBalance: 0,
-  });
-  const [liveOrders, setLiveOrders] = useState<VendorOrder[]>([]);
-  const [busy, setBusy] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const switchAnim = useRef(new Animated.Value(vendor?.isOpen ? 1 : 0)).current;
-
-  const load = useCallback(async () => {
-    try {
-      const data = await vendorApi.dashboard();
-      setVendor(data.vendor);
-      setStats(data.stats);
-      setLiveOrders(data.live ?? []);
-    } catch {
-      /* silent — offline or not approved yet */
-    }
-  }, [setVendor]);
-
-  React.useEffect(() => {
-    void load();
-    const interval = setInterval(() => void load(), 30000);
-    return () => clearInterval(interval);
-  }, [load]);
-
-  const handleRefresh = useCallback(() => {
-    setRefreshing(true);
-    void load().finally(() => setRefreshing(false));
-  }, [load]);
-
-  const toggle = async (isOpen: boolean) => {
-    setBusy(true);
-    haptic.light();
-    Animated.timing(switchAnim, {
-      toValue: isOpen ? 1 : 0,
-      duration: 200,
-      useNativeDriver: false,
-    }).start();
-    try {
-      const data = await vendorApi.setOpen(isOpen);
-      setVendor(data.vendor);
-      haptic.success();
-    } catch {
-      haptic.error();
-      Animated.timing(switchAnim, {
-        toValue: isOpen ? 0 : 1,
-        duration: 200,
-        useNativeDriver: false,
-      }).start();
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const isOpen = Boolean(vendor?.isOpen);
-  const isApproved = vendor?.status === 'approved';
-
-  return (
-    <Screen
-      title={vendor?.outletName || 'My Outlet'}
-      subtitle={vendor?.module === 'food' ? '🍽  Food Kitchen' : '🛍  Shop'}
-      refreshing={refreshing}
-      onRefresh={handleRefresh}
-      headerRight={
-        <TouchableOpacity
-          onPress={() => void load()}
-          style={{ padding: 4 }}
-        >
-          <Icon name="refresh" size={22} color={colors.text} />
-        </TouchableOpacity>
-      }
-    >
-      {/* Open / Closed switch */}
-      {isApproved ? (
-        <View
-          style={[
-            styles.toggleCard,
-            { backgroundColor: isOpen ? '#16A34A' : '#DC2626' },
-          ]}
-        >
-          <View style={{ flex: 1 }}>
-            <Text variant="title" weight="bold" color={colors.white}>
-              {isOpen ? 'Accepting Orders' : 'Outlet Paused'}
-            </Text>
-            <Text variant="caption" color="rgba(255,255,255,0.80)" style={{ marginTop: 2 }}>
-              {isOpen
-                ? 'Customers can order right now.'
-                : 'New orders will not come in. Live tickets still finish.'}
-            </Text>
-          </View>
-          <Switch
-            value={isOpen}
-            onValueChange={(v) => void toggle(v)}
-            disabled={busy}
-            trackColor={{ false: 'rgba(255,255,255,0.30)', true: 'rgba(255,255,255,0.30)' }}
-            thumbColor={colors.white}
-            ios_backgroundColor="rgba(255,255,255,0.30)"
-          />
-        </View>
-      ) : (
-        <View style={[styles.toggleCard, { backgroundColor: colors.warningBg }]}>
-          <Icon name="shield" size={20} color={colors.warning} />
-          <Text variant="bodySm" color={colors.warning} style={{ marginLeft: 10, flex: 1 }}>
-            Your outlet goes live after admin verifies all documents.
-          </Text>
-        </View>
-      )}
-
-      {/* Stats grid */}
-      <View style={styles.statsRow}>
-        <StatTile label="Today Orders" value={String(stats.todayOrders)} icon="receipt" accent={colors.brand[600]} />
-        <StatTile label="Today Sales" value={`₹${Math.round(stats.todaySales)}`} icon="rupee" accent={colors.success} />
-      </View>
-      <View style={styles.statsRow}>
-        <StatTile label="Live Tickets" value={String(stats.liveOrders)} icon="timer" accent={colors.warning} />
-        <StatTile label="Menu Items" value={String(stats.menuCount)} icon="utensils" accent={colors.brand[400]} />
-      </View>
-
-      {/* Earnings card */}
-      <View style={styles.earningsCard}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <View style={[styles.tileIcon, { backgroundColor: colors.brand[50] }]}>
-            <Icon name="wallet" size={18} color={colors.brand[600]} />
-          </View>
-          <View>
-            <Text variant="caption" color={colors.textSecondary} weight="semibold">SETTLEMENT WALLET</Text>
-            <Text variant="h2" weight="bold" style={{ color: colors.brand[700] }}>
-              ₹{Math.round(stats.payoutBalance)}
-            </Text>
-          </View>
-        </View>
-        <Text variant="caption" color={colors.textSecondary} style={{ marginTop: 8 }}>
-          Credited when an order is marked delivered. Platform keeps 5% of item total.
-        </Text>
-      </View>
-
-      {/* Live orders */}
-      {liveOrders.length > 0 ? (
-        <View style={{ marginTop: 6 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <Text variant="h3" weight="bold">Live Tickets</Text>
-            <View style={styles.liveChip}>
-              <View style={styles.liveDot} />
-              <Text variant="caption" weight="bold" color={colors.success}>{liveOrders.length}</Text>
-            </View>
-          </View>
-          <View style={styles.liveSection}>
-            {liveOrders.map((order, i) => (
-              <React.Fragment key={order.id}>
-                {i > 0 ? <View style={styles.divider} /> : null}
-                <LiveOrderRow
-                  order={order}
-                  onPress={() => navigation.navigate('OrderDetail', { orderId: order.id })}
-                />
-              </React.Fragment>
-            ))}
-          </View>
-        </View>
-      ) : isApproved ? (
-        <View style={{ alignItems: 'center', paddingVertical: 28 }}>
-          <Icon name="coffee" size={36} color={colors.brand[200]} />
-          <Text variant="bodySm" color={colors.textTertiary} style={{ marginTop: 10 }}>
-            No live tickets right now
-          </Text>
-        </View>
-      ) : null}
-
-      {/* Tips */}
-      <Text variant="h3" weight="bold" style={{ marginTop: 20, marginBottom: 10 }}>Quick Tips</Text>
-      {[
-        { icon: 'clock' as IconName, t: 'Prep running late', b: 'Pause the outlet. Customers stop ordering; live tickets still finish.' },
-        { icon: 'wallet' as IconName, t: 'Payout delayed', b: 'Wrong IFSC is caught at KYC. Balance shows on More → Payouts.' },
-        { icon: 'circleAlert' as IconName, t: 'Item out of stock', b: 'Toggle stock on Menu tab without deleting the item.' },
-        { icon: 'shield' as IconName, t: 'KYC rejected', b: 'Each document has a note. Fix only that slot — not the whole form.' },
-      ].map((row, i) => (
-        <View
-          key={row.t}
-          style={[
-            styles.tipRow,
-            i < 3 ? { borderBottomWidth: 1, borderColor: colors.border } : null,
-          ]}
-        >
-          <View style={[styles.tileIcon, { backgroundColor: colors.brand[50] }]}>
-            <Icon name={row.icon} size={18} color={colors.brand[600]} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text variant="title" weight="semibold">{row.t}</Text>
-            <Text variant="bodySm" color={colors.textSecondary}>{row.b}</Text>
-          </View>
-        </View>
-      ))}
-    </Screen>
-  );
+  const { vendor, setVendor } = useVendor(); const tabs = useNavigation<TabNav>(); const root = useNavigation<RootNav>();
+  const [stats, setStats] = useState(EMPTY); const [live, setLive] = useState<VendorOrder[]>([]); const [refreshing, setRefreshing] = useState(false); const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [lastSync, setLastSync] = useState<Date | null>(null);
+  const load = useCallback(async () => { try { const data = await vendorApi.dashboard(); setVendor(data.vendor); setStats(data.stats); setLive(data.live ?? []); setError(''); setLastSync(new Date()); } catch (e) { setError(e instanceof Error ? e.message : 'Showing your last synced data'); } }, [setVendor]);
+  useEffect(() => { void load(); const timer = setInterval(() => void load(), 15000); return () => clearInterval(timer); }, [load]);
+  const refresh = () => { setRefreshing(true); void load().finally(() => setRefreshing(false)); };
+  const setOpen = async (open: boolean) => { setBusy(true); try { const data = await vendorApi.setOpen(open); setVendor(data.vendor); haptic.success(); } catch (e) { Alert.alert('Could not update outlet', e instanceof Error ? e.message : 'Try again'); haptic.error(); } finally { setBusy(false); } };
+  const pause = () => Alert.alert('Pause new orders', 'Live orders will continue. How long should new orders stay paused?', [{ text: '15 min', onPress: () => void doPause(15) }, { text: '30 min', onPress: () => void doPause(30) }, { text: '60 min', onPress: () => void doPause(60) }, { text: 'Cancel', style: 'cancel' }]);
+  const doPause = async (minutes: number) => { try { const data = await vendorApi.pause(vendor?.outletId ?? '', minutes, 'Vendor paused orders'); setVendor(data.vendor); } catch (e) { Alert.alert('Could not pause outlet', e instanceof Error ? e.message : 'Try again'); } };
+  const open = Boolean(vendor?.isOpen);
+  return <Screen title={vendor?.outletName || 'Your outlet'} subtitle={`${vendor?.module === 'food' ? 'Food kitchen' : 'Shop'}  ·  ${lastSync ? `Synced ${lastSync.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}` : 'Syncing now'}`} refreshing={refreshing} onRefresh={refresh} headerRight={<IconButton icon="bell" background={colors.surface} color={colors.brand[700]} onPress={() => Alert.alert('Order alerts', 'New tickets are refreshed every 15 seconds. Keep device notifications enabled so Aurasure can alert the team.')} />}>
+    {error ? <View style={styles.offline}><Icon name="wifi" size={16} color={colors.warning} /><Text variant="caption" color={colors.warning} style={{ flex: 1 }}>Showing last synced data · {error}</Text><Pressable onPress={refresh}><Text variant="caption" weight="bold" color={colors.warning}>Retry</Text></Pressable></View> : null}
+    <Card tone={open ? 'dark' : 'warm'} style={styles.statusCard}><View style={{ flex: 1 }}><View style={styles.statusTitle}><View style={[styles.liveDot, { backgroundColor: open ? '#7CF0AE' : colors.warning }]} /><Text variant="title" weight="bold" color={open ? colors.white : colors.text}>{open ? 'Accepting orders' : 'Outlet paused'}</Text></View><Text variant="caption" color={open ? '#EAC9DA' : colors.textSecondary} style={{ marginTop: 4 }}>{open ? 'Customers can discover and order from you.' : vendor?.pauseUntil ? `Resumes around ${new Date(vendor.pauseUntil).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}` : 'Turn on when your team is ready.'}</Text></View><Switch value={open} onValueChange={(value) => void setOpen(value)} disabled={busy} trackColor={{ false: colors.borderStrong, true: '#8F476F' }} thumbColor={open ? '#FFFFFF' : colors.warning} /></Card>
+    {open ? <Pressable onPress={pause} style={styles.pauseLink}><Icon name="timer" size={15} color={colors.brand[600]} /><Text variant="caption" weight="bold" color={colors.brand[600]}>Pause for a short break</Text></Pressable> : null}
+    <View style={styles.statsGrid}><Stat icon="orders" label="Today’s orders" value={String(stats.todayOrders)} accent={colors.brand[600]} /><Stat icon="rupee" label="Gross sales" value={money(stats.todaySales)} accent={colors.success} /><Stat icon="timer" label="Live tickets" value={String(stats.liveOrders)} accent={colors.warning} /><Stat icon="utensils" label="Menu items" value={String(stats.menuCount)} accent={colors.info} /></View>
+    <Card style={styles.earnings}><View style={styles.earningsTop}><View style={styles.wallet}><Icon name="wallet" size={20} color={colors.brand[700]} /></View><View style={{ flex: 1 }}><Text variant="caption" weight="bold" color={colors.textSecondary}>AVAILABLE SETTLEMENT</Text><Text variant="h2" weight="bold" color={colors.brand[700]}>{money(stats.payoutBalance)}</Text></View><Pressable onPress={() => root.navigate('Business')}><Text variant="caption" weight="bold" color={colors.brand[600]}>View</Text></Pressable></View><View style={styles.earningsRule} /><Text variant="caption" color={colors.textSecondary}>Net after the platform’s 5% item commission. Delivery fees are not part of commission.</Text></Card>
+    <SectionTitle title="Live tickets" action="All orders" onAction={() => tabs.navigate('Orders')} />
+    {live.length ? <Card style={{ paddingVertical: 4 }}>{live.slice(0, 4).map((order, index) => <React.Fragment key={order.id}>{index > 0 ? <View style={styles.divider} /> : null}<LiveRow order={order} onPress={() => root.navigate('OrderDetail', { orderId: order.id })} /></React.Fragment>)}</Card> : <Card style={styles.emptyLive}><Icon name="coffee" size={28} color={colors.brand[300]} /><Text variant="title" weight="bold" style={{ marginTop: 8 }}>No live tickets</Text><Text variant="caption" color={colors.textSecondary} style={{ marginTop: 3 }}>You’re open — we’ll alert you when the next order lands.</Text></Card>}
+    <SectionTitle title="Quick actions" /><View style={styles.quickRow}><Quick icon="utensils" label="Menu" onPress={() => tabs.navigate('Menu')} /><Quick icon="chart" label="Business" onPress={() => root.navigate('Business')} /><Quick icon="mapPinned" label="Outlet pin" onPress={() => root.navigate('Map')} /><Quick icon="settings" label="Settings" onPress={() => tabs.navigate('More')} /></View>
+    <Button title="Open order board" rightIcon="arrowRight" onPress={() => tabs.navigate('Orders')} style={{ marginTop: 20 }} />
+  </Screen>;
 }
-
-const styles = StyleSheet.create({
-  toggleCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 14,
-    gap: 12,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 10,
-  },
-  tile: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-  },
-  tileIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  earningsCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: 14,
-  },
-  liveSection: {
-    backgroundColor: colors.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
-  },
-  liveRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
-    gap: 10,
-  },
-  statusPill: {
-    borderRadius: 20,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  liveChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: colors.successBg,
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  liveDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 99,
-    backgroundColor: colors.success,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginHorizontal: 14,
-  },
-  tipRow: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingVertical: 12,
-    alignItems: 'flex-start',
-  },
-});
+function Quick({ icon, label, onPress }: { icon: 'utensils' | 'chart' | 'mapPinned' | 'settings'; label: string; onPress: () => void }): React.ReactElement { return <Pressable onPress={onPress} style={styles.quick}><View style={styles.quickIcon}><Icon name={icon} size={19} color={colors.brand[600]} /></View><Text variant="caption" weight="bold" color={colors.textSecondary}>{label}</Text></Pressable>; }
+const styles = StyleSheet.create({ offline: { flexDirection: 'row', alignItems: 'center', gap: 7, padding: 10, borderRadius: radius.md, backgroundColor: colors.warningBg, marginBottom: 10 }, statusCard: { flexDirection: 'row', alignItems: 'center', padding: 17, borderWidth: 0 }, statusTitle: { flexDirection: 'row', alignItems: 'center', gap: 8 }, liveDot: { width: 9, height: 9, borderRadius: 5 }, pauseLink: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 11, justifyContent: 'center' }, statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 }, stat: { width: '48.8%', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: 13, minHeight: 110 }, statIcon: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' }, earnings: { marginTop: 14, backgroundColor: colors.surfaceWarm, borderColor: '#F2DEC9' }, earningsTop: { flexDirection: 'row', alignItems: 'center', gap: 10 }, wallet: { width: 42, height: 42, borderRadius: 14, backgroundColor: colors.brand[50], alignItems: 'center', justifyContent: 'center' }, earningsRule: { height: 1, backgroundColor: '#F0DFD2', marginVertical: 11 }, liveRow: { minHeight: 70, flexDirection: 'row', alignItems: 'center', gap: 10 }, liveNumber: { width: 39, height: 39, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, divider: { height: 1, backgroundColor: colors.border }, emptyLive: { alignItems: 'center', paddingVertical: 28 }, quickRow: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, paddingVertical: 13, paddingHorizontal: 8 }, quick: { alignItems: 'center', gap: 7, minWidth: 63 }, quickIcon: { width: 38, height: 38, borderRadius: 13, backgroundColor: colors.brand[50], alignItems: 'center', justifyContent: 'center' } });

@@ -40,6 +40,12 @@
           "resizeMode": "contain",
           "backgroundColor": "#FFFFFF"
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Aurasure Vendor to add outlet and menu photos."
+        }
       ]
     ],
     "backgroundColor": "#F5EAF3"

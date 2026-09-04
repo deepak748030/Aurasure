@@ -1,267 +1,54 @@
 import React, { useMemo, useState } from 'react';
-import { Image, Pressable, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { BackButton } from '@/components/ui/BackButton';
+import { Card, SectionTitle, Badge } from '@/components/ui/VendorUI';
 import { Icon } from '@/lib/icons';
+import { MapSurface } from '@/screens/shared/MapSurface';
 import { useVendor } from '@/context/VendorContext';
 import { uploadVendorImage, vendorApi } from '@/api/vendor';
 import { pickImage } from '@/lib/pickImage';
 import { colors } from '@/theme/colors';
+import { radius, spacing } from '@/theme/tokens';
 import { haptic } from '@/lib/haptics';
+import type { VendorDocument } from '@/api/vendor';
 
-const FOOD_CUISINES = ['North Indian', 'South Indian', 'Chinese', 'Biryani', 'Thali', 'Fast food', 'Sweets', 'Beverages'];
-const SHOP_CATS = ['Grocery', 'Fashion', 'Electronics', 'Home', 'Beauty', 'Pharmacy', 'General'];
+const FOOD_TAGS = ['North Indian', 'South Indian', 'Chinese', 'Biryani', 'Bakery', 'Fast food', 'Sweets', 'Beverages'];
+const SHOP_TAGS = ['Grocery', 'Fashion', 'Electronics', 'Home', 'Beauty', 'Pharmacy', 'General'];
+const TITLES = ['Outlet profile', 'Compliance', 'Payout account', 'Verify documents'];
 
 export function OnboardingScreen(): React.ReactElement {
-  const { vendor, setVendor } = useVendor();
-  const isFood = vendor?.module === 'food';
-  const [step, setStep] = useState(0);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const [tags, setTags] = useState<string[]>(vendor?.cuisines?.length ? vendor.cuisines : []);
-  const [form, setForm] = useState({
-    outletName: vendor?.outletName ?? '',
-    legalName: vendor?.legalName ?? '',
-    description: vendor?.description ?? '',
-    address: vendor?.address ?? '',
-    city: vendor?.city ?? '',
-    pin: vendor?.pin ?? '',
-    gstin: vendor?.gstin ?? '',
-    pan: vendor?.pan ?? '',
-    fssai: vendor?.fssai ?? '',
-    tradeLicense: vendor?.tradeLicense ?? '',
-    open: vendor?.hours?.open ?? '10:00',
-    close: vendor?.hours?.close ?? '22:00',
-    accountName: vendor?.bank?.accountName ?? '',
-    accountNumber: vendor?.bank?.accountNumber ?? '',
-    ifsc: vendor?.bank?.ifsc ?? '',
-    bankName: vendor?.bank?.bankName ?? '',
-    upi: vendor?.bank?.upi ?? '',
-  });
-
-  const set = (k: keyof typeof form, v: string) => setForm((s) => ({ ...s, [k]: v }));
+  const navigation = useNavigation(); const { vendor, setVendor } = useVendor(); const food = vendor?.module === 'food';
+  const [step, setStep] = useState(0); const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [tags, setTags] = useState(vendor?.cuisines ?? []);
+  const [form, setForm] = useState({ outletName: vendor?.outletName ?? '', legalName: vendor?.legalName ?? '', description: vendor?.description ?? '', address: vendor?.address ?? '', landmark: vendor?.landmark ?? '', city: vendor?.city ?? '', pin: vendor?.pin ?? '', pan: vendor?.pan ?? '', gstin: vendor?.gstin ?? '', fssai: vendor?.fssai ?? '', tradeLicense: vendor?.tradeLicense ?? '', open: vendor?.hours?.open ?? '10:00', close: vendor?.hours?.close ?? '22:00', accountName: vendor?.bank?.accountName ?? '', accountNumber: vendor?.bank?.accountNumber ?? '', ifsc: vendor?.bank?.ifsc ?? '', bankName: vendor?.bank?.bankName ?? '', upi: vendor?.bank?.upi ?? '' });
+  const set = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
   const docs = vendor?.documents ?? [];
-  const titles = useMemo(
-    () => ['Outlet', isFood ? 'Kitchen & tax' : 'Shop & tax', 'Bank payouts', 'Documents'],
-    [isFood],
-  );
-
-  const toggleTag = (t: string) => {
-    haptic.selection();
-    setTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
-  };
-
-  const saveStep = async () => {
-    setBusy(true);
-    setError('');
+  const requiredDocs = useMemo(() => food ? ['aadhaar', 'pan', 'gst', 'bank', 'outlet', 'interior', 'fssai', 'menu'] : ['aadhaar', 'pan', 'gst', 'bank', 'outlet', 'interior', 'trade', 'inventory'], [food]);
+  const save = async () => {
+    setBusy(true); setError('');
     try {
       if (step < 3) {
-        const data = await vendorApi.save({
-          outletName: form.outletName,
-          legalName: form.legalName,
-          description: form.description,
-          address: form.address,
-          city: form.city,
-          pin: form.pin,
-          gstin: form.gstin,
-          pan: form.pan,
-          fssai: form.fssai,
-          tradeLicense: form.tradeLicense,
-          cuisines: tags,
-          hours: { open: form.open, close: form.close },
-          bank: {
-            accountName: form.accountName,
-            accountNumber: form.accountNumber,
-            ifsc: form.ifsc,
-            bankName: form.bankName,
-            upi: form.upi,
-          },
-        });
-        setVendor(data.vendor);
-        haptic.light();
-        setStep((s) => s + 1);
-      } else {
-        const data = await vendorApi.submit();
-        haptic.success();
-        setVendor(data.vendor);
-      }
-    } catch (err) {
-      haptic.error();
-      setError(err instanceof Error ? err.message : 'Save failed');
-    } finally {
-      setBusy(false);
-    }
+        const data = await vendorApi.save({ outletName: form.outletName.trim(), legalName: form.legalName.trim(), description: form.description.trim(), address: form.address.trim(), landmark: form.landmark.trim(), city: form.city.trim(), pin: form.pin.trim(), pan: form.pan.trim().toUpperCase(), gstin: form.gstin.trim().toUpperCase(), fssai: form.fssai.trim(), tradeLicense: form.tradeLicense.trim(), cuisines: tags, hours: { open: form.open, close: form.close }, bank: { accountName: form.accountName.trim(), accountNumber: form.accountNumber.trim(), ifsc: form.ifsc.trim().toUpperCase(), bankName: form.bankName.trim(), upi: form.upi.trim() } });
+        setVendor(data.vendor); setStep((value) => value + 1); haptic.light();
+      } else { const data = await vendorApi.submit(); setVendor(data.vendor); haptic.success(); }
+    } catch (e) { setError(e instanceof Error ? e.message : 'Could not save this step.'); haptic.error(); } finally { setBusy(false); }
   };
-
-  const upload = async (key: string, label: string) => {
-    const picked = await pickImage();
-    if (!picked) return;
-    setBusy(true);
-    setError('');
-    try {
-      const up = await uploadVendorImage(picked.blob, picked.name);
-      const data = await vendorApi.setDoc(key, up.url || up.image.uri, label);
-      setVendor(data.vendor);
-      haptic.success();
-    } catch (err) {
-      haptic.error();
-      setError(err instanceof Error ? err.message : 'Upload failed');
-    } finally {
-      setBusy(false);
-    }
+  const upload = async (doc: VendorDocument) => {
+    const picked = await pickImage(); if (!picked) return;
+    setBusy(true); setError(''); try { const uploadResult = await uploadVendorImage(picked.blob, picked.name); const data = await vendorApi.setDoc(doc.key, uploadResult.url, doc.label); setVendor(data.vendor); haptic.success(); } catch (e) { setError(e instanceof Error ? e.message : 'Upload failed.'); haptic.error(); } finally { setBusy(false); }
   };
-
-  const chips = isFood ? FOOD_CUISINES : SHOP_CATS;
-
-  return (
-    <Screen title={titles[step]} subtitle={`Step ${step + 1} of 4 · ${isFood ? 'Food kitchen' : 'Shop'}`} keyboardAvoiding>
-      <View style={{ flexDirection: 'row', gap: 6, marginBottom: 16 }}>
-        {titles.map((_, i) => (
-          <View
-            key={i}
-            style={{
-              flex: 1,
-              height: 5,
-              borderRadius: 4,
-              backgroundColor: i <= step ? (isFood ? colors.food[500] : colors.brand[600]) : colors.ink[200],
-            }}
-          />
-        ))}
-      </View>
-
-      {step === 0 ? (
-        <>
-          <Input label="Outlet name (customers see this)" value={form.outletName} onChangeText={(v) => set('outletName', v)} leftIcon="store" />
-          <Input label="Legal / GST name" value={form.legalName} onChangeText={(v) => set('legalName', v)} />
-          <Input label="What do you sell?" value={form.description} onChangeText={(v) => set('description', v)} multiline />
-          <Input label="Street address" value={form.address} onChangeText={(v) => set('address', v)} leftIcon="mapPin" />
-          <Input label="City" value={form.city} onChangeText={(v) => set('city', v)} />
-          <Input label="PIN" value={form.pin} onChangeText={(v) => set('pin', v)} keyboardType="number-pad" />
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <View style={{ flex: 1 }}>
-              <Input label="Opens" value={form.open} onChangeText={(v) => set('open', v)} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Input label="Closes" value={form.close} onChangeText={(v) => set('close', v)} />
-            </View>
-          </View>
-          <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: 8 }}>
-            {isFood ? 'Cuisines' : 'Categories'}
-          </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
-            {chips.map((c) => {
-              const on = tags.includes(c);
-              return (
-                <Pressable
-                  key={c}
-                  onPress={() => toggleTag(c)}
-                  style={{
-                    paddingHorizontal: 12,
-                    paddingVertical: 8,
-                    borderRadius: 999,
-                    backgroundColor: on ? colors.brand[600] : colors.surface,
-                    borderWidth: 1,
-                    borderColor: on ? colors.brand[600] : colors.border,
-                  }}
-                >
-                  <Text variant="caption" color={on ? colors.white : colors.text} weight="semibold">
-                    {c}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </>
-      ) : null}
-
-      {step === 1 ? (
-        <>
-          <Text variant="bodySm" color={colors.textSecondary} style={{ marginBottom: 10 }}>
-            {isFood
-              ? 'FSSAI is mandatory for kitchens. GST if turnover requires it.'
-              : 'GST or a municipal trade license — one of the two is enough for small shops.'}
-          </Text>
-          <Input label="PAN" value={form.pan} onChangeText={(v) => set('pan', v)} autoCapitalize="characters" />
-          <Input label="GSTIN" value={form.gstin} onChangeText={(v) => set('gstin', v)} autoCapitalize="characters" />
-          {isFood ? (
-            <Input label="FSSAI license number" value={form.fssai} onChangeText={(v) => set('fssai', v)} />
-          ) : (
-            <Input label="Trade / shop license" value={form.tradeLicense} onChangeText={(v) => set('tradeLicense', v)} />
-          )}
-        </>
-      ) : null}
-
-      {step === 2 ? (
-        <>
-          <Text variant="bodySm" color={colors.textSecondary} style={{ marginBottom: 10 }}>
-            Settlements after delivered orders. Wrong IFSC is the #1 payout delay we see.
-          </Text>
-          <Input label="Account holder" value={form.accountName} onChangeText={(v) => set('accountName', v)} />
-          <Input label="Account number" value={form.accountNumber} onChangeText={(v) => set('accountNumber', v)} keyboardType="number-pad" />
-          <Input label="IFSC" value={form.ifsc} onChangeText={(v) => set('ifsc', v)} autoCapitalize="characters" />
-          <Input label="Bank name" value={form.bankName} onChangeText={(v) => set('bankName', v)} />
-          <Input label="UPI (backup)" value={form.upi} onChangeText={(v) => set('upi', v)} />
-        </>
-      ) : null}
-
-      {step === 3 ? (
-        <>
-          <Text variant="bodySm" color={colors.textSecondary} style={{ marginBottom: 12 }}>
-            Clear photos. Admin will not approve until every slot is ticked.
-          </Text>
-          {docs.map((d) => (
-            <Pressable
-              key={d.key}
-              onPress={() => void upload(d.key, d.label)}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 12,
-                paddingVertical: 12,
-                borderBottomWidth: 1,
-                borderColor: colors.border,
-              }}
-            >
-              {d.uri ? (
-                <Image source={{ uri: d.uri }} style={{ width: 52, height: 52, borderRadius: 10, backgroundColor: colors.ink[100] }} />
-              ) : (
-                <View
-                  style={{
-                    width: 52,
-                    height: 52,
-                    borderRadius: 10,
-                    backgroundColor: colors.brand[50],
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Icon name="camera" size={22} color={colors.brand[600]} />
-                </View>
-              )}
-              <View style={{ flex: 1 }}>
-                <Text variant="title">{d.label}</Text>
-                <Text variant="caption" color={d.uri ? colors.success : colors.textTertiary}>
-                  {d.uri ? 'Tap to replace' : 'Required · tap to upload'}
-                </Text>
-              </View>
-              <Icon name={d.uri ? 'circleCheck' : 'plus'} size={20} color={d.uri ? colors.success : colors.textTertiary} />
-            </Pressable>
-          ))}
-        </>
-      ) : null}
-
-      {error ? (
-        <Text variant="bodySm" color={colors.danger} style={{ marginTop: 8 }}>
-          {error}
-        </Text>
-      ) : null}
-
-      <View style={{ marginTop: 18, gap: 8 }}>
-        <Button title={step === 3 ? 'Submit for verification' : 'Save & next'} loading={busy} onPress={saveStep} />
-        {step > 0 ? <Button title="Back" variant="ghost" onPress={() => setStep((s) => s - 1)} /> : null}
-      </View>
-    </Screen>
-  );
+  const savePin = async (lat: number, lng: number) => { setBusy(true); try { const data = await vendorApi.save({ geo: { lat, lng } }); setVendor(data.vendor); setError(''); } catch (e) { setError(e instanceof Error ? e.message : 'Could not save the outlet pin.'); } finally { setBusy(false); } };
+  return <Screen keyboardAvoiding headerLeft={<BackButton onPress={() => { if (step > 0) setStep((value) => value - 1); else navigation.goBack(); }} />} title={TITLES[step]} subtitle={`Step ${step + 1} of 4 · ${food ? 'Food kitchen' : 'Shop'}`}>
+    <View style={styles.progress}>{TITLES.map((_, index) => <View key={index} style={[styles.progressBar, { backgroundColor: index <= step ? (food ? colors.food : colors.brand[600]) : colors.border }]} />)}</View>
+    {step === 0 ? <><Text variant="body" color={colors.textSecondary} style={{ marginBottom: 14 }}>Tell customers what they will find at this outlet. Your pin helps dispatch find you.</Text><Input label="Outlet name" value={form.outletName} onChangeText={(value) => set('outletName', value)} leftIcon="store" placeholder="The name customers see" /><Input label="Legal / GST name" value={form.legalName} onChangeText={(value) => set('legalName', value)} /><Input label={food ? 'About the kitchen' : 'About the shop'} value={form.description} onChangeText={(value) => set('description', value)} multiline placeholder="Short description" /><Input label="Street address" value={form.address} onChangeText={(value) => set('address', value)} leftIcon="mapPin" /><View style={styles.two}><View style={{ flex: 1 }}><Input label="City" value={form.city} onChangeText={(value) => set('city', value)} /></View><View style={{ flex: 1 }}><Input label="PIN" value={form.pin} onChangeText={(value) => set('pin', value)} keyboardType="number-pad" /></View></View><Input label="Landmark (optional)" value={form.landmark} onChangeText={(value) => set('landmark', value)} /><SectionTitle title="Outlet pin" /><Card style={{ padding: 0, overflow: 'hidden' }}><MapSurface editable lat={vendor?.geo?.lat} lng={vendor?.geo?.lng} onChange={(lat, lng) => void savePin(lat, lng)} height={190} /></Card><SectionTitle title={food ? 'Cuisines' : 'Categories'} /><View style={styles.tags}>{(food ? FOOD_TAGS : SHOP_TAGS).map((tag) => { const active = tags.includes(tag); return <Pressable key={tag} onPress={() => setTags((all) => active ? all.filter((item) => item !== tag) : [...all, tag])} style={[styles.tag, active && { backgroundColor: food ? colors.food : colors.brand[600], borderColor: food ? colors.food : colors.brand[600] }]}><Text variant="caption" weight="bold" color={active ? colors.white : colors.textSecondary}>{tag}</Text></Pressable>; })}</View><View style={styles.two}><View style={{ flex: 1 }}><Input label="Opens" value={form.open} onChangeText={(value) => set('open', value)} /></View><View style={{ flex: 1 }}><Input label="Closes" value={form.close} onChangeText={(value) => set('close', value)} /></View></View></> : null}
+    {step === 1 ? <><Text variant="body" color={colors.textSecondary} style={{ marginBottom: 16 }}>{food ? 'Food outlets need FSSAI before they can receive a live order.' : 'Share your tax identity and the shop license used at this address.'}</Text><Input label="PAN" value={form.pan} onChangeText={(value) => set('pan', value)} autoCapitalize="characters" leftIcon="badgeCheck" /><Input label="GSTIN (if registered)" value={form.gstin} onChangeText={(value) => set('gstin', value)} autoCapitalize="characters" leftIcon="receipt" />{food ? <Input label="FSSAI license number" value={form.fssai} onChangeText={(value) => set('fssai', value)} leftIcon="shield" /> : <Input label="Trade / shop license" value={form.tradeLicense} onChangeText={(value) => set('tradeLicense', value)} leftIcon="store" />}<Card tone="warm" style={{ marginTop: 4 }}><View style={{ flexDirection: 'row', gap: 9 }}><Icon name="info" size={18} color={colors.warning} /><Text variant="bodySm" color={colors.warning} style={{ flex: 1 }}>Documents are reviewed individually. If one is rejected, you only re-upload that slot.</Text></View></Card></> : null}
+    {step === 2 ? <><Text variant="body" color={colors.textSecondary} style={{ marginBottom: 16 }}>This account receives your net settlement after delivered orders. Double-check the IFSC.</Text><Input label="Account holder" value={form.accountName} onChangeText={(value) => set('accountName', value)} leftIcon="user" /><Input label="Account number" value={form.accountNumber} onChangeText={(value) => set('accountNumber', value)} keyboardType="number-pad" leftIcon="creditCard" /><Input label="IFSC" value={form.ifsc} onChangeText={(value) => set('ifsc', value)} autoCapitalize="characters" /><Input label="Bank name" value={form.bankName} onChangeText={(value) => set('bankName', value)} /><Input label="UPI backup (optional)" value={form.upi} onChangeText={(value) => set('upi', value)} leftIcon="wallet" /></> : null}
+    {step === 3 ? <><Card tone="warm"><Text variant="title" weight="bold">Upload clear photos</Text><Text variant="bodySm" color={colors.textSecondary} style={{ marginTop: 5 }}>Every slot is required. Tap a slot to choose or replace its photo.</Text></Card><View style={{ marginTop: 14 }}>{docs.map((doc) => <Pressable key={doc.key} onPress={() => void upload(doc)} style={styles.docRow}><View style={styles.docThumb}>{doc.uri ? <Image source={{ uri: doc.uri }} style={styles.docImage} /> : <Icon name="camera" size={21} color={colors.brand[600]} />}</View><View style={{ flex: 1 }}><Text variant="title" weight="semibold">{doc.label}</Text><Text variant="caption" color={doc.verified ? colors.success : doc.uri ? colors.warning : colors.textTertiary}>{doc.verified ? 'Verified' : doc.uri ? 'Uploaded · awaiting review' : 'Required · tap to upload'}</Text></View><Icon name={doc.uri ? 'circleCheck' : 'plus'} size={21} color={doc.uri ? colors.success : colors.textTertiary} /></Pressable>)}</View><Text variant="caption" color={colors.textTertiary} style={{ marginTop: 12 }}>{docs.filter((doc) => Boolean(doc.uri)).length} of {requiredDocs.length} document slots uploaded</Text></> : null}
+    {error ? <View style={styles.error}><Icon name="circleAlert" size={17} color={colors.danger} /><Text variant="bodySm" color={colors.danger} style={{ flex: 1 }}>{error}</Text></View> : null}<View style={{ marginTop: 18, gap: 8 }}><Button title={step === 3 ? 'Submit for verification' : 'Save & continue'} loading={busy} onPress={() => void save()} />{step > 0 ? <Button title="Back" variant="ghost" onPress={() => setStep((value) => value - 1)} /> : null}</View>
+  </Screen>;
 }
+const styles = StyleSheet.create({ progress: { flexDirection: 'row', gap: 5, marginBottom: 20 }, progressBar: { flex: 1, height: 5, borderRadius: 5 }, two: { flexDirection: 'row', gap: 10 }, tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 }, tag: { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: 11, paddingVertical: 8, borderRadius: radius.pill }, docRow: { minHeight: 76, borderBottomWidth: 1, borderColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 12 }, docThumb: { width: 52, height: 52, borderRadius: 13, backgroundColor: colors.brand[50], alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }, docImage: { width: 52, height: 52 }, error: { marginTop: 12, padding: 11, backgroundColor: colors.dangerBg, borderRadius: radius.md, flexDirection: 'row', alignItems: 'center', gap: 8 }, });

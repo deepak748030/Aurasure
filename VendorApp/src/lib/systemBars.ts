@@ -21,9 +21,9 @@ export interface SystemBars {
 }
 
 const INITIAL: SystemBars = {
-  statusBarBackground: '#F5EAF3',
+  statusBarBackground: '#F8F6F3',
   statusBarStyle: 'dark',
-  navigationBarBackground: '#F5EAF3',
+  navigationBarBackground: '#F8F6F3',
 };
 
 let state: SystemBars = INITIAL;

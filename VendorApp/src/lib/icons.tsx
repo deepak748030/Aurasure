@@ -115,6 +115,7 @@ const registry = {
   badgeCheck: ['check-decagram', 'check-decagram-outline'],
   gauge: ['speedometer', 'speedometer'],
   trending: ['trending-up', 'trending-up'],
+  chart: ['chart-box', 'chart-box-outline'],
   eye: ['eye', 'eye-outline'],
   lock: ['lock', 'lock-outline'],
   cornerDownLeft: ['keyboard-return', 'keyboard-return'],
@@ -127,6 +128,9 @@ const registry = {
   grid: ['view-grid', 'view-grid'],
   list: ['format-list-bulleted', 'format-list-bulleted'],
   share: ['share-variant', 'share-variant-outline'],
+  wifi: ['wifi', 'wifi'],
+  users: ['account-group', 'account-group-outline'],
+  helpCircle: ['help-circle', 'help-circle-outline'],
 } as const satisfies Record<string, readonly [GlyphName, GlyphName]>;
 
 export type IconName = keyof typeof registry;

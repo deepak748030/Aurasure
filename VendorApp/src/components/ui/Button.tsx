@@ -19,10 +19,10 @@ const SIZE: Record<Size, { height: number; variant: 'button' | 'title' | 'subtit
 // Flat solid background for every variant — no gradients
 const BG_COLOR: Record<Variant, string> = {
   primary: colors.brand[600],
-  login: '#A4006B',
+  login: colors.brand[800],
   success: colors.success,
   danger: colors.danger,
-  secondary: '#FAF0F9',
+  secondary: colors.brand[50],
   ghost: colors.surface,
 };
 
@@ -31,7 +31,7 @@ const TEXT_COLOR: Record<Variant, string> = {
   login: colors.white,
   success: colors.white,
   danger: colors.white,
-  secondary: '#8B0057',
+  secondary: colors.brand[700],
   ghost: colors.textSecondary,
 };
 
@@ -40,7 +40,7 @@ const BORDER_COLOR: Record<Variant, string | undefined> = {
   login: undefined,
   success: undefined,
   danger: undefined,
-  secondary: '#E4BBD8',
+  secondary: colors.brand[200],
   ghost: colors.border,
 };
 

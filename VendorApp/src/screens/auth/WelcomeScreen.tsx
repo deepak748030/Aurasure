@@ -1,90 +1,48 @@
-import React, { useEffect } from 'react';
-import { Pressable, View } from 'react-native';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-
+import React from 'react';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/lib/icons';
 import { colors } from '@/theme/colors';
+import { spacing, radius } from '@/theme/tokens';
 import type { RootStackParamList } from '@/navigation/types';
-import type { IconName } from '@/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Welcome'>;
-
-const ROWS: { icon: IconName; title: string; body: string }[] = [
-  { icon: 'utensils', title: 'Food kitchen', body: 'FSSAI, menu, prep times — accept or reject every ticket.' },
-  { icon: 'store', title: 'Shop / ecommerce', body: 'GST, inventory, packed orders. Locked to this module.' },
-  { icon: 'shield', title: 'KYC before live', body: 'Admin verifies each photo. Blurry IDs come back, not a silent reject.' },
-  { icon: 'bike', title: 'Riders are separate', body: 'Delivery partner app uses its own phone. This number stays a vendor.' },
-];
+const FEATURES = [
+  ['orders', 'Stay ahead of the pass', 'New orders, prep timers and rider pickup in one clear board.'],
+  ['utensils', 'Run your catalogue', 'Quickly pause stock, update prices and keep your storefront fresh.'],
+  ['chart', 'Know your business', 'Today’s sales, payouts, ratings and outlet health at a glance.'],
+] as const;
 
 export function WelcomeScreen({ navigation }: Props): React.ReactElement {
-  useEffect(() => undefined, []);
-
-  return (
-    <Screen scroll padded appBarColor={colors.appBarHero} statusBarStyle="light">
-      <Animated.View entering={FadeInDown.duration(420)}>
-        <View style={{ backgroundColor: '#A4006B', borderRadius: 20, padding: 22, marginTop: 8 }}>
-          <Text variant="overline" color="rgba(255,255,255,0.80)">
-            AURASURE PARTNER
-          </Text>
-          <Text variant="display" color={colors.white} style={{ marginTop: 8 }}>
-            Your outlet. Your hours. One phone.
-          </Text>
-          <Text variant="body" color="rgba(255,255,255,0.86)" style={{ marginTop: 10 }}>
-            Pick food or shop once. Upload documents. Go live only after admin ticks every file.
-          </Text>
-        </View>
-      </Animated.View>
-
-      <View style={{ marginTop: 18, gap: 10 }}>
-        {ROWS.map((row, i) => (
-          <Animated.View
-            key={row.title}
-            entering={FadeInUp.delay(80 * i).duration(380)}
-            style={{
-              flexDirection: 'row',
-              gap: 12,
-              backgroundColor: colors.surface,
-              borderRadius: 16,
-              padding: 14,
-              borderWidth: 1,
-              borderColor: colors.border,
-            }}
-          >
-            <View
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 14,
-                backgroundColor: colors.brand[50],
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Icon name={row.icon} size={22} color={colors.brand[600]} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text variant="title">{row.title}</Text>
-              <Text variant="bodySm" color={colors.textSecondary}>
-                {row.body}
-              </Text>
-            </View>
-          </Animated.View>
-        ))}
-      </View>
-
-      <Animated.View entering={FadeInUp.delay(420)} style={{ marginTop: 22, gap: 10 }}>
-        <Button title="Create vendor account" variant="login" size="lg" onPress={() => navigation.navigate('Register')} />
-        <Button title="I already have an outlet" variant="secondary" onPress={() => navigation.navigate('Login')} />
-      </Animated.View>
-      <Pressable style={{ marginTop: 16 }}>
-        <Text variant="caption" color={colors.textTertiary} style={{ textAlign: 'center' }}>
-          Same number cannot be a customer, a rider and a vendor.
-        </Text>
-      </Pressable>
-    </Screen>
-  );
+  return <Screen scroll padded={false} appBarColor={colors.appBarHero} statusBarStyle="light" backgroundColor={colors.background}>
+    <Animated.View entering={FadeInDown.duration(450)} style={styles.hero}>
+      <Image source={require('../../../assets/images/logo_aurasure_light.png')} style={styles.logo} resizeMode="contain" />
+      <Text variant="overline" color="#F9B9D7" style={{ marginTop: 30 }}>AURASURE PARTNER</Text>
+      <Text variant="display" color={colors.white} style={{ marginTop: 12 }}>Make every order count.</Text>
+      <Text variant="body" color="#F8DDEB" style={{ marginTop: 12 }}>The calm, capable command centre for kitchens and shops.</Text>
+      <View style={styles.heroPills}><View style={styles.pill}><Icon name="shield" size={15} color="#FFD7EA" /><Text variant="caption" color="#FFEAF4">Verified vendors</Text></View><View style={styles.pill}><Icon name="timer" size={15} color="#FFD7EA" /><Text variant="caption" color="#FFEAF4">Live operations</Text></View></View>
+    </Animated.View>
+    <Animated.View entering={FadeInUp.delay(120).duration(450)} style={styles.content}>
+      <Text variant="h2" weight="bold">Everything at the pass</Text>
+      {FEATURES.map(([icon, title, body]) => <View key={title} style={styles.feature}><View style={styles.featureIcon}><Icon name={icon} size={21} color={colors.brand[600]} /></View><View style={{ flex: 1 }}><Text variant="title" weight="bold">{title}</Text><Text variant="bodySm" color={colors.textSecondary} style={{ marginTop: 3 }}>{body}</Text></View></View>)}
+      <Button title="Sign in to your outlet" variant="login" size="lg" onPress={() => navigation.navigate('Login')} />
+      <Pressable onPress={() => navigation.navigate('Register')} style={styles.outline}><Text variant="button" color={colors.brand[700]}>Create a vendor account</Text><Icon name="arrowRight" size={18} color={colors.brand[700]} /></Pressable>
+      <Text variant="caption" color={colors.textTertiary} style={{ textAlign: 'center', marginTop: 14 }}>Food kitchen or shop · KYC protected · built for India</Text>
+    </Animated.View>
+  </Screen>;
 }
+
+const styles = StyleSheet.create({
+  hero: { backgroundColor: colors.appBarHero, paddingHorizontal: 20, paddingTop: 38, paddingBottom: 30, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
+  logo: { width: 122, height: 32, alignSelf: 'flex-start' },
+  heroPills: { flexDirection: 'row', gap: 8, marginTop: 24 },
+  pill: { borderRadius: radius.pill, backgroundColor: 'rgba(255,255,255,0.13)', paddingHorizontal: 10, paddingVertical: 7, flexDirection: 'row', alignItems: 'center', gap: 5 },
+  content: { paddingHorizontal: 4, paddingTop: 25, paddingBottom: 20 },
+  feature: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 18 },
+  featureIcon: { width: 44, height: 44, borderRadius: 14, backgroundColor: colors.brand[50], alignItems: 'center', justifyContent: 'center' },
+  outline: { height: 54, borderWidth: 1, borderColor: colors.brand[200], borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 9, marginTop: 10 },
+});

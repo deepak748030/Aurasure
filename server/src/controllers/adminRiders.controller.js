@@ -48,6 +48,9 @@ const decide = asyncHandler(async (req, res) => {
     if (!allDocsVerified(rider)) {
       throw ApiError.badRequest('Verify every document before approving this partner', 'DOCS_NOT_VERIFIED');
     }
+    if (!rider.trainingCompleted || !rider.quizCompleted) {
+      throw ApiError.badRequest('Training and the safety quiz must be completed before approval', 'TRAINING_INCOMPLETE');
+    }
     rider.status = 'approved';
     rider.reviewedAt = new Date();
     rider.reviewedBy = req.user.name || req.user.id;

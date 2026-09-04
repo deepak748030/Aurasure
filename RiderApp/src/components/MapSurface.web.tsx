@@ -55,7 +55,15 @@ export function MapSurface({
 }: MapSurfaceProps): React.ReactElement {
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
   const [size, setSize] = useState({ width: 0, height: 0 });
-  const center = stops[0] ?? DEFAULT_CENTER;
+  const center = useMemo(() => {
+    if (!stops.length) return DEFAULT_CENTER;
+    const latitudes = stops.map((stop) => stop.latitude);
+    const longitudes = stops.map((stop) => stop.longitude);
+    return {
+      latitude: (Math.min(...latitudes) + Math.max(...latitudes)) / 2,
+      longitude: (Math.min(...longitudes) + Math.max(...longitudes)) / 2,
+    };
+  }, [stops]);
   const centerPoint = project(center.latitude, center.longitude, zoom);
   const tileRange = useMemo(() => {
     const tiles: { key: string; url: string; left: number; top: number }[] = [];

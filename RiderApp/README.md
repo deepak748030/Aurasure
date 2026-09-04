@@ -31,3 +31,5 @@ npx expo run:ios
 ```
 
 The server must be running and MongoDB must be connected for authenticated screens. The server's rider endpoints are in `server/src/routes/rider.routes.js`; this app uses the server envelope and bearer-token session already used by the repository.
+
+For a local seeded walkthrough, run `npm run seed` in `server` and sign in with `9999999991` / `rider@123`. The seeded rider is approved and has a live demo offer with pickup OTP `1234` and drop OTP `4321`; do not use these credentials in production.

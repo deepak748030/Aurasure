@@ -63,8 +63,23 @@ function docsComplete(rider) {
 
 function profileComplete(rider) {
   if (!rider || !rider.name || !rider.phone) return false;
-  if (!rider.vehicleType || !rider.vehicleNumber) return false;
-  if (!rider.bank || !rider.bank.accountName || !rider.bank.accountNumber || !rider.bank.ifsc) {
+  if (!rider.city || !rider.pincode || !/^\d{6}$/.test(String(rider.pincode))) return false;
+  if (!rider.address) return false;
+  if (
+    !rider.vehicleType ||
+    !rider.vehicleNumber ||
+    !rider.pan ||
+    !rider.aadhaar ||
+    !rider.drivingLicense ||
+    !rider.rcNumber
+  ) return false;
+  if (
+    !rider.bank ||
+    !rider.bank.accountName ||
+    !rider.bank.accountNumber ||
+    !rider.bank.ifsc ||
+    !rider.bank.bankName
+  ) {
     return false;
   }
   return true;

@@ -204,14 +204,32 @@ export async function uploadRiderFile(
   const token = await getToken();
   const form = new FormData();
   form.append("image", file, name);
-  const res = await fetch(`${base}/api/v1/rider/uploads`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: form,
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+  let res: Response;
+  try {
+    res = await fetch(`${base}/api/v1/rider/uploads`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: form,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    throw new ApiError(
+      0,
+      error instanceof Error && error.name === "AbortError"
+        ? "TIMEOUT"
+        : "NETWORK_ERROR",
+      error instanceof Error && error.name === "AbortError"
+        ? "Image upload took too long"
+        : "Could not reach the Aurasure upload server",
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
   const json = (await res.json().catch(() => null)) as {
     success?: boolean;
     data?: { url: string; image: { kind: "uri"; uri: string } };
@@ -313,7 +331,7 @@ export const riderApi = {
     ),
   tasks: (status?: string) =>
     apiGet<{ tasks: DeliveryTask[] }>(
-      `/rider/tasks${status ? `?status=${status}` : ""}`,
+      `/rider/tasks${status ? `?status=${encodeURIComponent(status)}` : ""}`,
       { auth: true },
     ),
   earnings: (range: "today" | "week" | "all" = "today") =>

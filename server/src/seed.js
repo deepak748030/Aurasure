@@ -336,7 +336,23 @@ async function seedDemoRider() {
 /** One ready-to-deliver demo task so the Rider app has an offer immediately. */
 async function seedDemoDelivery(userId) {
   const existing = await DeliveryTask.findOne({ code: 'DLV-AUR-FD-30000' });
-  if (existing) return existing;
+  if (existing) {
+    // Keep the seeded map demo useful when an older database already has the
+    // task without coordinates.
+    let changed = false;
+    if (existing.pickup && existing.pickup.lat == null) {
+      existing.pickup.lat = 21.2514;
+      existing.pickup.lng = 81.6296;
+      changed = true;
+    }
+    if (existing.drop && existing.drop.lat == null) {
+      existing.drop.lat = 21.2379;
+      existing.drop.lng = 81.6337;
+      changed = true;
+    }
+    if (changed) await existing.save();
+    return existing;
+  }
   let order = await Order.findOne({ code: 'AUR-FD-30000' });
   if (!order) {
     order = await Order.create({
@@ -380,12 +396,16 @@ async function seedDemoDelivery(userId) {
       name: 'Aura Demo Kitchen',
       phone: '7777777777',
       address: 'Shop 4, Civil Lines, Raipur 492001',
+      lat: 21.2514,
+      lng: 81.6296,
       otp: '1234',
     },
     drop: {
       name: 'Aarav Sharma',
       phone: '9876543210',
       address: 'Tech Park, 5th Floor, GE Road, Raipur 492001',
+      lat: 21.2379,
+      lng: 81.6337,
       otp: '4321',
     },
     state: 'available',

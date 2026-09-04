@@ -32,7 +32,7 @@ const labels: Record<string, string> = {
   failed: "Delivery failed",
 };
 function openMaps(task: DeliveryTask): void {
-  const point = ["accepted", "at_pickup"].includes(task.state)
+  const point = ["available", "accepted", "at_pickup"].includes(task.state)
     ? task.pickup
     : task.drop;
   if (point.lat == null || point.lng == null) {
@@ -140,6 +140,7 @@ export function OrderMapScreen({
         setTask((await riderApi.arrivedPickup(task.id)).task);
       else if (task.state === "picked_up")
         setTask((await riderApi.arrivedDrop(task.id)).task);
+      else if (task.state === "available") navigation.goBack();
       else navigation.navigate("ActiveTask");
       haptic.success();
     } catch (err) {
@@ -204,7 +205,7 @@ export function OrderMapScreen({
           icon="phone"
           onPress={() =>
             Linking.openURL(
-              `tel:${["accepted", "at_pickup"].includes(task.state) ? task.vendorPhone : task.drop.phone}`,
+              `tel:${["available", "accepted", "at_pickup"].includes(task.state) ? task.vendorPhone : task.drop.phone}`,
             ).catch(() => Alert.alert("Call", "Contact unavailable."))
           }
         />
@@ -282,11 +283,13 @@ export function OrderMapScreen({
           <View style={{ flex: 1.4 }}>
             <Button
               title={
-                task.state === "accepted"
-                  ? "Arrived at pickup"
-                  : task.state === "picked_up"
-                    ? "Arrived at drop"
-                    : "Open delivery"
+                task.state === "available"
+                  ? "Back to offer"
+                  : task.state === "accepted"
+                    ? "Arrived at pickup"
+                    : task.state === "picked_up"
+                      ? "Arrived at drop"
+                      : "Open delivery"
               }
               size="sm"
               loading={busy}

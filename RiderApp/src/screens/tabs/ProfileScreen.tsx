@@ -193,8 +193,14 @@ export function ProfileScreen(): React.ReactElement {
               {rider?.ratingCount ?? 0} reviews
             </Text>
           </View>
-          <View>
-            <Text variant="h3" weight="bold">
+          <View style={{ width: 104, alignItems: "flex-end" }}>
+            <Text
+              variant="h3"
+              weight="bold"
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.72}
+            >
               {formatINR(rider?.totalEarnings ?? 0)}
             </Text>
             <Text variant="caption" color={colors.textSecondary}>
@@ -249,11 +255,19 @@ export function ProfileScreen(): React.ReactElement {
       <Card style={styles.menuCard}>
         <MenuItem
           icon="bike"
-          title={isOnline ? "Online for deliveries" : "Go online"}
+          title={
+            rider?.dutyState === "on_task"
+              ? "On active delivery"
+              : isOnline
+                ? "Online for deliveries"
+                : "Go online"
+          }
           subtitle={
-            isOnline
-              ? "You are receiving nearby requests"
-              : "Start receiving nearby requests"
+            rider?.dutyState === "on_task"
+              ? "Finish the current delivery to resume requests"
+              : isOnline
+                ? "You are receiving nearby requests"
+                : "Start receiving nearby requests"
           }
           color={isOnline ? colors.success : colors.textSecondary}
           background={isOnline ? colors.successBg : colors.surfaceAlt}

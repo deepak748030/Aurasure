@@ -72,16 +72,21 @@ export function UtilityScreen({
     vehicleType: rider?.vehicleType ?? "bike",
   });
   useEffect(() => {
+    setSaved("");
     if (kind === "wallet")
       void riderApi
         .payouts()
         .then(setPayouts)
-        .catch(() => undefined);
+        .catch((err) =>
+          setSaved(err instanceof Error ? err.message : "Payouts could not be loaded"),
+        );
     if (kind === "leaderboard")
       void riderApi
         .leaderboard()
         .then(setLeaderboard)
-        .catch(() => undefined);
+        .catch((err) =>
+          setSaved(err instanceof Error ? err.message : "Leaderboard could not be loaded"),
+        );
   }, [kind]);
   const save = async () => {
     setBusy(true);
@@ -137,7 +142,9 @@ export function UtilityScreen({
         </Pressable>
       }
     >
-      {kind === "wallet" ? <Wallet data={payouts} rider={rider} /> : null}
+      {kind === "wallet" ? (
+        <Wallet data={payouts} rider={rider} error={saved} />
+      ) : null}
       {kind === "help" ? (
         <Help
           title={title}
@@ -151,7 +158,7 @@ export function UtilityScreen({
         />
       ) : null}
       {kind === "leaderboard" ? (
-        <Leaderboard rider={rider} data={leaderboard} />
+        <Leaderboard rider={rider} data={leaderboard} error={saved} />
       ) : null}
       {kind === "referral" ? <Referral code={rider?.referralCode} /> : null}
       {kind === "reviews" ? <Reviews rider={rider} /> : null}
@@ -178,12 +185,19 @@ export function UtilityScreen({
 function Wallet({
   data,
   rider,
+  error,
 }: {
   data: PayoutsData | null;
   rider: ReturnType<typeof useRider>["rider"];
+  error: string;
 }): React.ReactElement {
   return (
     <>
+      {error ? (
+        <Text variant="caption" color={colors.danger} style={{ marginBottom: 10 }}>
+          {error}
+        </Text>
+      ) : null}
       <Card tone="plum" style={styles.walletHero}>
         <Text variant="caption" color="rgba(255,255,255,.7)" weight="bold">
           AVAILABLE BALANCE
@@ -380,14 +394,21 @@ function Help({
 function Leaderboard({
   rider,
   data,
+  error,
 }: {
   rider: ReturnType<typeof useRider>["rider"];
   data: LeaderboardData | null;
+  error: string;
 }): React.ReactElement {
   const trips = rider?.currentDayTrips ?? 0;
   const rows = data?.riders ?? [];
   return (
     <>
+      {error ? (
+        <Text variant="caption" color={colors.danger} style={{ marginBottom: 10 }}>
+          {error}
+        </Text>
+      ) : null}
       <Card tone="plum" style={styles.levelHero}>
         <View style={styles.rankCircle}>
           <Text variant="h1" weight="bold" color={colors.brand[600]}>
@@ -396,7 +417,7 @@ function Leaderboard({
         </View>
         <View style={{ flex: 1, marginLeft: 13 }}>
           <Text variant="caption" color="rgba(255,255,255,.7)" weight="bold">
-            THIS WEEK'S RANK
+            ALL-TIME RANK
           </Text>
           <Text variant="h2" weight="bold" color={colors.white}>
             Rising rider

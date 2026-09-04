@@ -123,20 +123,27 @@ function OfferCard({
             color={colors.brand[600]}
           />
         </View>
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
           <Text variant="title" weight="bold" numberOfLines={1}>
             {task.vendorName || "Aurasure partner store"}
           </Text>
-          <Text variant="caption" color={colors.textSecondary}>
+          <Text variant="caption" color={colors.textSecondary} numberOfLines={1}>
             {task.orderCode} · {task.items.length} item
             {task.items.length === 1 ? "" : "s"}
           </Text>
         </View>
         <View style={styles.payout}>
-          <Text variant="caption" color={colors.success}>
+          <Text variant="caption" color={colors.success} numberOfLines={1}>
             GUARANTEED
           </Text>
-          <Text variant="h3" weight="bold" color={colors.success}>
+          <Text
+            variant="h3"
+            weight="bold"
+            color={colors.success}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+          >
             {formatINR(task.riderPayout)}
           </Text>
         </View>
@@ -220,7 +227,8 @@ function OfferCard({
             title="Accept delivery"
             variant="success"
             size="sm"
-            loading={busy || expired}
+            loading={busy}
+            disabled={expired}
             onPress={onAccept}
           />
         </View>
@@ -494,7 +502,7 @@ export function HomeScreen(): React.ReactElement {
                     </Text>
                   </Pressable>
                 </View>
-              ) : online ? (
+              ) : online && rider?.dutyState !== "on_task" ? (
                 <Pressable
                   onPress={() => void setDuty("break")}
                   style={styles.breakRow}
@@ -827,7 +835,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  payout: { alignItems: "flex-end" },
+  payout: { alignItems: "flex-end", width: 92, flexShrink: 0 },
   offerRoute: { marginTop: 13 },
   offerMeta: {
     flexDirection: "row",

@@ -27,9 +27,9 @@ export function VendorTabBar({ state, navigation, descriptors }: BottomTabBarPro
         const def = TABS.find((t) => t.key === route.name);
         if (!def) return null;
         const focused = state.index === index;
-        const { options } = descriptors[route.key];
+        const options = descriptors[route.key]?.options;
         // @ts-ignore – tabBarBadge is standard RN Nav but types may lag
-        const badge = options.tabBarBadge as number | string | undefined;
+        const badge = options?.tabBarBadge as number | string | undefined;
 
         return (
           <Pressable

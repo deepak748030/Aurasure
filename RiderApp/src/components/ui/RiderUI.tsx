@@ -134,7 +134,14 @@ export function Metric({
       <View style={[styles.metricIcon, { backgroundColor: `${color}16` }]}>
         <Icon name={icon} size={17} color={color} />
       </View>
-      <Text variant="h2" weight="bold" style={{ marginTop: 6 }}>
+      <Text
+        variant="h2"
+        weight="bold"
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.72}
+        style={{ marginTop: 6 }}
+      >
         {value}
       </Text>
       <Text variant="caption" color={colors.textSecondary} numberOfLines={1}>

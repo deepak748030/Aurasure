@@ -23,8 +23,12 @@ export function VendorProvider({ children }: { children: React.ReactNode }): Rea
   }, []);
 
   const refresh = useCallback(async () => {
-    const data = await vendorApi.me();
-    setVendor(data.vendor);
+    try {
+      const data = await vendorApi.me();
+      setVendor(data.vendor);
+    } catch {
+      // network error — keep current vendor
+    }
   }, []);
 
   const logout = useCallback(() => {
@@ -32,12 +36,15 @@ export function VendorProvider({ children }: { children: React.ReactNode }): Rea
     setVendor(null);
   }, []);
 
-  const value = useMemo(() => ({ ready, vendor, setVendor, refresh, logout }), [ready, vendor, refresh, logout]);
+  const value = useMemo(
+    () => ({ ready, vendor, setVendor, refresh, logout }),
+    [ready, vendor, refresh, logout],
+  );
   return <C.Provider value={value}>{children}</C.Provider>;
 }
 
 export function useVendor(): Ctx {
   const ctx = useContext(C);
-  if (!ctx) throw new Error('useVendor');
+  if (!ctx) throw new Error('useVendor used outside VendorProvider');
   return ctx;
 }

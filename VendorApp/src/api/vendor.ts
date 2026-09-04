@@ -37,6 +37,23 @@ export interface Vendor {
   issues?: { id: string; title: string; body: string; status: string }[];
 }
 
+export interface CatalogItem {
+  id: string;
+  name: string;
+  price: number;
+  mrp?: number;
+  description?: string;
+  isVeg?: boolean;
+  inStock?: boolean;
+  isAvailable?: boolean;
+  image?: string | null;
+  prepTime?: number;
+  tags?: string[];
+  categoryIds?: string[];
+  categoryId?: string;
+  brand?: string;
+}
+
 export interface VendorOrder {
   id: string;
   code: string;
@@ -50,7 +67,18 @@ export interface VendorOrder {
   delivery?: { taskId: string; state: string; pickupOtp: string; riderName: string; riderPhone: string };
 }
 
-export async function uploadVendorImage(file: Blob, name: string): Promise<{ url: string; image: { kind: 'uri'; uri: string } }> {
+export interface DashboardStats {
+  todayOrders: number;
+  todaySales: number;
+  liveOrders: number;
+  menuCount: number;
+  payoutBalance: number;
+}
+
+export async function uploadVendorImage(
+  file: Blob,
+  name: string,
+): Promise<{ url: string; image: { kind: 'uri'; uri: string } }> {
   const { getApiBaseUrl } = await import('./config');
   const { getToken } = await import('./session');
   const { ApiError } = await import('./client');
@@ -73,7 +101,11 @@ export async function uploadVendorImage(file: Blob, name: string): Promise<{ url
     error?: { code: string; message: string };
   } | null;
   if (!res.ok || !json?.success || !json.data) {
-    throw new ApiError(res.status, json?.error?.code ?? 'UPLOAD_FAILED', json?.error?.message ?? 'Upload failed');
+    throw new ApiError(
+      res.status,
+      json?.error?.code ?? 'UPLOAD_FAILED',
+      json?.error?.message ?? 'Upload failed',
+    );
   }
   return json.data;
 }
@@ -83,7 +115,7 @@ export const vendorApi = {
   dashboard: () =>
     apiGet<{
       vendor: Vendor;
-      stats: { todayOrders: number; todaySales: number; liveOrders: number; menuCount: number; payoutBalance: number };
+      stats: DashboardStats;
       live: VendorOrder[];
     }>('/vendor/dashboard', { auth: true }),
   save: (body: Record<string, unknown>) => apiPatch<{ vendor: Vendor }>('/vendor/me', body, { auth: true }),
@@ -91,12 +123,21 @@ export const vendorApi = {
     apiPatch<{ vendor: Vendor }>('/vendor/documents', { key, uri, label }, { auth: true }),
   submit: () => apiPost<{ vendor: Vendor }>('/vendor/submit', {}, { auth: true }),
   setOpen: (isOpen: boolean) => apiPatch<{ vendor: Vendor }>('/vendor/open', { isOpen }, { auth: true }),
+
   orders: (status?: string) =>
     apiGet<{ orders: VendorOrder[] }>(`/vendor/orders${status ? `?status=${status}` : ''}`, { auth: true }),
   advance: (id: string, status: string) =>
     apiPatch<{ order: VendorOrder }>(`/vendor/orders/${id}/status`, { status }, { auth: true }),
-  catalog: () => apiGet<{ items: Record<string, unknown>[] }>('/vendor/catalog', { auth: true }),
-  saveItem: (body: Record<string, unknown>) => apiPost<{ item: Record<string, unknown> }>('/vendor/catalog', body, { auth: true }),
+
+  catalog: () => apiGet<{ items: CatalogItem[] }>('/vendor/catalog', { auth: true }),
+  saveItem: (body: Record<string, unknown>) =>
+    apiPost<{ item: CatalogItem }>('/vendor/catalog', body, { auth: true }),
+  updateItem: (body: Record<string, unknown>) =>
+    apiPost<{ item: CatalogItem }>('/vendor/catalog', body, { auth: true }),
+  toggleStock: (id: string, inStock: boolean) =>
+    apiPost<{ item: CatalogItem }>('/vendor/catalog', { id, inStock, isAvailable: inStock }, { auth: true }),
   deleteItem: (id: string) => apiDelete<{ deleted: string }>(`/vendor/catalog/${id}`, { auth: true }),
-  issue: (title: string, body: string) => apiPost<{ vendor: Vendor }>('/vendor/issues', { title, body }, { auth: true }),
+
+  issue: (title: string, body: string) =>
+    apiPost<{ vendor: Vendor }>('/vendor/issues', { title, body }, { auth: true }),
 };

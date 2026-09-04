@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from './Text';
 import { colors } from '@/theme/colors';
@@ -40,7 +40,7 @@ export function VendorModalProvider({ children }: { children: React.ReactNode })
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 18) }]}>
           <View style={styles.handle} />
           <View style={styles.heading}><View style={styles.headingIcon}><Icon name="info" size={18} color={colors.brand[700]} /></View><View style={{ flex: 1 }}><Text variant="h2" weight="bold">{options?.title}</Text>{options?.message ? <Text variant="body" color={colors.textSecondary} style={styles.message}>{options.message}</Text> : null}</View><Pressable onPress={hideModal} hitSlop={10} style={styles.close}><Icon name="x" size={19} color={colors.textSecondary} /></Pressable></View>
-          <View style={styles.actions}>{(options?.actions?.length ? options.actions : [{ label: 'Close', secondary: true }]).map((action, index) => <Pressable key={`${action.label}-${index}`} onPress={() => choose(action)} style={({ pressed }) => [styles.action, { backgroundColor: action.destructive ? colors.danger : action.secondary ? colors.surfaceAlt : colors.brand[600], borderColor: action.destructive ? colors.danger : action.secondary ? colors.border : colors.brand[600] }, pressed && { opacity: 0.78 }]}><Text variant="button" weight="bold" color={action.secondary ? colors.text : colors.white}>{action.label}</Text></Pressable>)}</View>
+          <ScrollView style={styles.actionsScroll} contentContainerStyle={styles.actions} showsVerticalScrollIndicator={false}>{(options?.actions?.length ? options.actions : [{ label: 'Close', secondary: true }]).map((action, index) => <Pressable key={`${action.label}-${index}`} onPress={() => choose(action)} style={({ pressed }) => [styles.action, { backgroundColor: action.destructive ? colors.danger : action.secondary ? colors.surfaceAlt : colors.brand[600], borderColor: action.destructive ? colors.danger : action.secondary ? colors.border : colors.brand[600] }, pressed && { opacity: 0.78 }]}><Text variant="button" weight="bold" color={action.secondary ? colors.text : colors.white}>{action.label}</Text></Pressable>)}</ScrollView>
         </View>
       </View>
     </Modal>
@@ -61,6 +61,7 @@ const styles = StyleSheet.create({
   headingIcon: { width: 36, height: 36, borderRadius: 12, backgroundColor: colors.brand[50], alignItems: 'center', justifyContent: 'center' },
   message: { marginTop: 5, paddingRight: 8 },
   close: { width: 32, height: 32, borderRadius: 10, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
-  actions: { gap: 9, marginTop: 22 },
+  actionsScroll: { maxHeight: 360 },
+  actions: { gap: 9, marginTop: 22, paddingBottom: 2 },
   action: { minHeight: 50, borderRadius: radius.pill, borderWidth: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
 });

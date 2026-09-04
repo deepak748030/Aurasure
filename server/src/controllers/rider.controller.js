@@ -50,7 +50,7 @@ const updateOnboarding = asyncHandler(async (req, res) => {
   }
   const fields = [
     'name', 'email', 'city', 'pincode', 'address', 'vehicleType', 'vehicleNumber',
-    'pan', 'aadhaar', 'drivingLicense', 'rcNumber', 'trainingCompleted',
+    'pan', 'aadhaar', 'drivingLicense', 'rcNumber', 'trainingCompleted', 'quizCompleted',
   ];
   for (const key of fields) {
     if (req.body[key] !== undefined) rider[key] = req.body[key];

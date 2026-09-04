@@ -181,6 +181,12 @@ export function OnboardingScreen(): React.ReactElement {
     }
     setBusy(true);
     try {
+      // Persist the switches again before submission so a slow/interrupted
+      // Step 2 save can never leave the server with stale training flags.
+      await save({
+        trainingCompleted: form.trainingCompleted,
+        quizCompleted: form.quizCompleted,
+      });
       const response = await riderApi.submit();
       setRider(response.rider);
       haptic.success();

@@ -1,5 +1,6 @@
 "use strict";
 
+import { Platform } from "react-native";
 import { apiGet, apiPatch, apiPost } from "./client";
 
 export type RiderStatus =
@@ -194,6 +195,8 @@ export interface PayoutsData {
 export async function uploadRiderFile(
   file: Blob,
   name: string,
+  nativeUri?: string,
+  mime = "image/jpeg",
 ): Promise<{ url: string; image: { kind: "uri"; uri: string } }> {
   const { getApiBaseUrl } = await import("./config");
   const { getToken } = await import("./session");
@@ -203,7 +206,14 @@ export async function uploadRiderFile(
     throw new ApiError(0, "API_DISABLED", "No Aurasure API URL configured");
   const token = await getToken();
   const form = new FormData();
-  form.append("image", file, name);
+  // React Native's multipart bridge expects a URI descriptor. Browsers need
+  // the Blob/File object instead. Passing a Blob on Android often surfaces as
+  // a misleading "Network request failed" before the server sees the file.
+  const uploadValue =
+    Platform.OS !== "web" && nativeUri
+      ? { uri: nativeUri, name, type: mime }
+      : file;
+  form.append("image", uploadValue as unknown as Blob);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30_000);
   let res: Response;

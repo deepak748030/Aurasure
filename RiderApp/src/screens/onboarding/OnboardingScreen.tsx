@@ -153,7 +153,12 @@ export function OnboardingScreen(): React.ReactElement {
     setBusy(true);
     setError("");
     try {
-      const result = await uploadRiderFile(image.blob, image.name);
+      const result = await uploadRiderFile(
+        image.blob,
+        image.name,
+        image.uri,
+        image.mime,
+      );
       await riderApi.setDoc(key, result.url, label);
       setDocs((old) =>
         old.map((doc) => (doc.key === key ? { ...doc, uri: result.url } : doc)),

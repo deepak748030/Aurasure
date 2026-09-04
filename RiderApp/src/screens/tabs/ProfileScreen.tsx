@@ -56,7 +56,12 @@ export function ProfileScreen(): React.ReactElement {
     setUploading(true);
     setError("");
     try {
-      const uploaded = await uploadRiderFile(picked.blob, picked.name);
+      const uploaded = await uploadRiderFile(
+        picked.blob,
+        picked.name,
+        picked.uri,
+        picked.mime,
+      );
       await riderApi.setDoc("photo", uploaded.url, "Profile photo");
       await refresh();
       haptic.success();

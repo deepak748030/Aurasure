@@ -98,7 +98,11 @@ export function ActiveTaskScreen(): React.ReactElement {
     if (!image) return;
     setBusy(true);
     try {
-      setPod((await uploadRiderFile(image.blob, image.name)).url);
+      setPod(
+        (
+          await uploadRiderFile(image.blob, image.name, image.uri, image.mime)
+        ).url,
+      );
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Proof photo upload failed",

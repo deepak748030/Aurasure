@@ -337,7 +337,7 @@ export function ProfileScreen(): React.ReactElement {
           icon="wallet"
           title="Earnings"
           subtitle={`${formatINR(rider?.currentDayEarnings ?? 0)} earned today`}
-          onPress={() => navigation.getParent()?.navigate("Earnings" as never)}
+          onPress={() => navigation.navigate("Earnings" as never)}
         />
         <MenuItem
           icon="bank"

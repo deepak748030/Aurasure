@@ -651,7 +651,7 @@ export function HomeScreen(): React.ReactElement {
                 title="Today at a glance"
                 action="Earnings"
                 onAction={() =>
-                  navigation.getParent()?.navigate("Earnings" as never)
+                  navigation.navigate("Earnings" as never)
                 }
               />
               <View style={styles.metrics}>

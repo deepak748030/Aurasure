@@ -81,9 +81,6 @@ export const colors = {
   foodAccent: '#FF6A3D',
   shopAccent: '#5B46E5',
 
-  // gradients (used by expo-linear-gradient)
-  brandGradient: ['#6A5EF5', '#8B5CF6'] as [string, string],
-
 };
 
 export type ColorScheme = typeof colors;

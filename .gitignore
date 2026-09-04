@@ -1,0 +1,26 @@
+# Reference Flutter apps (not part of the Expo workspace)
+driver_ref/
+vendor_reference/
+
+# Node / Expo
+node_modules/
+.expo/
+.expo-shared/
+dist/
+build/
+web-build/
+
+# Environment files (keep .env.example, ignore .env)
+.env
+*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+uiux_ref/

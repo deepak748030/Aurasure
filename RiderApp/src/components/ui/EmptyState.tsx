@@ -1,13 +1,13 @@
-import React from 'react';
-import { View } from 'react-native';
-import { Icon } from '@/lib/icons';
-import { Text } from './Text';
-import { Button } from './Button';
-import { colors } from '@/theme/colors';
-import type { IconName } from '@/types';
+import React from "react";
+import { View } from "react-native";
+import { Icon } from "@/lib/icons";
+import { Text } from "./Text";
+import { Button } from "./Button";
+import { colors } from "@/theme/colors";
+import type { IconName } from "@/types";
 
 export function EmptyState({
-  icon = 'package',
+  icon = "package",
   title,
   subtitle,
   actionLabel,
@@ -20,28 +20,48 @@ export function EmptyState({
   onAction?: () => void;
 }): React.ReactElement {
   return (
-    <View style={{ alignItems: 'center', paddingVertical: 48, paddingHorizontal: 28 }}>
+    <View
+      style={{
+        alignItems: "center",
+        paddingVertical: 40,
+        paddingHorizontal: 22,
+      }}
+    >
       <View
         style={{
-          width: 72,
-          height: 72,
-          borderRadius: 20,
+          width: 68,
+          height: 68,
+          borderRadius: 23,
+          alignItems: "center",
+          justifyContent: "center",
           backgroundColor: colors.brand[50],
-          alignItems: 'center',
-          justifyContent: 'center',
         }}
       >
-        <Icon name={icon} size={32} color={colors.brand[600]} />
+        <Icon name={icon} size={30} color={colors.brand[600]} />
       </View>
-      <Text variant="h3" weight="bold" style={{ marginTop: 16, textAlign: 'center' }}>
+      <Text
+        variant="h3"
+        weight="bold"
+        style={{ textAlign: "center", marginTop: 14 }}
+      >
         {title}
       </Text>
       {subtitle ? (
-        <Text variant="body" color={colors.textSecondary} style={{ marginTop: 6, textAlign: 'center' }}>
+        <Text
+          variant="bodySm"
+          color={colors.textSecondary}
+          style={{ textAlign: "center", marginTop: 5 }}
+        >
           {subtitle}
         </Text>
       ) : null}
-      {actionLabel ? <Button title={actionLabel} onPress={onAction} style={{ marginTop: 18 }} /> : null}
+      {actionLabel ? (
+        <Button
+          title={actionLabel}
+          onPress={onAction}
+          style={{ marginTop: 16 }}
+        />
+      ) : null}
     </View>
   );
 }

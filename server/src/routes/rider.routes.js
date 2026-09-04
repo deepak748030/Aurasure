@@ -46,6 +46,7 @@ router.get('/offers', rider.getOffers);
 router.post('/tasks/:id/accept', rider.acceptTask);
 router.post('/tasks/:id/reject', rider.rejectTask);
 router.get('/tasks/active', rider.getActiveTask);
+router.get('/tasks/:id', rider.getTask);
 router.post('/tasks/:id/arrived-pickup', rider.arrivedPickup);
 router.post('/tasks/:id/pickup', [body('otp').trim().isLength({ min: 4, max: 10 })], validate, rider.pickupOtp);
 router.post('/tasks/:id/arrived-drop', rider.arrivedDrop);
@@ -54,6 +55,7 @@ router.post('/tasks/:id/fail', rider.failTask);
 router.get('/tasks', rider.listTasks);
 
 router.get('/earnings', rider.earnings);
+router.get('/leaderboard', rider.leaderboard);
 router.get('/payouts', rider.payouts);
 router.post('/cod/deposit', rider.codDeposit);
 router.get('/incentives', rider.incentives);

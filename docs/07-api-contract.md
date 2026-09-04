@@ -70,12 +70,13 @@ POST   /vendor/push-token               { token, platform }
 ```
 GET    /rider/me
 GET    /rider/onboarding      PATCH /rider/onboarding
-POST   /rider/documents
-POST   /rider/duty                      { state: online|offline|break }
+PATCH  /rider/documents
+PATCH  /rider/duty                      { state: online|offline|break }
 POST   /rider/location/batch            [{ lat, lng, at, accuracy, speed }]
 GET    /rider/tasks/active
-POST   /rider/offers/:id/accept         409 OFFER_TAKEN if lost the race
-POST   /rider/offers/:id/reject         { reason? }
+GET    /rider/tasks/:id                 offer/task detail for map and deep links
+POST   /rider/tasks/:id/accept          409 OFFER_TAKEN if lost the race
+POST   /rider/tasks/:id/reject          { reason? }
 POST   /rider/tasks/:id/arrived-pickup
 POST   /rider/tasks/:id/pickup          { otp }
 POST   /rider/tasks/:id/arrived-drop
@@ -83,6 +84,7 @@ POST   /rider/tasks/:id/deliver         { otp, podUrl?, codCollectedPaise }
 POST   /rider/tasks/:id/fail            { reason, note }
 GET    /rider/tasks                     ?from=&to=
 GET    /rider/earnings                  ?range=
+GET    /rider/leaderboard
 GET    /rider/payouts
 POST   /rider/cod/deposit               { amountPaise, method, refId }
 GET    /rider/incentives

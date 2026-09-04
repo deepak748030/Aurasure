@@ -1,3 +1,15 @@
+export type UtilityKind =
+  | "wallet"
+  | "help"
+  | "leaderboard"
+  | "referral"
+  | "reviews"
+  | "safety"
+  | "language"
+  | "edit"
+  | "vehicle"
+  | "settings";
+
 export type RootStackParamList = {
   Welcome: undefined;
   Login: undefined;
@@ -8,6 +20,5 @@ export type RootStackParamList = {
   ActiveTask: undefined;
   OrderMap: { taskId: string };
   Notifications: undefined;
-  TaskHistory: undefined;
-  Incentives: undefined;
+  Utility: { kind: UtilityKind };
 };

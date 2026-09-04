@@ -1,28 +1,44 @@
-import React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import { Text } from './Text';
-import { Icon } from '@/lib/icons';
-import { colors } from '@/theme/colors';
-import { radius } from '@/theme/tokens';
-import { haptic } from '@/lib/haptics';
-import type { IconName } from '@/types';
+import React from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
+import { Text } from "./Text";
+import { Icon } from "@/lib/icons";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/tokens";
+import { haptic } from "@/lib/haptics";
+import type { IconName } from "@/types";
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'login';
-type Size = 'sm' | 'md' | 'lg';
+type Variant =
+  | "primary"
+  | "secondary"
+  | "ghost"
+  | "danger"
+  | "success"
+  | "login";
+type Size = "sm" | "md" | "lg";
 
-const SIZE: Record<Size, { height: number; variant: 'button' | 'title' | 'subtitle'; icon: number }> = {
-  sm: { height: 42, variant: 'subtitle', icon: 16 },
-  md: { height: 50, variant: 'button', icon: 18 },
-  lg: { height: 62, variant: 'button', icon: 20 },
+const SIZE: Record<
+  Size,
+  { height: number; variant: "button" | "title" | "subtitle"; icon: number }
+> = {
+  sm: { height: 42, variant: "subtitle", icon: 16 },
+  md: { height: 50, variant: "button", icon: 18 },
+  lg: { height: 62, variant: "button", icon: 20 },
 };
 
 // Flat solid background for every variant — no gradients
 const BG_COLOR: Record<Variant, string> = {
   primary: colors.brand[600],
-  login: '#A4006B',
+  login: colors.brand[600],
   success: colors.success,
   danger: colors.danger,
-  secondary: '#FAF0F9',
+  secondary: colors.brand[50],
   ghost: colors.surface,
 };
 
@@ -31,7 +47,7 @@ const TEXT_COLOR: Record<Variant, string> = {
   login: colors.white,
   success: colors.white,
   danger: colors.white,
-  secondary: '#8B0057',
+  secondary: "#8B0057",
   ghost: colors.textSecondary,
 };
 
@@ -40,7 +56,7 @@ const BORDER_COLOR: Record<Variant, string | undefined> = {
   login: undefined,
   success: undefined,
   danger: undefined,
-  secondary: '#E4BBD8',
+  secondary: "#E4BBD8",
   ghost: colors.border,
 };
 
@@ -60,8 +76,8 @@ export interface ButtonProps {
 export function Button({
   title,
   onPress,
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   leftIcon,
   rightIcon,
   loading = false,
@@ -84,17 +100,17 @@ export function Button({
       disabled={disabled || loading}
       style={({ pressed }) => [
         {
-          width: fullWidth ? '100%' : undefined,
-          alignSelf: fullWidth ? 'stretch' : 'flex-start',
+          width: fullWidth ? "100%" : undefined,
+          alignSelf: fullWidth ? "stretch" : "flex-start",
           height: s.height,
           borderRadius: radius.pill,
           backgroundColor: bgColor,
           opacity: disabled || loading ? 0.5 : pressed ? 0.88 : 1,
           borderWidth: borderColor ? 1 : 0,
           borderColor: borderColor,
-          justifyContent: 'center',
-          alignItems: 'center',
-          overflow: 'hidden',
+          justifyContent: "center",
+          alignItems: "center",
+          overflow: "hidden",
           minWidth: fullWidth ? 0 : 120,
         },
         style,
@@ -104,17 +120,43 @@ export function Button({
         {loading ? (
           <>
             <ActivityIndicator color={textColor} style={styles.leftIcon} />
-            <Text variant={s.variant} color={textColor} weight="bold" numberOfLines={1} style={styles.label}>
+            <Text
+              variant={s.variant}
+              color={textColor}
+              weight="bold"
+              numberOfLines={1}
+              style={styles.label}
+            >
               {title}
             </Text>
           </>
         ) : (
           <>
-            {leftIcon ? <Icon name={leftIcon} size={s.icon} color={textColor} style={styles.leftIcon} /> : null}
-            <Text variant={s.variant} color={textColor} weight="bold" numberOfLines={1} style={styles.label}>
+            {leftIcon ? (
+              <Icon
+                name={leftIcon}
+                size={s.icon}
+                color={textColor}
+                style={styles.leftIcon}
+              />
+            ) : null}
+            <Text
+              variant={s.variant}
+              color={textColor}
+              weight="bold"
+              numberOfLines={1}
+              style={styles.label}
+            >
               {title}
             </Text>
-            {rightIcon ? <Icon name={rightIcon} size={s.icon} color={textColor} style={styles.rightIcon} /> : null}
+            {rightIcon ? (
+              <Icon
+                name={rightIcon}
+                size={s.icon}
+                color={textColor}
+                style={styles.rightIcon}
+              />
+            ) : null}
           </>
         )}
       </View>
@@ -124,11 +166,11 @@ export function Button({
 
 const styles = StyleSheet.create({
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   leftIcon: { marginRight: 8 },
   rightIcon: { marginLeft: 8 },
-  label: { textAlign: 'center', letterSpacing: 0.2 },
+  label: { textAlign: "center", letterSpacing: 0.2 },
 });

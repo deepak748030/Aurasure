@@ -343,6 +343,416 @@ const orders = Array.from({ length: 46 }).map((_, i) => {
   };
 });
 
+/* ------------------------- vendors / riders / tasks ---------------------- */
+
+const vendorDoc = (key, label, verified, note = '') => ({
+  key,
+  label,
+  uri: `https://picsum.photos/seed/aur-v-${key}/640/640`,
+  verified,
+  note,
+});
+
+const vendorFoodDocs = [
+  vendorDoc('aadhaar', 'Owner Aadhaar (front + back)', false),
+  vendorDoc('pan', 'PAN card', false),
+  vendorDoc('gst', 'GST certificate (or declaration)', false),
+  vendorDoc('bank', 'Cancelled cheque / bank passbook', false),
+  vendorDoc('outlet', 'Outlet / storefront photo', false),
+  vendorDoc('interior', 'Kitchen or shop floor photo', false),
+  vendorDoc('fssai', 'FSSAI license', false),
+  vendorDoc('menu', 'Current menu photo', false),
+];
+
+const vendors = [
+  {
+    id: 'vnd_1',
+    userId: 'usr_3',
+    phone: '7000000001',
+    module: 'food',
+    status: 'submitted',
+    ownerName: 'Rohan Verma',
+    email: 'rohan@example.com',
+    outletName: 'Rohan Kitchen',
+    legalName: 'Rohan Foods Pvt Ltd',
+    description: 'Demo vendor application (seed).',
+    address: 'Shop 4, Civil Lines',
+    landmark: 'Near City Hospital',
+    city: 'Raipur',
+    pin: '492001',
+    gstin: '22AABCD1234E1Z5',
+    pan: 'ABCDE1234E',
+    fssai: '12123456789012',
+    tradeLicense: '',
+    cuisines: ['North Indian', 'Mughlai'],
+    bank: { accountName: 'Rohan Verma', accountNumber: '1234567890', ifsc: 'HDFC0000001', bankName: 'HDFC Bank', upi: 'rohan@upi' },
+    hours: { open: '10:00', close: '23:00' },
+    documents: vendorFoodDocs.map((d) => ({ ...d })),
+    reviewNote: '',
+    reviewedAt: null,
+    reviewedBy: '',
+    submittedAt: daysAgo(1),
+    isOpen: false,
+    outletId: null,
+    payoutBalance: 0,
+  },
+  {
+    id: 'vnd_2',
+    userId: 'usr_6',
+    phone: '7000000004',
+    module: 'shop',
+    status: 'under_review',
+    ownerName: 'Aditya Singh',
+    email: 'aditya@example.com',
+    outletName: 'Aditya Gadgets',
+    legalName: 'Aditya Retail LLP',
+    description: 'Electronics outlet under review.',
+    address: '12, Marine Drive',
+    landmark: 'Near Central Mall',
+    city: 'Raipur',
+    pin: '492001',
+    gstin: '22AABCD5678E1Z2',
+    pan: 'ABCDE5678F',
+    fssai: '',
+    tradeLicense: 'TL-RAI-2024-0091',
+    cuisines: [],
+    bank: { accountName: 'Aditya Singh', accountNumber: '5678901234', ifsc: 'ICIC0000011', bankName: 'ICICI Bank', upi: 'aditya@upi' },
+    hours: { open: '09:00', close: '22:00' },
+    documents: [
+      vendorDoc('aadhaar', 'Owner Aadhaar (front + back)', true),
+      vendorDoc('pan', 'PAN card', true),
+      vendorDoc('gst', 'GST certificate (or declaration)', false),
+      vendorDoc('bank', 'Cancelled cheque / bank passbook', true),
+      vendorDoc('outlet', 'Outlet / storefront photo', true),
+      vendorDoc('interior', 'Shop floor photo', false),
+      vendorDoc('trade', 'Trade / shop license', true),
+      vendorDoc('inventory', 'Inventory / aisle photo', false),
+    ],
+    reviewNote: 'Aadhaar and bank verified.',
+    reviewedAt: daysAgo(0, 4),
+    reviewedBy: 'Aurasure Admin',
+    submittedAt: daysAgo(3),
+    isOpen: false,
+    outletId: null,
+    payoutBalance: 0,
+  },
+  {
+    id: 'vnd_3',
+    userId: 'usr_7',
+    phone: '7000000005',
+    module: 'food',
+    status: 'approved',
+    ownerName: 'Meera Joshi',
+    email: 'meera@example.com',
+    outletName: 'Meera Thali House',
+    legalName: 'Meera Foods',
+    description: 'Live vendor (seed).',
+    address: '8, MG Road',
+    landmark: 'Near Clock Tower',
+    city: 'Raipur',
+    pin: '492001',
+    gstin: '22AABCD9012E1Z8',
+    pan: 'ABCDE9012G',
+    fssai: '12123456789013',
+    tradeLicense: '',
+    cuisines: ['South Indian', 'Thali'],
+    bank: { accountName: 'Meera Joshi', accountNumber: '9012345678', ifsc: 'SBIN0000001', bankName: 'SBI', upi: 'meera@upi' },
+    hours: { open: '11:00', close: '22:30' },
+    documents: vendorFoodDocs.map((d) => ({ ...d, verified: true })),
+    reviewNote: 'All documents verified.',
+    reviewedAt: daysAgo(6),
+    reviewedBy: 'Aurasure Admin',
+    submittedAt: daysAgo(8),
+    isOpen: true,
+    outletId: 'rst_1',
+    payoutBalance: 1280,
+  },
+];
+
+const riderDoc = (key, label, verified, note = '') => ({
+  key,
+  label,
+  uri: `https://picsum.photos/seed/aur-r-${key}/640/640`,
+  verified,
+  note,
+});
+
+const riderDocs = [
+  riderDoc('aadhaar', 'Aadhaar Card', false),
+  riderDoc('drivingLicense', 'Driving Licence', false),
+  riderDoc('pan', 'PAN Card', false),
+  riderDoc('vehicle', 'Vehicle Registration', false),
+  riderDoc('photo', 'Profile Photo', false),
+];
+
+const riders = [
+  {
+    id: 'rdr_1',
+    userId: 'usr_4',
+    phone: '7000000002',
+    status: 'submitted',
+    name: 'Imran Khan',
+    email: 'imran@example.com',
+    city: 'Bhilai',
+    pincode: '490001',
+    address: 'B-12, Telibandha',
+    vehicleType: 'bike',
+    vehicleNumber: 'CG04AK1234',
+    pan: 'ABCDE1235F',
+    aadhaar: '123456789012',
+    drivingLicense: 'DL-RAI-2024-004321',
+    rcNumber: 'MP04RC2024001',
+    trainingCompleted: false,
+    quizCompleted: false,
+    bank: { accountName: 'Imran Khan', accountNumber: '9876543210', ifsc: 'SBIN0000001', bankName: 'SBI', upi: 'imran@upi' },
+    documents: riderDocs.map((d) => ({ ...d })),
+    reviewNote: '',
+    reviewedAt: null,
+    reviewedBy: '',
+    submittedAt: daysAgo(2),
+    dutyState: 'offline',
+    codInHand: 0,
+    maxCodLimit: 2000,
+    payoutBalance: 0,
+    totalTrips: 0,
+    totalEarnings: 0,
+    currentDayTrips: 0,
+    currentDayEarnings: 0,
+    rating: 0,
+    ratingCount: 0,
+    offerCount: 0,
+    acceptanceCount: 0,
+  },
+  {
+    id: 'rdr_2',
+    userId: 'usr_5',
+    phone: '7000000003',
+    status: 'approved',
+    name: 'Sneha Rao',
+    email: 'sneha@example.com',
+    city: 'Raipur',
+    pincode: '492001',
+    address: 'C-5, Shankar Nagar',
+    vehicleType: 'scooter',
+    vehicleNumber: 'CG05SK2233',
+    pan: 'ABCDE2233H',
+    aadhaar: '123456789013',
+    drivingLicense: 'DL-RAI-2024-004322',
+    rcNumber: 'MP04RC2024002',
+    trainingCompleted: true,
+    quizCompleted: true,
+    bank: { accountName: 'Sneha Rao', accountNumber: '2233445566', ifsc: 'HDFC0000011', bankName: 'HDFC Bank', upi: 'sneha@upi' },
+    documents: riderDocs.map((d) => ({ ...d, verified: true })),
+    reviewNote: 'Approved after all docs verified.',
+    reviewedAt: daysAgo(7),
+    reviewedBy: 'Aurasure Admin',
+    submittedAt: daysAgo(9),
+    dutyState: 'online',
+    codInHand: 640,
+    maxCodLimit: 3000,
+    payoutBalance: 320,
+    totalTrips: 41,
+    totalEarnings: 2450,
+    currentDayTrips: 4,
+    currentDayEarnings: 260,
+    rating: 4.7,
+    ratingCount: 38,
+    offerCount: 46,
+    acceptanceCount: 41,
+  },
+  {
+    id: 'rdr_3',
+    userId: 'usr_6',
+    phone: '7000000004',
+    status: 'under_review',
+    name: 'Aditya Singh',
+    email: 'aditya@example.com',
+    city: 'Raipur',
+    pincode: '492001',
+    address: '12, Marine Drive',
+    vehicleType: 'ev',
+    vehicleNumber: 'CG06EV4411',
+    pan: 'ABCDE4411J',
+    aadhaar: '123456789014',
+    drivingLicense: 'DL-RAI-2024-004323',
+    rcNumber: 'MP04RC2024003',
+    trainingCompleted: true,
+    quizCompleted: true,
+    bank: { accountName: 'Aditya Singh', accountNumber: '4455667788', ifsc: 'ICIC0000011', bankName: 'ICICI Bank', upi: 'aditya@upi' },
+    documents: riderDocs.map((d, i) => ({ ...d, verified: i < 3 })),
+    reviewNote: 'Vehicle RC under review.',
+    reviewedAt: daysAgo(0, 3),
+    reviewedBy: 'Aurasure Admin',
+    submittedAt: daysAgo(4),
+    dutyState: 'offline',
+    codInHand: 0,
+    maxCodLimit: 2000,
+    payoutBalance: 0,
+    totalTrips: 0,
+    totalEarnings: 0,
+    currentDayTrips: 0,
+    currentDayEarnings: 0,
+    rating: 0,
+    ratingCount: 0,
+    offerCount: 0,
+    acceptanceCount: 0,
+  },
+];
+
+const deliveryTasks = [
+  {
+    id: 'task_1',
+    code: 'DLV-AUR-1003',
+    orderCode: 'AUR-1003',
+    orderId: 'ord_4',
+    module: 'food',
+    state: 'available',
+    vendorName: 'Meera Thali House',
+    vendorPhone: '7000000005',
+    total: 520,
+    codAmount: 520,
+    deliveryFee: 29,
+    riderPayout: 35,
+    items: [{ name: 'Aurora Classic Burger', qty: 2, price: 249 }],
+    pickup: { name: 'Meera Thali House', phone: '7000000005', address: '8, MG Road, Raipur 492001', otp: '1234' },
+    drop: { name: 'Nisha Patel', phone: '9876543210', address: '101, Sector 2, Raipur 492001', otp: '4321' },
+    riderId: '',
+    riderName: '',
+    riderPhone: '',
+    createdAt: daysAgo(0, 1),
+    acceptedAt: null,
+    deliveredAt: null,
+    note: '',
+  },
+  {
+    id: 'task_2',
+    code: 'DLV-AUR-1012',
+    orderCode: 'AUR-1012',
+    orderId: 'ord_13',
+    module: 'shop',
+    state: 'accepted',
+    vendorName: 'Aditya Gadgets',
+    vendorPhone: '7000000004',
+    total: 2999,
+    codAmount: 0,
+    deliveryFee: 0,
+    riderPayout: 25,
+    items: [{ name: 'Aura ANC Headphones', qty: 1, price: 4999 }],
+    pickup: { name: 'Aditya Gadgets', phone: '7000000004', address: '12, Marine Drive, Raipur 492001', otp: '2233' },
+    drop: { name: 'Rohan Verma', phone: '7000000001', address: 'Shop 4, Civil Lines, Raipur 492001', otp: '3322' },
+    riderId: 'rdr_2',
+    riderName: 'Sneha Rao',
+    riderPhone: '7000000003',
+    createdAt: daysAgo(0, 2),
+    acceptedAt: daysAgo(0, 2),
+    deliveredAt: null,
+    note: '',
+  },
+  {
+    id: 'task_3',
+    code: 'DLV-AUR-1009',
+    orderCode: 'AUR-1009',
+    orderId: 'ord_10',
+    module: 'food',
+    state: 'delivered',
+    vendorName: 'Rohan Kitchen',
+    vendorPhone: '7000000001',
+    total: 340,
+    codAmount: 340,
+    deliveryFee: 29,
+    riderPayout: 35,
+    items: [{ name: 'Truffle Margherita', qty: 1, price: 329 }],
+    pickup: { name: 'Rohan Kitchen', phone: '7000000001', address: 'Shop 4, Civil Lines, Raipur 492001', otp: '4455' },
+    drop: { name: 'Sneha Rao', phone: '7000000003', address: 'C-5, Shankar Nagar, Raipur 492001', otp: '5544' },
+    riderId: 'rdr_2',
+    riderName: 'Sneha Rao',
+    riderPhone: '7000000003',
+    createdAt: daysAgo(1, 5),
+    acceptedAt: daysAgo(1, 5),
+    deliveredAt: daysAgo(1, 4),
+    note: '',
+  },
+];
+
+const auditEntries = [
+  {
+    id: 'aud_1',
+    actorId: 'usr_1',
+    actorName: 'Aurasure Admin',
+    action: 'vendor.approve',
+    targetType: 'vendor',
+    targetId: 'vnd_3',
+    targetCode: 'Meera Thali House',
+    detail: 'All documents verified',
+    ip: '127.0.0.1',
+    createdAt: daysAgo(6),
+  },
+  {
+    id: 'aud_2',
+    actorId: 'usr_1',
+    actorName: 'Aurasure Admin',
+    action: 'rider.approve',
+    targetType: 'rider',
+    targetId: 'rdr_2',
+    targetCode: 'Sneha Rao · 7000000003',
+    detail: 'Docs verified',
+    ip: '127.0.0.1',
+    createdAt: daysAgo(7),
+  },
+  {
+    id: 'aud_3',
+    actorId: 'usr_1',
+    actorName: 'Aurasure Admin',
+    action: 'partner.approve',
+    targetType: 'partner_application',
+    targetId: 'usr_5',
+    targetCode: 'Sneha Rao · 7000000003',
+    detail: 'Docs verified',
+    ip: '127.0.0.1',
+    createdAt: daysAgo(9),
+  },
+  {
+    id: 'aud_4',
+    actorId: 'usr_1',
+    actorName: 'Aurasure Admin',
+    action: 'order.status',
+    targetType: 'order',
+    targetId: 'ord_13',
+    targetCode: 'AUR-1012',
+    detail: 'preparing → out_for_delivery',
+    ip: '127.0.0.1',
+    createdAt: daysAgo(0, -3),
+  },
+  {
+    id: 'aud_5',
+    actorId: 'usr_1',
+    actorName: 'Aurasure Admin',
+    action: 'delivery.assign',
+    targetType: 'delivery_task',
+    targetId: 'task_2',
+    targetCode: 'AUR-1012',
+    detail: 'Assigned to Sneha Rao (7000000003)',
+    ip: '127.0.0.1',
+    createdAt: daysAgo(0, -2),
+  },
+];
+
+/** Append a server-audit entry, mirroring the real API's writeAudit(). */
+const pushAudit = (req, action, targetType, targetId, targetCode, detail = '') => {
+  auditEntries.unshift({
+    id: id('aud'),
+    actorId: req.user?._id ?? '',
+    actorName: req.user?.name ?? req.user?.phone ?? 'admin',
+    action,
+    targetType,
+    targetId,
+    targetCode,
+    detail,
+    ip: req.headers?.['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || '127.0.0.1',
+    createdAt: new Date().toISOString(),
+  });
+};
+
 /* --------------------------------- auth --------------------------------- */
 
 const sessions = new Map();
@@ -404,6 +814,10 @@ app.get('/api/v1/admin/stats', (req, res) =>
     cancelledOrders: orders.filter((o) => o.status === 'cancelled').length,
     walletCollected: orders.reduce((s, o) => s + o.walletPaid, 0),
     pendingPartners: users.filter((u) => u.partnerApplication?.status === 'submitted').length,
+    pendingVendors: vendors.filter((v) => ['submitted', 'under_review'].includes(v.status)).length,
+    pendingRiders: riders.filter((r) => ['submitted', 'under_review'].includes(r.status)).length,
+    deliveryPartners: riders.length,
+    ridersOnline: riders.filter((r) => ['online', 'on_task'].includes(r.dutyState)).length,
     partnerKinds: users.reduce((acc, u) => {
       if (u.partnerApplication) acc[u.partnerApplication.kind] = (acc[u.partnerApplication.kind] ?? 0) + 1;
       return acc;
@@ -445,14 +859,18 @@ app.patch('/api/v1/admin/orders/:id/status', (req, res) => {
     if (!['placed', 'confirmed'].includes(order.status)) {
       return fail(res, 400, 'CANT_CANCEL', 'This order can no longer be cancelled');
     }
+    const prev = order.status;
     order.status = 'cancelled';
+    pushAudit(req, 'order.cancel', 'order', order.id, order.code, `${prev} → cancelled`);
     return ok(res, { order: withUser(order) });
   }
   if (!(status in RANK) || RANK[status] <= RANK[order.status]) {
     return fail(res, 400, 'STATUS_REGRESSION', `Orders can only move forward - it is already ${order.status}`);
   }
+  const prev = order.status;
   order.status = status;
   order.etaMinutes = status === 'out_for_delivery' ? 15 : 0;
+  pushAudit(req, 'order.status', 'order', order.id, order.code, `${prev} → ${status}`);
   return ok(res, { order: withUser(order) });
 });
 
@@ -481,6 +899,14 @@ app.patch('/api/v1/admin/partners/:userId', (req, res) => {
   if (!user?.partnerApplication) return fail(res, 404, 'APPLICATION_NOT_FOUND', 'Application not found');
   user.partnerApplication.status = req.body.status;
   if (req.body.note) user.partnerApplication.note = String(req.body.note).slice(0, 300);
+  pushAudit(
+    req,
+    req.body.status === 'approved' ? 'partner.approve' : 'partner.reject',
+    'partner_application',
+    user.id,
+    `${user.name} · ${user.phone}`,
+    String(req.body.note || ''),
+  );
   return ok(res, { application: { userId: user.id, ...user.partnerApplication, name: user.name, phone: user.phone } });
 });
 
@@ -581,6 +1007,250 @@ app.patch('/api/v1/admin/customers/:id', (req, res) => {
   }
   user.role = req.body.role;
   return ok(res, { customer: { id: user.id, role: user.role } });
+});
+
+/* ------------------------------- vendors --------------------------------- */
+
+app.get('/api/v1/admin/vendors', (req, res) => {
+  let rows = [...vendors].sort((a, b) => new Date(b.updatedAt ?? b.submittedAt ?? 0) - new Date(a.updatedAt ?? a.submittedAt ?? 0));
+  if (req.query.status) rows = rows.filter((v) => v.status === req.query.status);
+  if (req.query.module) rows = rows.filter((v) => v.module === req.query.module);
+  rows = search(rows, req.query.q, ['outletName', 'ownerName', 'phone', 'city']);
+  const { slice, meta } = paginate(req.query, rows, 30);
+  return ok(res, { vendors: slice, pending: vendors.filter((v) => ['submitted', 'under_review'].includes(v.status)).length }, meta);
+});
+
+app.get('/api/v1/admin/vendors/:id', (req, res) => {
+  const vendor = vendors.find((v) => v.id === req.params.id);
+  if (!vendor) return fail(res, 404, 'VENDOR_NOT_FOUND', 'Vendor not found');
+  const user = users.find((u) => u.id === vendor.userId) ?? null;
+  const mine = orders.filter((o) => o.vendorId === vendor.id).slice(0, 20).map(withUser);
+  const requiredDocuments =
+    vendor.module === 'food'
+      ? vendorFoodDocs.map(({ key, label }) => ({ key, label }))
+      : [
+          { key: 'aadhaar', label: 'Owner Aadhaar (front + back)' },
+          { key: 'pan', label: 'PAN card' },
+          { key: 'gst', label: 'GST certificate (or declaration)' },
+          { key: 'bank', label: 'Cancelled cheque / bank passbook' },
+          { key: 'outlet', label: 'Outlet / storefront photo' },
+          { key: 'interior', label: 'Shop floor photo' },
+          { key: 'trade', label: 'Trade / shop license' },
+          { key: 'inventory', label: 'Inventory / aisle photo' },
+        ];
+  return ok(res, { vendor, user, orders: mine, requiredDocuments });
+});
+
+app.patch('/api/v1/admin/vendors/:id', (req, res) => {
+  const vendor = vendors.find((v) => v.id === req.params.id);
+  if (!vendor) return fail(res, 404, 'VENDOR_NOT_FOUND', 'Vendor not found');
+  const { status, note } = req.body ?? {};
+  const allowed = ['under_review', 'needs_info', 'approved', 'rejected', 'suspended', 'onboarding'];
+  if (!allowed.includes(status)) return fail(res, 400, 'INVALID_DECISION', 'Invalid decision');
+  if (status === 'approved') {
+    if (!vendor.documents.every((d) => d.verified)) {
+      return fail(res, 400, 'DOCS_NOT_VERIFIED', 'Verify every document before approving this outlet');
+    }
+    vendor.isOpen = true;
+  }
+  vendor.status = status;
+  vendor.reviewedAt = new Date().toISOString();
+  vendor.reviewedBy = req.user.name || req.user.id;
+  if (note) vendor.reviewNote = String(note).slice(0, 400);
+  if (status === 'suspended' || status === 'rejected') vendor.isOpen = false;
+  pushAudit(req, status === 'approved' ? 'vendor.approve' : `vendor.${status}`, 'vendor', vendor.id, vendor.outletName || vendor.phone, String(note || ''));
+  return ok(res, { vendor });
+});
+
+app.patch('/api/v1/admin/vendors/:id/documents', (req, res) => {
+  const vendor = vendors.find((v) => v.id === req.params.id);
+  if (!vendor) return fail(res, 404, 'VENDOR_NOT_FOUND', 'Vendor not found');
+  const { key, verified, note } = req.body ?? {};
+  const doc = (vendor.documents || []).find((d) => d.key === key);
+  if (!doc) return fail(res, 404, 'DOC_NOT_FOUND', 'Document slot not found');
+  doc.verified = Boolean(verified);
+  if (note !== undefined) doc.note = String(note).slice(0, 200);
+  if (vendor.status === 'submitted') vendor.status = 'under_review';
+  return ok(res, { vendor });
+});
+
+/* -------------------------------- riders --------------------------------- */
+
+app.get('/api/v1/admin/riders', (req, res) => {
+  let rows = [...riders].sort((a, b) => new Date(b.updatedAt ?? b.submittedAt ?? 0) - new Date(a.updatedAt ?? a.submittedAt ?? 0));
+  if (req.query.status) rows = rows.filter((r) => r.status === req.query.status);
+  if (req.query.dutyState) rows = rows.filter((r) => r.dutyState === req.query.dutyState);
+  rows = search(rows, req.query.q, ['name', 'phone', 'city', 'vehicleNumber']);
+  const { slice, meta } = paginate(req.query, rows, 30);
+  return ok(res, { riders: slice, pending: riders.filter((r) => ['submitted', 'under_review'].includes(r.status)).length }, meta);
+});
+
+app.get('/api/v1/admin/riders/:id', (req, res) => {
+  const rider = riders.find((r) => r.id === req.params.id);
+  if (!rider) return fail(res, 404, 'RIDER_NOT_FOUND', 'Delivery partner not found');
+  const user = users.find((u) => u.id === rider.userId) ?? null;
+  const tasks = deliveryTasks.filter((t) => t.riderId === rider.id);
+  const requiredDocuments = riderDocs.map(({ key, label }) => ({ key, label }));
+  return ok(res, { rider, user, tasks, requiredDocuments });
+});
+
+app.patch('/api/v1/admin/riders/:id', (req, res) => {
+  const rider = riders.find((r) => r.id === req.params.id);
+  if (!rider) return fail(res, 404, 'RIDER_NOT_FOUND', 'Delivery partner not found');
+  const { status, note } = req.body ?? {};
+  const allowed = ['under_review', 'needs_info', 'approved', 'rejected', 'suspended', 'onboarding'];
+  if (!allowed.includes(status)) return fail(res, 400, 'INVALID_DECISION', 'Invalid decision');
+  if (status === 'approved') {
+    if (!rider.documents.every((d) => d.verified)) {
+      return fail(res, 400, 'DOCS_NOT_VERIFIED', 'Verify every document before approving this partner');
+    }
+  }
+  rider.status = status;
+  rider.reviewedAt = new Date().toISOString();
+  rider.reviewedBy = req.user.name || req.user.id;
+  if (note) rider.reviewNote = String(note).slice(0, 400);
+  if (status === 'suspended' || status === 'rejected') rider.dutyState = 'offline';
+  pushAudit(req, status === 'approved' ? 'rider.approve' : `rider.${status}`, 'rider', rider.id, rider.name || rider.phone, String(note || ''));
+  return ok(res, { rider });
+});
+
+app.patch('/api/v1/admin/riders/:id/documents', (req, res) => {
+  const rider = riders.find((r) => r.id === req.params.id);
+  if (!rider) return fail(res, 404, 'RIDER_NOT_FOUND', 'Delivery partner not found');
+  const { key, verified, note } = req.body ?? {};
+  const doc = (rider.documents || []).find((d) => d.key === key);
+  if (!doc) return fail(res, 404, 'DOC_NOT_FOUND', 'Document slot not found');
+  doc.verified = Boolean(verified);
+  if (note !== undefined) doc.note = String(note).slice(0, 200);
+  if (rider.status === 'submitted') rider.status = 'under_review';
+  return ok(res, { rider });
+});
+
+app.patch('/api/v1/admin/riders/:id/cod-deposits/:depositId', (req, res) => {
+  const rider = riders.find((r) => r.id === req.params.id);
+  if (!rider) return fail(res, 404, 'RIDER_NOT_FOUND', 'Delivery partner not found');
+  const deposit = (rider.codDeposits || []).find((d) => d.id === req.params.depositId);
+  if (!deposit) return fail(res, 404, 'DEPOSIT_NOT_FOUND', 'Deposit not found');
+  const { status, note } = req.body ?? {};
+  if (!['confirmed', 'failed'].includes(status)) return fail(res, 400, 'INVALID_STATUS', 'Status must be confirmed or failed');
+  deposit.status = status;
+  if (note !== undefined) deposit.note = String(note).slice(0, 200);
+  return ok(res, { rider });
+});
+
+/* ---------------------------- delivery tasks ----------------------------- */
+
+app.get('/api/v1/admin/delivery/tasks', (req, res) => {
+  let rows = [...deliveryTasks].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  if (req.query.state) rows = rows.filter((t) => t.state === req.query.state);
+  const { slice, meta } = paginate(req.query, rows, 30);
+  return ok(res, { tasks: slice }, meta);
+});
+
+app.get('/api/v1/admin/delivery/tasks/:id', (req, res) => {
+  const task = deliveryTasks.find((t) => t.id === req.params.id);
+  if (!task) return fail(res, 404, 'TASK_NOT_FOUND', 'Delivery task not found');
+  return ok(res, { task });
+});
+
+app.get('/api/v1/admin/delivery/riders', (req, res) => {
+  const activeByRider = new Map(
+    deliveryTasks
+      .filter((t) => ['accepted', 'at_pickup', 'picked_up', 'at_drop'].includes(t.state))
+      .map((t) => [t.riderId, t]),
+  );
+  return ok(res, {
+    riders: riders
+      .filter((r) => r.status === 'approved' && r.dutyState !== 'offline')
+      .map((r) => ({
+        id: r.id,
+        name: r.name,
+        phone: r.phone,
+        vehicleType: r.vehicleType,
+        vehicleNumber: r.vehicleNumber,
+        dutyState: r.dutyState,
+        codInHand: r.codInHand,
+        maxCodLimit: r.maxCodLimit,
+        currentDayTrips: r.currentDayTrips,
+        activeTask: activeByRider.get(r.id) || null,
+      })),
+  });
+});
+
+const mockAssign = (task, rider) => {
+  task.state = 'accepted';
+  task.riderId = rider.id;
+  task.riderName = rider.name;
+  task.riderPhone = rider.phone;
+  task.acceptedAt = new Date().toISOString();
+  rider.dutyState = 'on_task';
+  rider.offerCount = Number(rider.offerCount || 0) + 1;
+  rider.acceptanceCount = Number(rider.acceptanceCount || 0) + 1;
+  return task;
+};
+
+app.post('/api/v1/admin/delivery/tasks/:id/assign', (req, res) => {
+  const task = deliveryTasks.find((t) => t.id === req.params.id);
+  if (!task) return fail(res, 404, 'TASK_NOT_FOUND', 'Delivery task not found');
+  if (task.state !== 'available') return fail(res, 400, 'TASK_TAKEN', `Task is already ${task.state}`);
+  const rider = riders.find((r) => r.id === req.body?.riderId);
+  if (!rider || rider.status !== 'approved') return fail(res, 400, 'RIDER_NOT_APPROVED', 'Pick an approved delivery partner');
+  const codAmount = Number(task.codAmount) || 0;
+  if (codAmount > 0 && rider.codInHand + codAmount > rider.maxCodLimit) {
+    return fail(res, 400, 'COD_LIMIT_EXCEEDED', `Rider has ₹${Math.round(rider.codInHand)} COD in hand; assigning ${rider.name} would cross their limit`);
+  }
+  const assigned = mockAssign(task, rider);
+  pushAudit(req, 'delivery.assign', 'delivery_task', task.id, task.orderCode, `Assigned to ${rider.name} (${rider.phone})`);
+  return ok(res, { task: assigned });
+});
+
+app.post('/api/v1/admin/orders/:id/assign-rider', (req, res) => {
+  const order = orders.find((o) => o.id === req.params.id);
+  if (!order) return fail(res, 404, 'ORDER_NOT_FOUND', 'Order not found');
+  if (order.status !== 'out_for_delivery') return fail(res, 400, 'NOT_READY', 'Move the order to out_for_delivery before assigning a rider');
+  const rider = riders.find((r) => r.id === req.body?.riderId);
+  if (!rider || rider.status !== 'approved') return fail(res, 400, 'RIDER_NOT_APPROVED', 'Pick an approved delivery partner');
+  let task = deliveryTasks.find((t) => t.orderId === order.id);
+  if (!task) {
+    task = {
+      id: id('task'),
+      code: `DLV-${order.code}`,
+      orderCode: order.code,
+      orderId: order.id,
+      module: order.module,
+      state: 'available',
+      vendorName: 'Vendor',
+      vendorPhone: '',
+      total: order.total,
+      codAmount: order.payBy === 'cod' ? order.total : 0,
+      deliveryFee: order.deliveryFee,
+      riderPayout: Math.max(order.deliveryFee, 25),
+      items: order.items.map((it) => ({ name: it.name, qty: it.qty, price: it.unitPrice })),
+      pickup: { name: 'Vendor', phone: '', address: order.address, otp: '1234' },
+      drop: { name: order.user?.name ?? 'Customer', phone: order.user?.phone ?? '', address: order.address, otp: '4321' },
+      riderId: '',
+      riderName: '',
+      riderPhone: '',
+      createdAt: new Date().toISOString(),
+      acceptedAt: null,
+      deliveredAt: null,
+      note: '',
+    };
+    deliveryTasks.unshift(task);
+  }
+  if (task.state !== 'available') return fail(res, 400, 'TASK_TAKEN', `Task is already ${task.state}`);
+  const assigned = mockAssign(task, rider);
+  pushAudit(req, 'delivery.assign', 'delivery_task', task.id, order.code, `Assigned to ${rider.name} (${rider.phone})`);
+  return ok(res, { task: assigned, orderId: order.id });
+});
+
+/* --------------------------------- audit --------------------------------- */
+
+app.get('/api/v1/admin/audit', (req, res) => {
+  let rows = [...auditEntries].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  rows = search(rows, req.query.q, ['actorName', 'action', 'targetCode', 'targetType']);
+  const { slice, meta } = paginate(req.query, rows, 50);
+  return ok(res, { entries: slice }, meta);
 });
 
 /* -------------------------------- reports -------------------------------- */

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useQueryClient } from '@tanstack/react-query';
 import { Check, X, Bike, Store as StoreIcon, Download } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { PageHeader, StatCard } from '@/components/ui/PageHeader';
@@ -14,6 +15,7 @@ import { Modal } from '@/components/ui/Modal';
 import { ErrorState } from '@/components/ui/EmptyState';
 import { StatSkeleton } from '@/components/ui/Skeleton';
 import { usePartners, usePartnerDecision } from '@/lib/queries';
+import { prefetchCustomer } from '@/lib/prefetch';
 import { useToast } from '@/lib/toast';
 import { useAuth } from '@/lib/auth';
 import { logActivity } from '@/lib/activity';
@@ -31,6 +33,7 @@ const TABS = [
 export default function PartnersPage() {
   const toast = useToast();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { data, isLoading, isFetching, isError, error, refetch } = usePartners();
   const decision = usePartnerDecision();
 
@@ -38,6 +41,7 @@ export default function PartnersPage() {
   const [search, setSearch] = useState('');
   const [reviewing, setReviewing] = useState<{ app: PartnerApplication; status: 'approved' | 'rejected' } | null>(null);
   const [note, setNote] = useState('');
+  const [reviewError, setReviewError] = useState('');
 
   const all = data?.applications ?? [];
 
@@ -67,6 +71,7 @@ export default function PartnersPage() {
 
   const submit = async () => {
     if (!reviewing) return;
+    setReviewError('');
     try {
       await decision.mutateAsync({ userId: reviewing.app.userId, status: reviewing.status, note });
       logActivity({
@@ -79,7 +84,9 @@ export default function PartnersPage() {
       setReviewing(null);
       setNote('');
     } catch (err) {
-      toast.error((err as Error).message);
+      const message = (err as Error).message;
+      setReviewError(message);
+      toast.error(message);
     }
   };
 
@@ -205,6 +212,8 @@ export default function PartnersPage() {
                 <>
                   <Link
                     href={`/customers/${app.userId}`}
+                    onMouseEnter={() => prefetchCustomer(queryClient, app.userId)}
+                    onFocus={() => prefetchCustomer(queryClient, app.userId)}
                     className="inline-flex h-8 items-center rounded-lg px-3 text-[13px] font-medium text-ink-600 transition-colors hover:bg-ink-100"
                   >
                     Profile
@@ -216,6 +225,7 @@ export default function PartnersPage() {
                       icon={<Check size={15} />}
                       onClick={() => {
                         setNote(app.note ?? '');
+                        setReviewError('');
                         setReviewing({ app, status: 'approved' });
                       }}
                     >
@@ -229,6 +239,7 @@ export default function PartnersPage() {
                       icon={<X size={15} />}
                       onClick={() => {
                         setNote(app.note ?? '');
+                        setReviewError('');
                         setReviewing({ app, status: 'rejected' });
                       }}
                     >
@@ -263,6 +274,11 @@ export default function PartnersPage() {
           </>
         }
       >
+        {reviewError ? (
+          <p className="mb-4 rounded-lg bg-[var(--color-danger-soft)] px-3 py-2.5 text-[13px] text-[var(--color-danger)]">
+            {reviewError}
+          </p>
+        ) : null}
         <Field
           label="Reviewer note"
           hint="Saved on the application and visible to the applicant in the app (max 300 characters)."

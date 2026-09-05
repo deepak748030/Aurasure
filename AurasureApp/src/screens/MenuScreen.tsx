@@ -243,6 +243,9 @@ export function MenuScreen({ navigation }: { navigation: Nav }): React.ReactElem
                 const ok = await sheet.confirm({ title: 'Log out?', message: 'Your cart and favourites stay on this device.', confirmLabel: 'Log out', destructive: true, icon: 'logout' });
                 if (!ok) return;
                 await logout();
+                // Wait a frame so the confirm Modal fully unmounts before the
+                // "signed out" sheet opens — otherwise a leftover handle shows.
+                await new Promise((r) => setTimeout(r, 80));
                 sheet.info('Signed out', 'You can keep browsing as a guest.');
               })();
             }}

@@ -82,27 +82,32 @@ export function Sheet({
   const translateY = useRef(new Animated.Value(1)).current;
   const backdrop = useRef(new Animated.Value(0)).current;
   const [mounted, setMounted] = useState(visible);
+  const openGen = useRef(0);
 
   useEffect(() => {
     if (visible) {
+      const gen = ++openGen.current;
       setMounted(true);
+      translateY.stopAnimation();
+      backdrop.stopAnimation();
       translateY.setValue(1);
       backdrop.setValue(0);
       Animated.parallel([
         Animated.timing(translateY, { toValue: 0, duration: motion.sheetIn, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
         Animated.timing(backdrop, { toValue: 1, duration: motion.sheetIn, useNativeDriver: true }),
-      ]).start();
+      ]).start(({ finished }) => {
+        if (!finished || openGen.current !== gen) return;
+      });
       return;
     }
-    if (mounted) {
-      Animated.parallel([
-        Animated.timing(translateY, { toValue: 1, duration: motion.sheetOut, easing: Easing.in(Easing.cubic), useNativeDriver: true }),
-        Animated.timing(backdrop, { toValue: 0, duration: motion.sheetOut, useNativeDriver: true }),
-      ]).start(({ finished }) => {
-        if (finished) setMounted(false);
-      });
-    }
-  }, [visible, mounted, backdrop, translateY]);
+    // Drop immediately and cancel in-flight motion. A stale exit callback used
+    // to call setMounted(false) after the next sheet (e.g. "Signed out") had
+    // already opened — leaving a sliver of the handle at the top, then reopening.
+    openGen.current += 1;
+    translateY.stopAnimation();
+    backdrop.stopAnimation();
+    setMounted(false);
+  }, [visible, backdrop, translateY]);
 
   const drag = useMemo(
     () =>

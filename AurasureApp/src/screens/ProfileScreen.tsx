@@ -224,6 +224,7 @@ export function ProfileScreen({ navigation }: { navigation: Nav }): React.ReactE
                 const ok = await sheet.confirm({ title: 'Log out?', message: 'You can still browse as a guest. Placing orders needs a sign-in.', confirmLabel: 'Log out', destructive: true, icon: 'logout' });
                 if (!ok) return;
                 await logout();
+                await new Promise((r) => setTimeout(r, 80));
                 sheet.info('Signed out', 'Browse as a guest, or sign back in any time.');
               })();
             }}

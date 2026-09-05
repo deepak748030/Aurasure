@@ -83,7 +83,7 @@ export function RootNavigator(): React.ReactElement {
         card: c.surface,
         text: c.text,
         border: c.border,
-        notification: c.danger,
+        notification: c.primary,
       },
     }),
     [resolved, c],

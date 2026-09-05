@@ -395,10 +395,10 @@ export function Avatar({
     borderRadius: size / 2,
     overflow: 'hidden' as const,
     backgroundColor: c.primarySoft,
-    borderWidth: ring ? 2 : 0,
-    borderColor: c.white,
+    borderWidth: ring ? 2 : 1,
+    borderColor: ring ? c.white : c.border,
     alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    justifyContent: 'flex-end' as const,
   };
 
   if (uri) {
@@ -407,7 +407,7 @@ export function Avatar({
         <SmartImage
           source={{ kind: 'uri', uri }}
           name={name}
-          icon="userRound"
+          icon="user"
           rounded
           contentFit="cover"
           style={{ width: size, height: size }}
@@ -417,9 +417,11 @@ export function Avatar({
     );
   }
 
+  // Head-and-shoulders glyph, clipped by the circle so it reads as a default
+  // contact photo — not a tiny icon floating in the middle.
   return (
     <View style={frame} accessibilityLabel={`${name} avatar`}>
-      <Icon name="userRound" size={size * 0.58} color={c.primary} filled />
+      <Icon name="user" size={size * 0.92} color={c.primary} />
     </View>
   );
 }

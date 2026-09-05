@@ -143,7 +143,15 @@ export function Sheet({
   return (
     <Modal transparent visible animationType="none" statusBarTranslucent onRequestClose={dismiss}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.root}>
-        <Pressable onPress={dismiss} accessibilityRole="button" accessibilityLabel="Close">
+        {/* Keep the backdrop as a full-screen hit target. Without an explicit
+            absolute frame, RN Web can measure this Pressable at zero height,
+            allowing the tab bar underneath to receive touches. */}
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={dismiss}
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+        >
           <Animated.View style={[styles.backdrop, { opacity: backdrop }]} />
         </Pressable>
 
@@ -232,7 +240,8 @@ export function Sheet({
 
 const createStyles = (c: ReturnType<typeof useColors>) =>
   StyleSheet.create({
-    root: { flex: 1, justifyContent: 'flex-end' },
+    // The sheet must always sit above the floating tab bar on native and web.
+    root: { flex: 1, justifyContent: 'flex-end', zIndex: 9999, elevation: 9999 },
     backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: c.overlay },
     sheet: {
       borderTopLeftRadius: radius.xxl,

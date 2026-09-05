@@ -26,7 +26,7 @@ const PAGES: { title: string; subtitle: string; body: string; image: number }[] 
   {
     title: 'Every order, right on time',
     subtitle: 'Follow your delivery from kitchen to doorstep',
-    body: 'See every update in one place, from preparation to arrival, with clear delivery status at every step.'
+    body: 'See every update in one place, from preparation to arrival, with clear delivery status at every step.',
     image: require('../../assets/images/onboarding-track.png'),
   },
 ];

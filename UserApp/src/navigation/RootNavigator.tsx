@@ -17,6 +17,7 @@ import { ItemDetailScreen } from '@/screens/ItemDetailScreen';
 import { CategoryScreen } from '@/screens/CategoryScreen';
 import { VibeScreen } from '@/screens/VibeScreen';
 import { SeeAllScreen } from '@/screens/SeeAllScreen';
+import { FlashSaleScreen } from '@/screens/FlashSaleScreen';
 import { SearchScreen } from '@/screens/SearchScreen';
 import { CartScreen } from '@/screens/CartScreen';
 import { CheckoutScreen } from '@/screens/CheckoutScreen';
@@ -119,6 +120,7 @@ export function RootNavigator(): React.ReactElement {
         <Stack.Screen name="Category" component={AppScreen(CategoryScreen)} />
         <Stack.Screen name="Vibe" component={AppScreen(VibeScreen)} />
         <Stack.Screen name="SeeAll" component={AppScreen(SeeAllScreen)} />
+        <Stack.Screen name="FlashSale" component={AppScreen(FlashSaleScreen)} options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="Search" component={AppScreen(SearchScreen)} options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="Cart" component={AppScreen(CartScreen)} options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="Checkout" component={AppScreen(CheckoutScreen)} options={{ animation: 'slide_from_bottom' }} />

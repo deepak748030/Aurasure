@@ -3,6 +3,7 @@ import { Pressable, View } from 'react-native';
 import { Screen } from '@/components/ui/Screen';
 import { HomeHeader } from '@/components/home/HomeHeader';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
+import { FlashSaleTimer } from '@/components/home/FlashSaleTimer';
 import { Rail } from '@/components/ui/Rail';
 import { EmptyState, SectionHeader, Tag } from '@/components/ui/Primitives';
 import { CategoryTile, ItemCard, SpecialOfferCard, StoreCard } from '@/components/cards/Cards';
@@ -216,7 +217,20 @@ export function HomeShopScreen({ navigation }: { navigation: Nav }): React.React
 
           {flashSale.length > 0 ? (
             <View style={{ marginTop: spacing.section, backgroundColor: c.gradientPromo[0], paddingVertical: spacing.md }}>
-              <SectionHeader title="Flash sale" subtitle="Deepest discounts, ending soon" icon="zap" actionLabel={`${flashSale.length} deals`} />
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm }}>
+                <View style={{ flex: 1 }}>
+                  <SectionHeader title="Flash sale" subtitle="Deepest discounts, ending soon" icon="zap" actionLabel={`${flashSale.length} deals`} />
+                </View>
+                <Pressable accessibilityRole="button" onPress={() => navigation.navigate('FlashSale')} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: 3, paddingBottom: spacing.md }}>
+                  <Text variant="caption" weight="bold" color={c.primary}>
+                    See all
+                  </Text>
+                  <Icon name="chevronRight" size={13} color={c.primary} />
+                </Pressable>
+              </View>
+              <View style={{ paddingHorizontal: spacing.edge, paddingBottom: spacing.sm }}>
+                <FlashSaleTimer compact />
+              </View>
               <Rail>
                 {flashSale.map((product) => (
                   <ItemCard key={product.id} {...cardProps(product)} />

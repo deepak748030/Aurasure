@@ -13,6 +13,7 @@ export type RootStackParamList = {
   Item: { module: 'food' | 'shop'; id: string };
   Category: { module: 'food' | 'shop'; id: string; name: string };
   Vibe: { id: string; name: string; tagline?: string };
+  FlashSale: undefined;
   SeeAll: { kind: 'restaurants' | 'items' | 'products' | 'stores' | 'offers' | 'popular' | 'new'; title: string; categoryId?: string };
   Search: { initial?: string } | undefined;
   Cart: undefined;

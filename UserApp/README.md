@@ -25,7 +25,9 @@ npm start                   # Expo: press w / a / i
 | Android emulator        | `http://10.0.2.2:5000`                           |
 | Real phone (Expo Go)    | `http://<your-lan-ip>:5000`                      |
 
-`npm run check` runs three gates:
+`npm run check` runs three gates (start `npm run api` first, or export
+`EXPO_PUBLIC_API_URL` at the command line — the last two scripts need a running
+API):
 
 1. `tsc --noEmit` over the whole app (strict + `noUncheckedIndexedAccess`).
 2. `scripts/api-contract-check.mjs` — every path in `src/api/*.ts` is requested

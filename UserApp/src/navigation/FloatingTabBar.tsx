@@ -140,9 +140,10 @@ const styles = StyleSheet.create({
   },
   fabSlot: { width: 66, height: '100%', alignItems: 'center', justifyContent: 'center' },
   fab: {
-    width: 54,
-    height: 54,
-    borderRadius: radius.pill,
+    width: 58,
+    height: 58,
+    transform: [{ translateY: -8 }],
+    borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
     shadowOpacity: 0.35,

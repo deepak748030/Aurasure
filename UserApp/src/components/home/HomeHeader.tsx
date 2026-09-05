@@ -42,7 +42,9 @@ export function HomeHeader({
   const { totalCartCount } = useCart();
   const CHIP = c.isDark ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.16)';
   const CHIP_BORDER = c.isDark ? 'rgba(0,0,0,0.24)' : 'rgba(255,255,255,0.24)';
-  const SOFT = c.isDark ? 'rgba(34,3,15,0.72)' : 'rgba(255,255,255,0.86)';
+  // Dark mode must use light-on-dark secondary text; the old dark rgba value
+  // made the search placeholder and header metadata look black.
+  const SOFT = c.isDark ? 'rgba(246,241,244,0.82)' : 'rgba(255,255,255,0.86)';
 
   const switchModule = async (): Promise<void> => {
     const next = await sheet.pick({

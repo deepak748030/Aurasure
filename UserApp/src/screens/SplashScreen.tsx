@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from '@/components/ui/Text';
 import { Icon, BRAND } from '@/lib/icons';
 import { useColors } from '@/theme/ThemeContext';
@@ -47,7 +46,7 @@ export function SplashScreen({ navigation }: { navigation: { replace: (name: str
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
-      <LinearGradient colors={c.isDark ? ['#14101D', '#221833'] : [c.primaryDeep, c.primary, c.secondary]} style={styles.fill}>
+      <View style={[styles.fill, { backgroundColor: c.isDark ? c.bg : c.primaryDeep }]>
         <View style={styles.center}>
           <Animated.View
             style={[
@@ -75,7 +74,7 @@ export function SplashScreen({ navigation }: { navigation: { replace: (name: str
             </Text>
           </View>
         </View>
-      </LinearGradient>
+      </View>
     </SafeAreaView>
   );
 }

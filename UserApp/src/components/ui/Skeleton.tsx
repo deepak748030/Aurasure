@@ -120,7 +120,7 @@ export function SkeletonList({
           style={{
             flexDirection: 'row',
             alignItems: 'center',
-            gap: spacing.md,
+            gap: thumb > 0 ? spacing.md : 0,
             padding: spacing.sm,
             marginTop: index === 0 ? 0 : spacing.listGap,
             backgroundColor: c.surface,
@@ -128,7 +128,7 @@ export function SkeletonList({
             borderBottomColor: c.divider,
           }}
         >
-          <Pulse width={thumb} height={thumb} radiusOverride={radius.md} />
+          {thumb > 0 ? <Pulse width={thumb} height={thumb} radiusOverride={radius.md} /> : null}
           <View style={{ flex: 1, gap: 6 }}>
             <Pulse height={13} width="58%" />
             <Pulse height={10} width="36%" />

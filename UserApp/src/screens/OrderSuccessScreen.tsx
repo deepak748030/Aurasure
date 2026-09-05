@@ -5,6 +5,7 @@ import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 import { Icon, type IconName } from '@/lib/icons';
 import { MetaRow } from '@/components/list/ListRow';
+import { SkeletonList } from '@/components/ui/Skeleton';
 import { useQuery } from '@/hooks/useQuery';
 import { getOrder } from '@/api/orders';
 import { useColors } from '@/theme/ThemeContext';
@@ -47,9 +48,9 @@ export function OrderSuccessScreen({ navigation, route }: { navigation: Nav; rou
 
         <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
           {query.loading ? (
-            <Text variant="bodySm" tone="muted">
-              Loading your receipt…
-            </Text>
+            <View style={{ paddingTop: spacing.xs }}>
+              <SkeletonList rows={3} thumb={0} withDivider={false} />
+            </View>
           ) : order ? (
             <>
               <MetaRow label="Items" value={`${order.items.length} · ${money(order.itemTotal)}`} />

@@ -1,10 +1,11 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Screen, FlushSurface } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
 import { Button, IconButton } from '@/components/ui/Button';
 import { Icon } from '@/lib/icons';
 import { Divider, EmptyState, Tag } from '@/components/ui/Primitives';
+import { SkeletonList } from '@/components/ui/Skeleton';
 import { SmartImage } from '@/components/ui/SmartImage';
 import { ListRow, ListSection, MetaRow } from '@/components/list/ListRow';
 import { CouponCard } from '@/components/rewards/CouponCard';
@@ -28,8 +29,28 @@ export function CartScreen({ navigation }: { navigation: Nav }): React.ReactElem
   const c = useColors();
   const sheet = useSheet();
   const cart = useCart();
-  const { user, isLoggedIn } = useSession();
-  const [module, setModule] = useState<ModuleKey>(cart.lines.food.length > 0 && cart.lines.shop.length === 0 ? 'shop' : cart.lines.shop.length > 0 ? 'food' : 'food');
+  const { user, isLoggedIn, module: browsing } = useSession();
+  /**
+   * Which cart is on screen. This must stay *derived* rather than frozen in
+   * `useState`: the cart is restored from AsyncStorage asynchronously, so on
+   * the very first render both modules are still empty and any snapshot taken
+   * here would pin the screen to an empty cart for good — that is what made the
+   * badge say "1" while the list underneath rendered "your cart is empty".
+   * `picked` only records an explicit tap on the Food/Shop switch, and is
+   * ignored the moment that side runs out of items.
+   */
+  const [picked, setPicked] = useState<ModuleKey | null>(null);
+  const module: ModuleKey =
+    picked && cart.lines[picked].length > 0
+      ? picked
+      : cart.lines[browsing].length > 0
+        ? browsing
+        : cart.lines.food.length > 0
+          ? 'food'
+          : cart.lines.shop.length > 0
+            ? 'shop'
+            : browsing;
+  const setModule = setPicked;
 
   const lines = cart.linesFor(module);
   const outlet = cart.outletFor(module);
@@ -138,14 +159,19 @@ export function CartScreen({ navigation }: { navigation: Nav }): React.ReactElem
   return (
     <Screen
       title={module === 'food' ? 'Your cart' : 'Your bag'}
-      subtitle={lines.length > 0 ? `${cart.countFor(module)} item${cart.countFor(module) === 1 ? '' : 's'} · ${outlet?.name || 'one store'}` : 'Nothing here yet'}
+      subtitle={
+        !cart.hydrated
+          ? 'Loading your cart…'
+          : lines.length > 0
+            ? `${cart.countFor(module)} item${cart.countFor(module) === 1 ? '' : 's'} · ${outlet?.name || 'one store'}`
+            : 'Nothing here yet'
+      }
       back={navigation.canGoBack()}
-      onRefresh={cart.hydrated ? undefined : undefined}
       headerRight={
-        lines.length > 0 ? <IconButton name="trash" accessibilityLabel="Empty cart" onPress={() => void clearCart()} size={34} iconSize={17} /> : undefined
+        cart.hydrated && lines.length > 0 ? <IconButton name="trash" accessibilityLabel="Empty cart" onPress={() => void clearCart()} size={34} iconSize={17} /> : undefined
       }
       stickyFooter={
-        lines.length > 0 ? (
+        cart.hydrated && lines.length > 0 ? (
           <View style={[styles.bar, { backgroundColor: c.surface, borderTopColor: c.divider }]}>
             <View style={{ flex: 1 }}>
               <Text variant="micro" tone="faint">
@@ -180,7 +206,7 @@ export function CartScreen({ navigation }: { navigation: Nav }): React.ReactElem
       }
     >
       {/* Cart switch when both modules have items */}
-      {cart.lines.food.length > 0 && cart.lines.shop.length > 0 ? (
+      {cart.hydrated && cart.lines.food.length > 0 && cart.lines.shop.length > 0 ? (
         <View style={{ flexDirection: 'row', gap: 6, padding: spacing.edge, backgroundColor: c.surfaceHi }}>
           {(['food', 'shop'] as ModuleKey[]).map((key) => (
             <Pressable
@@ -198,7 +224,12 @@ export function CartScreen({ navigation }: { navigation: Nav }): React.ReactElem
         </View>
       ) : null}
 
-      {lines.length === 0 ? (
+      {!cart.hydrated ? (
+        /* Saved cart is still coming back from storage - never claim "empty" yet. */
+        <View style={{ paddingHorizontal: spacing.edge, paddingTop: spacing.sm }}>
+          <SkeletonList rows={3} thumb={68} />
+        </View>
+      ) : lines.length === 0 ? (
         <EmptyState
           icon={module === 'food' ? 'cart' : 'bag'}
           title={module === 'food' ? 'Your cart is empty' : 'Your bag is empty'}

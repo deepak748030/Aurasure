@@ -48,13 +48,13 @@ export function CouponCard({
           {coupon.offType === 'percent' ? 'OFF' : 'OFF'}
         </Text>
       </View>
-      <View style={{ flex: 1, gap: 3, paddingVertical: 2, minWidth: 0 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Text variant="title" weight="semibold" numberOfLines={1} style={{ flex: 1 }}>
+      <View style={styles.body}>
+        <View style={styles.titleRow}>
+          <Text variant="title" weight="semibold" numberOfLines={1} style={{ flexShrink: 1 }}>
             {coupon.title}
           </Text>
           {applied ? (
-            <View style={{ paddingHorizontal: 6, paddingVertical: 2, borderRadius: radius.xs, backgroundColor: c.successBg }}>
+            <View style={[styles.appliedPill, { backgroundColor: c.successBg }]}>
               <Text variant="micro" weight="semibold" color={c.success}>
                 APPLIED
               </Text>
@@ -64,29 +64,34 @@ export function CouponCard({
         <Text variant="caption" tone="muted" numberOfLines={compact ? 1 : 2}>
           {coupon.subtitle}
         </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, rowGap: 4, flexWrap: 'wrap' }}>
-          <View style={styles.codeBox}>
-            <Text variant="micro" weight="semibold" color={tone}>
-              {coupon.code}
-            </Text>
+        {/* Code + minimum on the left, expiry pinned right on its own flex
+            track. The old row wrapped with `marginLeft:'auto'`, which dropped
+            the date onto a ragged second line whenever the code was long. */}
+        <View style={styles.metaRow}>
+          <View style={styles.metaLeft}>
+            <View style={[styles.codeBox, { borderColor: tone }]}>
+              <Text variant="micro" weight="semibold" color={tone} numberOfLines={1}>
+                {coupon.code}
+              </Text>
+            </View>
+            {coupon.minOrder > 0 ? (
+              <Text variant="micro" tone={usable.ok && state === 'available' ? 'faint' : 'warning'} numberOfLines={1}>
+                Min {money(coupon.minOrder)}
+              </Text>
+            ) : null}
           </View>
-          {coupon.minOrder > 0 ? (
-            <Text variant="micro" tone={usable.ok && state === 'available' ? 'faint' : 'warning'} numberOfLines={1}>
-              Min {money(coupon.minOrder)}
-            </Text>
-          ) : null}
-          <Text variant="micro" tone="faint" numberOfLines={1} style={{ marginLeft: 'auto' }}>
+          <Text variant="micro" tone="faint" numberOfLines={1} style={styles.metaRight}>
             {left}
           </Text>
         </View>
         {itemTotal > 0 && state === 'available' ? (
-          <Text variant="micro" color={usable.ok ? c.success : c.warning}>
+          <Text variant="micro" color={usable.ok ? c.success : c.warning} numberOfLines={2}>
             {usable.ok ? `Saves ${money(couponDiscount(coupon, itemTotal))} on this cart` : usable.reason ?? 'Not usable yet'}
           </Text>
         ) : null}
       </View>
       {onRemove || onClaim ? (
-        <View style={{ alignItems: 'flex-end', justifyContent: 'center' }}>
+        <View style={styles.action}>
           {onRemove ? (
             <Pressable accessibilityRole="button" onPress={onRemove} hitSlop={8} style={{ padding: 4 }}>
               <Icon name="x" size={16} color={c.textTertiary} />
@@ -133,12 +138,32 @@ export function CouponList({ coupons, itemTotal, onPick, selectedCode }: { coupo
 const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
+    alignItems: 'stretch',
     borderRadius: radius.lg,
     borderWidth: 1,
     overflow: 'hidden',
     marginHorizontal: spacing.edge,
     marginTop: spacing.sm,
   },
-  stub: { width: 74, alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.md, gap: 2, borderRightWidth: 1, borderRightColor: 'rgba(0,0,0,0.06)', borderStyle: 'dashed' },
-  codeBox: { borderWidth: 1, borderStyle: 'dashed', borderRadius: radius.xs, paddingHorizontal: 6, paddingVertical: 2 },
+  stub: {
+    width: 78,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: spacing.md,
+    gap: 2,
+    borderRightWidth: 1,
+    borderRightColor: 'rgba(0,0,0,0.06)',
+    borderStyle: 'dashed',
+  },
+  /* The body used to have no horizontal padding, so long titles and the code
+     chip ran straight into the card border. */
+  body: { flex: 1, minWidth: 0, gap: 4, paddingVertical: spacing.md, paddingHorizontal: spacing.md },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  appliedPill: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: radius.xs, flexShrink: 0 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 2 },
+  metaLeft: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1, minWidth: 0 },
+  metaRight: { flexShrink: 0, textAlign: 'right' },
+  codeBox: { borderWidth: 1, borderStyle: 'dashed', borderRadius: radius.xs, paddingHorizontal: 6, paddingVertical: 2, flexShrink: 1 },
+  action: { alignItems: 'flex-end', justifyContent: 'center', paddingRight: spacing.sm, paddingVertical: spacing.sm },
 });

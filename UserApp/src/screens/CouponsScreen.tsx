@@ -1,9 +1,10 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { Screen } from '@/components/ui/Screen';
+import { Text } from '@/components/ui/Text';
 import { SegmentedTabs } from '@/components/ui/SegmentedTabs';
 import { CouponCard } from '@/components/rewards/CouponCard';
-import { EmptyState } from '@/components/ui/Primitives';
+import { EmptyState, ErrorState } from '@/components/ui/Primitives';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -88,16 +89,29 @@ export function CouponsScreen({ navigation }: { navigation: Nav }): React.ReactE
       refreshing={query.refreshing}
     >
       <View style={{ paddingHorizontal: spacing.edge, paddingTop: spacing.sm, gap: spacing.sm }}>
-        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
+        {/* `alignItems:'flex-end'` used to bottom-align a 48px input against a
+            48px button while the input also carried a label above it, so the
+            two never lined up. The button now sits in its own labelled column
+            and both controls share one baseline. */}
+        <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' }}>
           <Input
             label="Have a code?"
             value={code}
             onChangeText={(text) => setCode(text.toUpperCase().slice(0, 16))}
             placeholder="AURA50"
             icon="coupon"
+            autoCapitalize="characters"
+            autoCorrect={false}
+            returnKeyType="done"
+            onSubmitEditing={() => void claim()}
             containerStyle={{ flex: 1 }}
           />
-          <Button title="Claim" onPress={() => void claim()} loading={busy} />
+          <View style={{ gap: 6 }}>
+            <Text variant="caption" weight="semibold" tone="muted" style={{ opacity: 0 }}>
+              {' '}
+            </Text>
+            <Button title="Claim" onPress={() => void claim()} loading={busy} disabled={busy || code.trim().length < 3} />
+          </View>
         </View>
         {!isLoggedIn ? (
           <View style={{ padding: spacing.sm, borderRadius: radius.md, backgroundColor: c.surfaceHi }}>
@@ -127,6 +141,8 @@ export function CouponsScreen({ navigation }: { navigation: Nav }): React.ReactE
         <View style={{ paddingHorizontal: spacing.edge, paddingTop: spacing.sm }}>
           <SkeletonList rows={3} thumb={0} />
         </View>
+      ) : query.error ? (
+        <ErrorState message={query.error.message} onRetry={query.refetch} />
       ) : rows.length === 0 ? (
         <EmptyState
           icon="coupon"
@@ -134,7 +150,7 @@ export function CouponsScreen({ navigation }: { navigation: Nav }): React.ReactE
           subtitle={tab === 'available' ? `Claim a code above, or pick a ${module === 'food' ? 'dish' : 'product'} — campaigns appear here all week.` : 'Coupons move here automatically.'}
         />
       ) : (
-        <View style={{ paddingBottom: spacing.xxl }}>
+        <View style={{ paddingTop: spacing.xs, paddingBottom: spacing.xxl }}>
           {rows.map((coupon) => (
             <CouponCard
               key={coupon.id}
@@ -142,7 +158,7 @@ export function CouponsScreen({ navigation }: { navigation: Nav }): React.ReactE
               state={tab === 'used' ? 'used' : tab === 'expired' ? 'expired' : 'available'}
               itemTotal={itemTotal}
               applied={cart.couponCode[module] === coupon.code}
-              onPress={() => apply(coupon)}
+              onPress={tab === 'available' ? () => apply(coupon) : undefined}
             />
           ))}
         </View>

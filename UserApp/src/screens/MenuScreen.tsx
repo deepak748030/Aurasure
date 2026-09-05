@@ -40,7 +40,21 @@ export function MenuScreen({ navigation }: { navigation: Nav }): React.ReactElem
     {
       group: 'MY ORDERS',
       items: [
-        { label: 'Current orders', icon: 'truck', onPress: () => navigation.navigate('Tabs'), badge: cart.cartHasItems ? 'cart' : undefined },
+        // `navigate('Tabs')` alone re-targets the navigator without changing the
+        // inner tab, so from the Menu tab nothing appeared to happen. Naming the
+        // screen actually lands the user on Orders (and Cart for the cart row).
+        { label: 'Current orders', icon: 'truck', onPress: () => navigation.navigate('Tabs', { screen: 'Orders' }) },
+        ...(cart.cartHasItems
+          ? [
+              {
+                label: 'Cart',
+                icon: 'cart' as IconName,
+                onPress: () => navigation.navigate('Cart'),
+                badge: String(cart.totalCartCount),
+                tone: 'primary' as const,
+              },
+            ]
+          : []),
         { label: 'Favourites', icon: 'heart', onPress: () => navigation.navigate('Favorites'), badge: favorites.length > 0 ? String(favorites.length) : undefined },
         { label: 'Addresses', icon: 'mapPin', onPress: () => navigation.navigate('Addresses') },
       ],

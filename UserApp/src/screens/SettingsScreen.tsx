@@ -14,7 +14,7 @@ import { useColors } from '@/theme/ThemeContext';
 import { spacing } from '@/theme/tokens';
 import { StorageKey, readJson, removeKey, writeJson } from '@/lib/storage';
 import { API_BASE_URL, CURRENCY } from '@/config';
-import { haptic } from '@/lib/haptics';
+import { haptic, setHapticsEnabled } from '@/lib/haptics';
 import type { Nav } from '@/navigation/types';
 
 interface SettingsState {
@@ -36,12 +36,17 @@ export function SettingsScreen({ navigation }: { navigation: Nav }): React.React
   const [settings, setSettings] = useState<SettingsState>(DEFAULTS);
 
   useEffect(() => {
-    void readJson<SettingsState>(StorageKey.settings, DEFAULTS).then((stored) => setSettings({ ...DEFAULTS, ...stored }));
+    void readJson<SettingsState>(StorageKey.settings, DEFAULTS).then((stored) => {
+      const next = { ...DEFAULTS, ...stored };
+      setSettings(next);
+      setHapticsEnabled(next.hapticsEnabled);
+    });
   }, []);
 
   const update = (patch: Partial<SettingsState>): void => {
     const next = { ...settings, ...patch };
     setSettings(next);
+    if (patch.hapticsEnabled !== undefined) setHapticsEnabled(next.hapticsEnabled);
     void writeJson(StorageKey.settings, next);
     haptic.selection();
   };

@@ -1,10 +1,17 @@
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
 
+// Kept in memory so every button in the app follows the Settings toggle
+// without making haptic calls asynchronous or adding context to every screen.
+let enabled = true;
+export function setHapticsEnabled(value: boolean): void {
+  enabled = value;
+}
+
 const guard =
   <T extends (...args: never[]) => Promise<unknown>>(fn: T) =>
   (...args: Parameters<T>): void => {
-    if (Platform.OS === 'web') return;
+    if (Platform.OS === 'web' || !enabled) return;
     void fn(...args).catch(() => undefined);
   };
 

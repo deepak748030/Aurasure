@@ -101,11 +101,12 @@ export const lightPalette: Palette = {
 
 export const darkPalette: Palette = {
   isDark: true,
-  primary: '#E56BB8',
-  primaryDeep: '#67014B',
-  primarySoft: 'rgba(229, 107, 184, 0.14)',
-  primaryFaint: 'rgba(229, 107, 184, 0.07)',
-  onPrimary: '#22030F',
+  // Cool indigo accent keeps dark mode crisp without the light-mode pink cast.
+  primary: '#8B8CFF',
+  primaryDeep: '#4C4DA8',
+  primarySoft: 'rgba(139, 140, 255, 0.16)',
+  primaryFaint: 'rgba(139, 140, 255, 0.08)',
+  onPrimary: '#10112E',
   secondary: '#1ED7AA',
   secondarySoft: 'rgba(30, 215, 170, 0.16)',
   bg: '#0F0B0E',
@@ -140,8 +141,8 @@ export const darkPalette: Palette = {
   mapBase: '#1D1F22',
   mapRoad: '#2C2F33',
   mapBlock: '#24272A',
-  gradientHeader: ['#241A21', '#1A1417'],
-  gradientPromo: ['#3A2E18', '#1F191D'],
+  gradientHeader: ['#1E1F3A', '#15161F'],
+  gradientPromo: ['#302A18', '#1B1C24'],
 };
 
 export const palettes = { light: lightPalette, dark: darkPalette } as const;

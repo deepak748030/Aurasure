@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { Screen, FlushSurface } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
@@ -25,6 +25,7 @@ export function TrackOrderScreen({ navigation, route }: { navigation: Nav; route
   const c = useColors();
   const sheet = useSheet();
   const { coords, requestLocation, locationStatus } = useSession();
+  const [recentering, setRecentering] = useState(false);
   const query = useQuery<{ order: Order; outlet: OrderOutlet | null }>(
     useCallback((signal: AbortSignal) => fetchOrderDetail(route.params.id, signal), [route.params.id]),
     { deps: [] },
@@ -75,9 +76,13 @@ export function TrackOrderScreen({ navigation, route }: { navigation: Nav; route
           markers={markers}
           userLabel={order.status === 'delivered' ? 'Delivered here' : (outlet?.name ?? 'Your order')}
           showUserDot={Boolean(coords)}
+          recentering={recentering}
           onCenterPress={() => {
+            if (recentering) return;
+            setRecentering(true);
             void (async () => {
-              const next = await requestLocation();
+              const next = await requestLocation({ force: true }).catch(() => null);
+              setRecentering(false);
               sheet.info(next ? 'Location refreshed' : 'Location unavailable', next ? `${next.latitude.toFixed(4)}, ${next.longitude.toFixed(4)}` : 'Enable location services to see yourself on the map.');
             })();
           }}

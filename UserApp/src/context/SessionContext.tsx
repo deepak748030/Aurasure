@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import * as Location from 'expo-location';
 import { clearSession, getCachedUser, patchUser, persistSession, restoreSession, subscribeSession } from '@/api/session';
 import * as authApi from '@/api/auth';
@@ -53,7 +53,13 @@ interface SessionValue {
 
   locationStatus: LocationStatus;
   coords: { latitude: number; longitude: number } | null;
-  requestLocation: () => Promise<{ latitude: number; longitude: number } | null>;
+  /**
+   * Ask the device for a fix. Concurrent calls share one in-flight request and
+   * a fresh fix (< 60s old) is reused instead of re-prompting the OS.
+   */
+  requestLocation: (options?: { force?: boolean }) => Promise<{ latitude: number; longitude: number } | null>;
+  /** Reverse-geocode the current fix, save it as an address and select it. */
+  useCurrentLocationAsAddress: () => Promise<UserAddress | null>;
   /** "20 minutes" style greeting line in the home header. */
   deliveryEtaLabel: string;
   onboarded: boolean;
@@ -61,6 +67,37 @@ interface SessionValue {
 }
 
 const SessionContext = createContext<SessionValue | null>(null);
+
+/** A GPS fix younger than this is reused instead of re-reading the device. */
+const FIX_TTL = 60_000;
+
+/** Shallow list compare so an unchanged fetch keeps the previous array. */
+function sameAddresses(a: UserAddress[], b: UserAddress[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((row, index) => {
+    const other = b[index];
+    return (
+      other != null &&
+      row.id === other.id &&
+      row.label === other.label &&
+      row.line === other.line &&
+      row.city === other.city &&
+      row.pin === other.pin &&
+      row.isDefault === other.isDefault &&
+      row.lat === other.lat &&
+      row.lng === other.lng
+    );
+  });
+}
+
+/** ~11 m — below this two fixes are the same place as far as the UI cares. */
+function samePoint(
+  a: { latitude: number; longitude: number } | null,
+  b: { latitude: number; longitude: number } | null,
+): boolean {
+  if (!a || !b) return false;
+  return Math.abs(a.latitude - b.latitude) < 0.0001 && Math.abs(a.longitude - b.longitude) < 0.0001;
+}
 
 export function SessionProvider({ children }: { children: React.ReactNode }): React.ReactElement {
   const [ready, setReady] = useState(false);
@@ -75,6 +112,19 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
   const [locationStatus, setLocationStatus] = useState<LocationStatus>('idle');
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [onboarded, setOnboardedState] = useState(true);
+
+  // Refs mirror state that the location helpers need to *read* without making
+  // those callbacks change identity — an unstable `requestLocation` /
+  // `loadAddresses` is what turned "use current location" into a refresh loop.
+  const coordsRef = useRef<{ latitude: number; longitude: number } | null>(null);
+  const coordsAtRef = useRef(0);
+  const inFlightRef = useRef<Promise<{ latitude: number; longitude: number } | null> | null>(null);
+  const addressesRef = useRef<UserAddress[]>([]);
+  const userRef = useRef<UserProfile | null>(null);
+  const selectedIdRef = useRef<string | null>(null);
+  addressesRef.current = addresses;
+  userRef.current = user;
+  selectedIdRef.current = selectedAddressId;
 
   /* ------------------------------- bootstrap ------------------------------ */
 
@@ -181,20 +231,34 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
 
   const loadAddresses = useCallback(async () => {
     const list = await accountApi.fetchAddresses();
-    setAddresses(list);
-    setSelectedAddressId((prev) => {
-      if (prev && list.some((a) => a.id === prev)) return prev;
-      const fallback = list.find((a) => a.isDefault) ?? list[0];
-      void writeJson(StorageKey.address, fallback?.id ?? null);
-      return fallback?.id ?? null;
-    });
+    // Keep the previous array when nothing changed. `addresses` feeds the
+    // context value, the header and several `useMemo` deps — handing out a new
+    // array on every fetch re-rendered (and re-fetched) the whole tree.
+    setAddresses((prev) => (sameAddresses(prev, list) ? prev : list));
+    // The write is a side effect, so it must not live inside a state updater:
+    // React may invoke updaters twice (StrictMode / concurrent re-render),
+    // which persisted the address id twice per load.
+    const keep = selectedIdRef.current && list.some((a) => a.id === selectedIdRef.current);
+    if (!keep) {
+      const fallback = list.find((a) => a.isDefault) ?? list[0] ?? null;
+      const nextId = fallback?.id ?? null;
+      if (nextId !== selectedIdRef.current) {
+        selectedIdRef.current = nextId;
+        setSelectedAddressId(nextId);
+        void writeJson(StorageKey.address, nextId);
+      }
+    }
     return list;
   }, []);
 
+  // Only re-run when the *identity* of the signed-in user changes. Depending on
+  // the whole `user` object meant every profile refresh (wallet top-up, name
+  // edit, `GET /users/me` on focus) re-fetched the address book.
+  const userId = user?.id ?? null;
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
     loadAddresses().catch(() => undefined);
-  }, [user, loadAddresses]);
+  }, [userId, loadAddresses]);
 
   const addAddress = useCallback(async (input: { label: string; line: string; city: string; pin: string; isDefault?: boolean; lat?: number | null; lng?: number | null }) => {
     const created = await accountApi.addAddress(input);
@@ -292,24 +356,114 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
 
   /* -------------------------------- location ------------------------------- */
 
-  const requestLocation = useCallback(async () => {
-    setLocationStatus('asking');
-    try {
-      const permission = await Location.requestForegroundPermissionsAsync();
-      if (!permission.granted) {
-        setLocationStatus('denied');
-        return null;
-      }
-      const position = await Location.getLastKnownPositionAsync({ maxAge: 5 * 60 * 1000 });
-      const current = position ?? (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }));
-      setCoords({ latitude: current.coords.latitude, longitude: current.coords.longitude });
-      setLocationStatus('granted');
-      return { latitude: current.coords.latitude, longitude: current.coords.longitude };
-    } catch {
-      setLocationStatus('unsupported');
-      return null;
+  /**
+   * Every "use current location" button used to fire its own permission
+   * prompt + GPS read. Tapping twice (or two screens mounting at once) started
+   * two OS requests, each finishing at a slightly different time, and each
+   * `setCoords` re-rendered every consumer of this context — which is what the
+   * "location keeps refreshing again and again" bug looked like. Now:
+   *   • one in-flight promise is shared by all callers,
+   *   • a fix younger than `FIX_TTL` is returned from cache without touching
+   *     the GPS at all (pass `{ force: true }` to bypass),
+   *   • `setCoords` only writes when the position actually moved, so an
+   *     identical fix does not re-render the tree.
+   */
+  const requestLocation = useCallback(async (options?: { force?: boolean }) => {
+    const force = options?.force === true;
+    if (!force) {
+      const cached = coordsRef.current;
+      if (cached && Date.now() - coordsAtRef.current < FIX_TTL) return cached;
     }
+    if (inFlightRef.current) return inFlightRef.current;
+
+    const task = (async (): Promise<{ latitude: number; longitude: number } | null> => {
+      setLocationStatus('asking');
+      try {
+        const existing = await Location.getForegroundPermissionsAsync();
+        const permission = existing.granted ? existing : await Location.requestForegroundPermissionsAsync();
+        if (!permission.granted) {
+          setLocationStatus('denied');
+          return null;
+        }
+        const position = await Location.getLastKnownPositionAsync({ maxAge: 5 * 60 * 1000 });
+        const current = position ?? (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }));
+        const next = { latitude: current.coords.latitude, longitude: current.coords.longitude };
+        coordsAtRef.current = Date.now();
+        setLocationStatus('granted');
+        // Identical fix → keep the previous object so `coords` stays
+        // referentially stable and dependent effects do not re-run.
+        if (samePoint(coordsRef.current, next)) return coordsRef.current;
+        coordsRef.current = next;
+        setCoords(next);
+        return next;
+      } catch {
+        setLocationStatus('unsupported');
+        return null;
+      } finally {
+        inFlightRef.current = null;
+      }
+    })();
+
+    inFlightRef.current = task;
+    return task;
   }, []);
+
+  /**
+   * "Use current location" as a real address: reverse-geocode the fix and save
+   * it (or reuse the existing saved address for the same spot) so the header
+   * shows a place name instead of nothing, and the delivery address is
+   * actually set. Reusing an existing pin is what stops a new duplicate row —
+   * and a fresh `addresses` array — being created on every tap.
+   */
+  const useCurrentLocationAsAddress = useCallback(async (): Promise<UserAddress | null> => {
+    const point = await requestLocation();
+    if (!point) return null;
+
+    const existing = addressesRef.current.find(
+      (a) => typeof a.lat === 'number' && typeof a.lng === 'number' && samePoint({ latitude: a.lat, longitude: a.lng }, point),
+    );
+    if (existing) {
+      setSelectedAddressId(existing.id);
+      void writeJson(StorageKey.address, existing.id);
+      return existing;
+    }
+
+    let line = `Near ${point.latitude.toFixed(4)}, ${point.longitude.toFixed(4)}`;
+    let city = '';
+    let pin = '';
+    try {
+      const [place] = await Location.reverseGeocodeAsync({ latitude: point.latitude, longitude: point.longitude });
+      if (place) {
+        const parts = [place.name, place.street, place.district, place.subregion].filter(
+          (part): part is string => typeof part === 'string' && part.trim().length > 0,
+        );
+        const unique = parts.filter((part, index) => parts.indexOf(part) === index);
+        if (unique.length > 0) line = unique.join(', ');
+        city = place.city ?? place.subregion ?? place.region ?? '';
+        pin = place.postalCode ?? '';
+      }
+    } catch {
+      /* reverse geocoding is best-effort — the coordinates line still works */
+    }
+
+    // Not signed in: there is no server to save to, so surface the resolved
+    // place through `coords` only and let the caller ask for a login.
+    if (!userRef.current) return null;
+
+    const created = await accountApi.addAddress({
+      label: 'Current location',
+      line,
+      city: city || 'Unknown',
+      pin: pin || '000000',
+      isDefault: addressesRef.current.length === 0,
+      lat: point.latitude,
+      lng: point.longitude,
+    });
+    setAddresses((prev) => [...prev.filter((a) => a.id !== created.id), created]);
+    setSelectedAddressId(created.id);
+    void writeJson(StorageKey.address, created.id);
+    return created;
+  }, [requestLocation]);
 
   const setOnboarded = useCallback((done: boolean) => {
     setOnboardedState(done);
@@ -359,6 +513,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
       locationStatus,
       coords,
       requestLocation,
+      useCurrentLocationAsAddress,
       deliveryEtaLabel,
       onboarded,
       setOnboarded,
@@ -393,6 +548,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
       locationStatus,
       coords,
       requestLocation,
+      useCurrentLocationAsAddress,
       deliveryEtaLabel,
       onboarded,
       setOnboarded,

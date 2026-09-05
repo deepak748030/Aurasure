@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
@@ -23,12 +23,22 @@ import { hasCoords, project } from '@/lib/geo';
 export function LocationScreen({ navigation }: { navigation: { navigate: (name: string) => void; goBack: () => void; canGoBack: () => boolean } }): React.ReactElement {
   const c = useColors();
   const sheet = useSheet();
-  const { addresses, selectedAddress, setSelectedAddressId, loadAddresses, requestLocation, locationStatus } = useSession();
+  const { addresses, selectedAddress, setSelectedAddressId, loadAddresses, useCurrentLocationAsAddress, isLoggedIn, locationStatus } = useSession();
   const [locating, setLocating] = useState(false);
-
+  const alive = useRef(true);
   useEffect(() => {
-    void loadAddresses();
-  }, [loadAddresses]);
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+
+  // Signed-out users have no address book to fetch, and `loadAddresses` is a
+  // stable callback, so this runs exactly once per sign-in state.
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    void loadAddresses().catch(() => undefined);
+  }, [isLoggedIn, loadAddresses]);
 
   const cities = useQuery<ServiceCity[]>(useCallback((signal: AbortSignal) => fetchCities(signal), []), {});
   const list = useMemo(() => cities.data ?? [], [cities.data]);
@@ -55,10 +65,30 @@ export function LocationScreen({ navigation }: { navigation: { navigate: (name: 
   };
 
   const useCurrent = async (): Promise<void> => {
+    // Guard against a double tap: the second press would kick off a second
+    // permission + geocode round trip and re-render the screen mid-flight.
+    if (locating) return;
+    if (!isLoggedIn) {
+      sheet.show({
+        title: 'Sign in to save it',
+        message: 'We can read your location, but saving it as a delivery address needs your account.',
+        icon: 'user',
+        tone: 'info',
+        dismissLabel: 'Later',
+        actions: [{ label: 'Sign in', onPress: () => navigation.navigate('Auth'), variant: 'primary' }],
+      });
+      return;
+    }
     setLocating(true);
-    const coords = await requestLocation();
+    let saved: Awaited<ReturnType<typeof useCurrentLocationAsAddress>> = null;
+    try {
+      saved = await useCurrentLocationAsAddress();
+    } catch {
+      saved = null;
+    }
+    if (!alive.current) return;
     setLocating(false);
-    if (!coords) {
+    if (!saved) {
       sheet.show({
         title: 'Location unavailable',
         message:
@@ -73,7 +103,14 @@ export function LocationScreen({ navigation }: { navigation: { navigate: (name: 
       return;
     }
     haptic.success();
-    sheet.success('Location captured', `Lat ${coords.latitude.toFixed(4)} · Lng ${coords.longitude.toFixed(4)}\nNearby stores are sorted by distance.`);
+    sheet.show({
+      title: 'Delivering here',
+      message: `${saved.line}${saved.city ? `, ${saved.city}` : ''}. Edit it any time from your saved addresses.`,
+      icon: 'mapPin',
+      tone: 'success',
+      dismissLabel: 'Done',
+      actions: [{ label: 'Edit address', onPress: () => navigation.navigate('AddressEdit'), variant: 'secondary' }],
+    });
   };
 
   return (

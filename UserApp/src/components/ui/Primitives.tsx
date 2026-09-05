@@ -390,7 +390,16 @@ export function Avatar({
 }): React.ReactElement {
   const c = useColors();
   if (uri) {
-    return <SmartImage source={{ kind: 'uri', uri }} rounded style={{ width: size, height: size }} radiusOverride={radius.pill} />;
+    return (
+      <SmartImage
+        source={{ kind: 'uri', uri }}
+        name={name}
+        icon="userRound"
+        rounded
+        style={{ width: size, height: size }}
+        radiusOverride={radius.pill}
+      />
+    );
   }
   return (
     <View

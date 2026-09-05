@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/Text';
-import { Icon, BRAND } from '@/lib/icons';
+import { BRAND } from '@/lib/icons';
 import { useColors } from '@/theme/ThemeContext';
 import { radius, spacing } from '@/theme/tokens';
 import { useSession } from '@/context/SessionContext';
@@ -54,7 +55,12 @@ export function SplashScreen({ navigation }: { navigation: { replace: (name: str
               { transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.06] }) }] },
             ]}
           >
-            <Icon name={BRAND.icon} size={46} color={c.white} />
+            <Image
+              source={require('../../assets/images/icon.png')}
+              contentFit="contain"
+              style={{ width: 72, height: 72, borderRadius: radius.lg }}
+              accessibilityLabel="Aurasure app icon"
+            />
           </Animated.View>
           <View style={{ alignItems: 'center', gap: 6 }}>
             <Text variant="h2" weight="bold" color={c.white}>

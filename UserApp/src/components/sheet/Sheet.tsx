@@ -134,7 +134,10 @@ export function Sheet({
   // Do not leave an empty native Modal mounted after the exit animation.
   // Android can keep its white surface above the tab bar for a frame when a
   // placeholder View is returned here.
-  if (!mounted) return null;
+  // Unmount immediately when closed. Keeping a transparent Modal alive during
+  // the exit animation leaves an empty white rounded surface on Android above
+  // the tab bar (especially after logout/navigation changes).
+  if (!visible || !mounted) return null;
 
   const dismiss = (): void => {
     if (dismissible) {

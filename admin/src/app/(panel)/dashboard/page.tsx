@@ -16,6 +16,7 @@ import {
   ArrowRight,
   Image as ImageIcon,
   LayoutList,
+  MessageSquareText,
 } from 'lucide-react';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { PageHeader, StatCard } from '@/components/ui/PageHeader';
@@ -97,6 +98,14 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             <StatCard label="Wallet collected" value={moneyShort(s?.walletCollected)} icon={Wallet} tone="neutral" />
+            <StatCard
+              label="Open support tickets"
+              value={num(s?.openTickets)}
+              hint="Waiting on a reply"
+              icon={MessageSquareText}
+              tone="danger"
+              onClick={() => router.push('/support')}
+            />
             <StatCard label="Cancelled orders" value={num(s?.cancelledOrders)} icon={XCircle} tone="danger" />
             <StatCard
               label="Restaurants"

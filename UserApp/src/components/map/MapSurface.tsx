@@ -18,7 +18,10 @@ import { radius, spacing } from '@/theme/tokens';
 export interface MapMarker {
   id: string;
   label: string;
-  /** 0..1 position on the canvas; the app has no lat/lng for most outlets. */
+  /**
+   * 0..1 position on the canvas. Callers compute this with `lib/geo` from real
+   * lat/lng — never from grid slots or index maths.
+   */
   x: number;
   y: number;
   icon?: IconName;
@@ -36,6 +39,8 @@ interface MapSurfaceProps {
   footer?: React.ReactNode;
   showControls?: boolean;
   recentering?: boolean;
+  /** Pulsing "you" dot at the centre. Hide it when there is no device fix. */
+  showUserDot?: boolean;
 }
 
 export function MapSurface({
@@ -48,6 +53,7 @@ export function MapSurface({
   footer,
   showControls = true,
   recentering = false,
+  showUserDot = true,
 }: MapSurfaceProps): React.ReactElement {
   const c = useColors();
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
@@ -141,6 +147,7 @@ export function MapSurface({
         ))}
 
         {/* user dot */}
+        {showUserDot ? (
         <View style={[styles.userWrap, { left: '50%', top: '50%' }]}>
           <Animated.View
             style={{
@@ -155,6 +162,7 @@ export function MapSurface({
           />
           <View style={[styles.userDot, { borderColor: c.white, backgroundColor: c.primary }]} />
         </View>
+        ) : null}
 
         {markers.map((marker) => (
           <Pressable
@@ -190,7 +198,7 @@ export function MapSurface({
           style={({ pressed }) => [styles.chip, { backgroundColor: pressed ? c.sheet : c.sheet, borderColor: c.border }]}
         >
           <Icon name="crosshairs" size={13} color={c.primary} />
-          <Text variant="micro" weight="bold" color={c.text}>
+          <Text variant="micro" weight="semibold" color={c.text}>
             {userLabel}
           </Text>
         </Pressable>

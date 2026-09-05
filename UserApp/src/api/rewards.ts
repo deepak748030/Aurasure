@@ -11,15 +11,42 @@ export interface WalletState {
   transactions: LedgerTx[];
 }
 
+export interface TierDetail {
+  name: string;
+  color: string;
+  progress: number;
+  nextTier: string;
+  nextAt: number | null;
+}
+
 export interface LoyaltyState {
   points: number;
   tier: string;
+  tierDetail: TierDetail;
+  rules: { earnPer100: number; redeemPoints: number; redeemValue: number; tiers: { name: string; min: number; color: string }[] };
+  nextTierAt: number | null;
   activity: LoyaltyTx[];
 }
 
-/** 100 points → ₹10, redeem only in multiples of 100 (server rule). */
-export const MIN_REDEEM_POINTS = 100;
-export const POINTS_PER_RUPEE = 10;
+/**
+ * Fallback rules while the loyalty payload loads (or on an old server that
+ * predates `rules`). The live values always come from `LoyaltyState.rules`.
+ */
+export const FALLBACK_LOYALTY_RULES = {
+  earnPer100: 5,
+  redeemPoints: 100,
+  redeemValue: 10,
+  tiers: [
+    { name: 'Bronze', min: 0, color: '#C2703D' },
+    { name: 'Silver', min: 1000, color: '#94A3B8' },
+    { name: 'Gold', min: 2500, color: '#E5A710' },
+    { name: 'Platinum', min: 5000, color: '#64748B' },
+  ],
+} as const;
+
+export function loyaltyRules(state: LoyaltyState | null | undefined) {
+  return state?.rules ?? FALLBACK_LOYALTY_RULES;
+}
 
 export function fetchWallet(): Promise<WalletState> {
   return apiGet<WalletState>('/users/me/wallet', { auth: true });
@@ -55,6 +82,8 @@ export interface ReferralState {
   earnings: number;
   friends: number;
   referredBy: string | null;
+  reward: { wallet: number; points: number; referrerWallet: number };
+  terms: string[];
 }
 
 export function fetchReferral(): Promise<ReferralState> {

@@ -338,7 +338,7 @@ function MenuRow({
           {item.isBestseller ? <Tag label="Bestseller" tone="warning" /> : null}
           <View style={{ flex: 1 }} />
           {unavailable ? (
-            <Text variant="micro" weight="bold" color={c.danger}>
+            <Text variant="micro" weight="semibold" color={c.danger}>
               OUT OF STOCK
             </Text>
           ) : (
@@ -362,7 +362,7 @@ function QtyStepper({ qty, onPress, onInc, onDec }: { qty: number; onPress: () =
       <Pressable accessibilityRole="button" accessibilityLabel="Decrease quantity" onPress={onDec} hitSlop={6}>
         <Icon name="minus" size={13} color={c.primary} />
       </Pressable>
-      <Text variant="caption" weight="bold" color={c.primary}>
+      <Text variant="caption" weight="semibold" color={c.primary}>
         {qty}
       </Text>
       <Pressable accessibilityRole="button" accessibilityLabel="Increase quantity" onPress={onInc} hitSlop={6}>

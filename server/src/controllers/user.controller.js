@@ -5,6 +5,14 @@ const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { ok, created, noContent } = require('../utils/response');
 const { newId } = require('../utils/id');
+const Restaurant = require('../models/Restaurant');
+const ShopStore = require('../models/ShopStore');
+const { getAppSettings } = require('../utils/settings');
+
+function asCoord(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
 
 /** GET /api/v1/users/me */
 const getMe = asyncHandler(async (req, res) => ok(res, { user: req.user.toJSON() }));
@@ -26,8 +34,8 @@ const getAddresses = asyncHandler(async (req, res) => ok(res, { addresses: req.u
 
 /** POST /api/v1/users/me/addresses */
 const addAddress = asyncHandler(async (req, res) => {
-  const { label, line, city, pin, isDefault } = req.body;
-  const address = { id: newId('adr'), label, line, city, pin, isDefault: Boolean(isDefault) };
+  const { label, line, city, pin, isDefault, lat, lng } = req.body;
+  const address = { id: newId('adr'), label, line, city, pin, isDefault: Boolean(isDefault), lat: asCoord(lat), lng: asCoord(lng) };
   if (address.isDefault) req.user.addresses.forEach((a) => (a.isDefault = false));
   req.user.addresses.push(address);
   await req.user.save();
@@ -40,11 +48,13 @@ const updateAddress = asyncHandler(async (req, res) => {
   const address = req.user.addresses.find((a) => a.id === addressId);
   if (!address) throw ApiError.notFound('Address not found', 'ADDRESS_NOT_FOUND');
 
-  const { label, line, city, pin, isDefault } = req.body;
+  const { label, line, city, pin, isDefault, lat, lng } = req.body;
   if (label !== undefined) address.label = label;
   if (line !== undefined) address.line = line;
   if (city !== undefined) address.city = city;
   if (pin !== undefined) address.pin = pin;
+  if (lat !== undefined) address.lat = asCoord(lat);
+  if (lng !== undefined) address.lng = asCoord(lng);
   if (isDefault !== undefined) {
     if (isDefault) req.user.addresses.forEach((a) => (a.isDefault = false));
     address.isDefault = Boolean(isDefault);
@@ -103,7 +113,34 @@ const putFavorite = asyncHandler(async (req, res) => {
   return ok(res, { favorites: req.user.favorites });
 });
 
+/** GET /api/v1/users/me/delivery-estimate?module=&city= — honest "when" copy. */
+const getDeliveryEstimate = asyncHandler(async (req, res) => {
+  const module = req.query.module === 'shop' ? 'shop' : 'food';
+  const city = typeof req.query.city === 'string' ? req.query.city.trim() : '';
+  const settings = await getAppSettings();
+  const Model = module === 'food' ? Restaurant : ShopStore;
+  const query = module === 'food' ? { isClosed: { $ne: true } } : {};
+  if (city) query.city = city;
+  let outlets = await Model.find(query).sort({ rating: -1 }).limit(5);
+  if (!outlets.length && city) {
+    outlets = await Model.find(module === 'food' ? { isClosed: { $ne: true } } : {}).sort({ rating: -1 }).limit(5);
+  }
+  const field = module === 'food' ? 'deliveryTime' : 'deliveryMins';
+  const etas = outlets.map((o) => Number(o[field]) || settings.delivery.defaultEta);
+  const etaMinutes = etas.length
+    ? Math.min(settings.delivery.maxEta, Math.max(settings.delivery.minEta, Math.round(Math.min(...etas))))
+    : settings.delivery.defaultEta;
+  return ok(res, {
+    module,
+    city: city || null,
+    etaMinutes,
+    label: etas.length ? `Delivery in ~${etaMinutes} min` : 'Delivery slots open soon',
+    outlets: outlets.map((o) => ({ id: o.id, name: o.name, city: o.city || null })),
+  });
+});
+
 module.exports = {
+  getDeliveryEstimate,
   getMe,
   updateMe,
   getAddresses,

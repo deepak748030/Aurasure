@@ -10,6 +10,9 @@ const console_ = require('../controllers/adminCatalog.controller');
 const vendorCatalogue = require('../controllers/adminVendorCatalog.controller');
 const uploads = require('../controllers/upload.controller');
 const promos = require('../controllers/promo.controller');
+const notifications = require('../controllers/notification.controller');
+const support = require('../controllers/support.controller');
+const appConfig = require('../controllers/app.controller');
 const { singleImage, manyImages } = require('../middlewares/upload');
 const { authenticate, requireRole } = require('../middlewares/auth');
 const validate = require('../middlewares/validate');
@@ -92,6 +95,22 @@ router.delete('/uploads/:bucket/:file', uploads.deleteUpload);
 // Promo codes - CRUD comes from the catalogue loop below, these are the extras.
 router.post('/promos/:id/issue', promos.issuePromo);
 router.get('/promos/:id/stats', promos.promoStats);
+
+// Customer-app notifications: list + broadcast composer.
+router.get('/notifications', notifications.listAll);
+router.post('/notifications/broadcast', notifications.broadcast);
+router.delete('/notifications/:id', notifications.removeOne);
+
+// Support inbox ("write to us" tickets from the app Help centre).
+router.get('/support-tickets', support.listAll);
+router.get('/support-tickets/:id', support.getOne);
+router.patch('/support-tickets/:id', support.updateOne);
+
+// Editorial content (FAQs, policies, partner perks) + app configuration.
+router.get('/content', appConfig.adminListContent);
+router.put('/content/:key', appConfig.adminUpdateContent);
+router.get('/app-settings', appConfig.adminGetSettings);
+router.put('/app-settings', appConfig.adminUpdateSettings);
 
 // Catalogue CRUD - one identical REST surface per resource.
 for (const [path, handlers] of Object.entries(console_.resources)) {

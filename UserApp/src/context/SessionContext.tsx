@@ -33,8 +33,8 @@ interface SessionValue {
 
   addresses: UserAddress[];
   loadAddresses: () => Promise<UserAddress[]>;
-  addAddress: (input: { label: string; line: string; city: string; pin: string; isDefault?: boolean }) => Promise<UserAddress>;
-  editAddress: (id: string, input: Partial<{ label: string; line: string; city: string; pin: string; isDefault?: boolean }>) => Promise<void>;
+  addAddress: (input: { label: string; line: string; city: string; pin: string; isDefault?: boolean; lat?: number | null; lng?: number | null }) => Promise<UserAddress>;
+  editAddress: (id: string, input: Partial<{ label: string; line: string; city: string; pin: string; isDefault?: boolean; lat?: number | null; lng?: number | null }>) => Promise<void>;
   removeAddress: (id: string) => Promise<void>;
   selectedAddressId: string | null;
   setSelectedAddressId: (id: string | null) => void;
@@ -196,7 +196,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
     loadAddresses().catch(() => undefined);
   }, [user, loadAddresses]);
 
-  const addAddress = useCallback(async (input: { label: string; line: string; city: string; pin: string; isDefault?: boolean }) => {
+  const addAddress = useCallback(async (input: { label: string; line: string; city: string; pin: string; isDefault?: boolean; lat?: number | null; lng?: number | null }) => {
     const created = await accountApi.addAddress(input);
     setAddresses((prev) => (input.isDefault ? prev.map((a) => ({ ...a, isDefault: false })) .concat(created) : [...prev, created]));
     setSelectedAddressId(created.id);
@@ -205,7 +205,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
   }, []);
 
   const editAddress = useCallback(
-    async (id: string, input: Partial<{ label: string; line: string; city: string; pin: string; isDefault?: boolean }>) => {
+    async (id: string, input: Partial<{ label: string; line: string; city: string; pin: string; isDefault?: boolean; lat?: number | null; lng?: number | null }>) => {
       const updated = await accountApi.editAddress(id, input);
       setAddresses((prev) => {
         const next = prev.map((a) => (a.id === id ? updated : a));

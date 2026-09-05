@@ -83,7 +83,7 @@ export function TrackingStepper({ order }: { order: Order }): React.ReactElement
           <Icon name={statusIcon(order.status)} size={15} color={cancelled ? c.danger : orderTone(order.status) === 'success' ? c.success : c.primary} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text variant="subtitle" weight="bold">
+          <Text variant="subtitle" weight="semibold">
             {statusLabel(order.status)}
           </Text>
           <Text variant="micro" tone="muted">

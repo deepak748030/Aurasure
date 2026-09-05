@@ -30,11 +30,11 @@ export function OrderCard({ order, onPress, onReorder }: { order: Order; onPress
         <View style={[styles.plate, { backgroundColor: order.status === 'cancelled' ? c.dangerBg : order.status === 'delivered' ? c.successBg : c.primarySoft }]}>
           <Icon name={statusIcon(order.status)} size={16} color={tone} />
         </View>
-        <View style={{ flex: 1 }}>
-          <Text variant="title" weight="bold">
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text variant="title" weight="semibold" numberOfLines={1}>
             {order.code}
           </Text>
-          <Text variant="micro" tone="muted">
+          <Text variant="micro" tone="muted" numberOfLines={1}>
             {dayLabel(order.placedAt)} · {relative(order.placedAt)}
           </Text>
         </View>
@@ -49,12 +49,12 @@ export function OrderCard({ order, onPress, onReorder }: { order: Order; onPress
         ))}
         {extra > 0 ? (
           <View style={{ width: 44, height: 44, borderRadius: radius.sm, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
-            <Text variant="micro" weight="bold" tone="muted">
+            <Text variant="micro" weight="semibold" tone="muted">
               +{extra}
             </Text>
           </View>
         ) : null}
-        <View style={{ flex: 1, gap: 2, marginLeft: 2 }}>
+        <View style={{ flex: 1, gap: 2, marginLeft: 2, minWidth: 0 }}>
           <Text variant="bodySm" weight="semibold" numberOfLines={1}>
             {order.items.map((line) => line.name).join(', ')}
           </Text>
@@ -62,11 +62,11 @@ export function OrderCard({ order, onPress, onReorder }: { order: Order; onPress
             {order.items.length} item{order.items.length === 1 ? '' : 's'} · {order.module === 'food' ? 'Food' : 'Shop'}
           </Text>
         </View>
-        <View style={{ alignItems: 'flex-end', gap: 2 }}>
-          <Text variant="title" weight="bold">
+        <View style={{ alignItems: 'flex-end', gap: 2, flexShrink: 0 }}>
+          <Text variant="title" weight="semibold" numberOfLines={1}>
             {money(order.total)}
           </Text>
-          <Text variant="micro" tone="faint">
+          <Text variant="micro" tone="faint" numberOfLines={1}>
             {order.payBy === 'wallet' ? 'Wallet' : 'Cash'}
           </Text>
         </View>
@@ -86,7 +86,7 @@ export function OrderCard({ order, onPress, onReorder }: { order: Order; onPress
       {onReorder && !running ? (
         <Pressable accessibilityRole="button" onPress={onReorder} hitSlop={6} style={({ pressed }) => [styles.reorder, { borderColor: c.primary, opacity: pressed ? 0.85 : 1 }]}>
           <Icon name="refresh" size={14} color={c.primary} />
-          <Text variant="caption" weight="bold" color={c.primary}>
+          <Text variant="caption" weight="semibold" color={c.primary}>
             Reorder
           </Text>
         </Pressable>

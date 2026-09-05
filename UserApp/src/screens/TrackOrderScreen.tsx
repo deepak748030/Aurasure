@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { View } from 'react-native';
 import { Screen, FlushSurface } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
@@ -10,7 +10,8 @@ import { TrackingStepper } from '@/components/orders/TrackingStepper';
 import { MapSurface, type MapMarker } from '@/components/map/MapSurface';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useQuery } from '@/hooks/useQuery';
-import { getOrder, isRunning, statusLabel } from '@/api/orders';
+import { fetchOrderDetail, isRunning, statusLabel, type OrderOutlet } from '@/api/orders';
+import { hasCoords, project } from '@/lib/geo';
 import { useSession } from '@/context/SessionContext';
 import { useColors } from '@/theme/ThemeContext';
 import { useSheet } from '@/components/sheet/SheetProvider';
@@ -19,22 +20,37 @@ import { minutes } from '@/lib/format';
 import type { Nav, Route } from '@/navigation/types';
 import type { Order } from '@/types';
 
-/**
- * Live tracking. There is no rider GPS endpoint on this server build, so the
- * map shows the store, your address and the current stage — and the ETA the
- * order itself carries (`etaMinutes` from `POST /orders`).
- */
+/** Live tracking: the outlet pin (real coordinates) + the stage + the ETA. */
 export function TrackOrderScreen({ navigation, route }: { navigation: Nav; route: Route<'TrackOrder'> }): React.ReactElement {
   const c = useColors();
   const sheet = useSheet();
   const { coords, requestLocation, locationStatus } = useSession();
-  const query = useQuery<Order>(useCallback(() => getOrder(route.params.id), [route.params.id]), { deps: [] });
-  const order = query.data;
+  const query = useQuery<{ order: Order; outlet: OrderOutlet | null }>(
+    useCallback((signal: AbortSignal) => fetchOrderDetail(route.params.id, signal), [route.params.id]),
+    { deps: [] },
+  );
+  const order = query.data?.order ?? null;
+  const outlet = query.data?.outlet ?? null;
 
-  const markers: MapMarker[] = [
-    { id: 'you', label: 'Your address', x: 0.5, y: 0.5, icon: 'home', tone: 'primary', active: true },
-    { id: 'outlet', label: 'Store', x: 0.28, y: 0.34, icon: 'store', tone: 'success' },
-  ];
+  const markers = useMemo<MapMarker[]>(() => {
+    const points: { lat: number; lng: number; marker: Omit<MapMarker, 'x' | 'y'> }[] = [];
+    if (hasCoords(outlet)) {
+      points.push({
+        lat: outlet.lat,
+        lng: outlet.lng,
+        marker: { id: 'outlet', label: outlet.name, icon: 'store', tone: 'success' },
+      });
+    }
+    if (coords) {
+      points.push({
+        lat: coords.latitude,
+        lng: coords.longitude,
+        marker: { id: 'you', label: 'You', icon: 'home', tone: 'primary', active: true },
+      });
+    }
+    const positions = project(points);
+    return points.map((point, index) => ({ ...point.marker, x: positions[index]?.x ?? 0.5, y: positions[index]?.y ?? 0.5 }));
+  }, [outlet, coords]);
 
   if (query.loading) {
     return (
@@ -57,7 +73,8 @@ export function TrackOrderScreen({ navigation, route }: { navigation: Nav; route
         <MapSurface
           height={230}
           markers={markers}
-          userLabel={order.status === 'delivered' ? 'Delivered here' : 'Your address'}
+          userLabel={order.status === 'delivered' ? 'Delivered here' : (outlet?.name ?? 'Your order')}
+          showUserDot={Boolean(coords)}
           onCenterPress={() => {
             void (async () => {
               const next = await requestLocation();

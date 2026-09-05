@@ -55,7 +55,7 @@ export function Chip({
       ]}
     >
       {icon ? <Icon name={icon} size={size === 'sm' ? 13 : 15} color={selected ? c.onPrimary : c.textSecondary} /> : null}
-      <Text variant={size === 'sm' ? 'caption' : 'subtitle'} weight="semibold" color={selected ? c.onPrimary : c.text}>
+      <Text variant={size === 'sm' ? 'caption' : 'subtitle'} weight="semibold" color={selected ? c.onPrimary : c.text} numberOfLines={1}>
         {label}
       </Text>
       {right}
@@ -103,12 +103,12 @@ export function Tag({
   return (
     <View
       style={[
-        { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 7, paddingVertical: 3, borderRadius: radius.sm, backgroundColor: bg },
+        { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 7, paddingVertical: 3, borderRadius: radius.sm, backgroundColor: bg, flexShrink: 1, minWidth: 0 },
         style,
       ]}
     >
       {icon ? <Icon name={icon} size={10} color={fg} /> : null}
-      <Text variant="micro" weight="bold" color={fg} numberOfLines={1}>
+      <Text variant="micro" weight="semibold" color={fg} numberOfLines={1} style={{ flexShrink: 1 }}>
         {label}
       </Text>
     </View>
@@ -132,12 +132,13 @@ export function RatingPill({
   const v = Number(value) || 0;
   const tone = v >= 4.5 ? c.success : v >= 4 ? c.primary : v >= 3 ? c.warning : c.danger;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, rowGap: 2, flexWrap: 'wrap', minWidth: 0 }}>
       <View
         style={{
           flexDirection: 'row',
           alignItems: 'center',
           gap: 3,
+          flexShrink: 0,
           backgroundColor: v >= 4.5 ? c.successBg : c.surfaceAlt,
           paddingHorizontal: compact ? 5 : 7,
           paddingVertical: compact ? 2 : 3,
@@ -145,17 +146,17 @@ export function RatingPill({
         }}
       >
         <Icon name="star" size={compact ? 10 : 12} color={tone} filled />
-        <Text variant={compact ? 'micro' : 'caption'} weight="bold" color={tone}>
+        <Text variant={compact ? 'micro' : 'caption'} weight="semibold" color={tone} numberOfLines={1}>
           {v > 0 ? v.toFixed(1) : 'New'}
         </Text>
       </View>
       {typeof count === 'number' && count > 0 ? (
-        <Text variant="caption" tone="faint">
+        <Text variant="caption" tone="faint" numberOfLines={1}>
           ({count.toLocaleString('en-IN')})
         </Text>
       ) : null}
       {suffix ? (
-        <Text variant="caption" tone="faint">
+        <Text variant="caption" tone="faint" numberOfLines={1} style={{ flexShrink: 1, minWidth: 0 }}>
           {suffix}
         </Text>
       ) : null}
@@ -201,17 +202,17 @@ export function Price({
   const strike = mrp && mrp > price;
   const variant = size === 'lg' ? 'h3' : size === 'sm' ? 'title' : 'subtitle';
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 5 }}>
-      <Text variant={variant} weight="bold" color={c.text}>
+    <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 5, flexShrink: 1, minWidth: 0 }}>
+      <Text variant={variant} weight="semibold" color={c.text} numberOfLines={1}>
         {inr(price)}
       </Text>
       {strike ? (
-        <Text variant="caption" tone="faint" style={{ textDecorationLine: 'line-through' }}>
+        <Text variant="caption" tone="faint" numberOfLines={1} style={{ textDecorationLine: 'line-through' }}>
           {inr(mrp ?? 0)}
         </Text>
       ) : null}
       {trailing ? (
-        <Text variant="caption" tone="muted">
+        <Text variant="caption" tone="muted" numberOfLines={1} style={{ flexShrink: 1 }}>
           {trailing}
         </Text>
       ) : null}
@@ -251,10 +252,10 @@ export function SectionHeader({
       }}
     >
       <View style={{ width: 4, height: 30, borderRadius: 2, backgroundColor: c.primary }} />
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, minWidth: 0 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
           {icon ? <Icon name={icon} size={15} color={c.primary} /> : null}
-          <Text variant="h3" weight="bold" numberOfLines={1}>
+          <Text variant="h3" weight="semibold" numberOfLines={1} style={{ flexShrink: 1 }}>
             {title}
           </Text>
         </View>
@@ -272,9 +273,9 @@ export function SectionHeader({
             onAction?.();
           }}
           hitSlop={8}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 2, flexShrink: 0 }}
         >
-          <Text variant="caption" weight="bold" color={c.primary}>
+          <Text variant="caption" weight="semibold" color={c.primary} numberOfLines={1}>
             {actionLabel}
           </Text>
           <Icon name="chevronRight" size={13} color={c.primary} />
@@ -352,7 +353,7 @@ export function QtyStepper({
       >
         <Icon name={qty <= 1 ? 'trash' : 'minus'} size={compact ? 12 : 14} color={c.primary} />
       </Pressable>
-      <Text variant={compact ? 'caption' : 'title'} weight="bold" color={c.primary}>
+      <Text variant={compact ? 'caption' : 'title'} weight="semibold" color={c.primary}>
         {qty}
       </Text>
       <Pressable
@@ -413,67 +414,10 @@ export function Avatar({
 
 /* ------------------------------ empty / error ---------------------------- */
 
-export function EmptyState({
-  icon = 'package',
-  title,
-  subtitle,
-  actionLabel,
-  onAction,
-  compact,
-}: {
-  icon?: IconName;
-  title: string;
-  subtitle?: string;
-  actionLabel?: string;
-  onAction?: () => void;
-  compact?: boolean;
-}): React.ReactElement {
-  const c = useColors();
-  return (
-    <View style={{ alignItems: 'center', paddingVertical: compact ? 24 : 44, paddingHorizontal: 24, gap: spacing.sm }}>
-      <View
-        style={{
-          width: compact ? 54 : 72,
-          height: compact ? 54 : 72,
-          borderRadius: radius.xxl,
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: c.primarySoft,
-        }}
-      >
-        <Icon name={icon} size={compact ? 24 : 32} color={c.primary} />
-      </View>
-      <Text variant="h3" weight="bold" center>
-        {title}
-      </Text>
-      {subtitle ? (
-        <Text variant="bodySm" tone="muted" center>
-          {subtitle}
-        </Text>
-      ) : null}
-      {actionLabel ? (
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => {
-            haptic.medium();
-            onAction?.();
-          }}
-          style={{
-            marginTop: 4,
-            paddingHorizontal: 18,
-            paddingVertical: 10,
-            borderRadius: radius.pill,
-            backgroundColor: c.primary,
-          }}
-        >
-          <Text variant="subtitle" weight="bold" color={c.onPrimary}>
-            {actionLabel}
-          </Text>
-        </Pressable>
-      ) : null}
-    </View>
-  );
-}
+// Lives in its own leaf module so ErrorState can use it without a
+// Primitives <-> ErrorState require cycle. Re-exported here so existing
+// `from '@/components/ui/Primitives'` imports keep working.
+export { EmptyState } from './EmptyState';
 
 /* ------------------------------ thin progress ---------------------------- */
 

@@ -11,6 +11,7 @@ import { useColors } from '@/theme/ThemeContext';
 import { useSheet } from '@/components/sheet/SheetProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { money, tierFor } from '@/lib/format';
+import { useAppSettings } from '@/hooks/useAppSettings';
 import { haptic } from '@/lib/haptics';
 import { ApiError } from '@/api/client';
 import type { Nav } from '@/navigation/types';
@@ -31,7 +32,8 @@ export function EditProfileScreen({ navigation }: { navigation: Nav }): React.Re
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const tier = useMemo(() => tierFor(user?.loyaltyPoints ?? 0), [user?.loyaltyPoints]);
+  const settings = useAppSettings();
+  const tier = useMemo(() => tierFor(user?.loyaltyPoints ?? 0, settings.data?.loyalty.tiers), [user?.loyaltyPoints, settings.data]);
 
   const save = async (): Promise<void> => {
     const next: Record<string, string> = {};
@@ -121,7 +123,7 @@ export function EditProfileScreen({ navigation }: { navigation: Nav }): React.Re
 
         <View style={{ padding: spacing.md, borderRadius: radius.md, backgroundColor: c.surfaceHi, gap: 4 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Text variant="caption" weight="bold">
+            <Text variant="caption" weight="semibold">
               Mobile number
             </Text>
             <Tag label="LOCKED" tone="muted" />

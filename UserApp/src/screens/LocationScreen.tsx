@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
@@ -9,9 +9,11 @@ import { useColors } from '@/theme/ThemeContext';
 import { radius, spacing } from '@/theme/tokens';
 import { useSession } from '@/context/SessionContext';
 import { useSheet } from '@/components/sheet/SheetProvider';
-import { MapSurface } from '@/components/map/MapSurface';
+import { MapSurface, type MapMarker } from '@/components/map/MapSurface';
 import { haptic } from '@/lib/haptics';
-import { CITIES } from '@/lib/format';
+import { useQuery } from '@/hooks/useQuery';
+import { fetchCities, type ServiceCity } from '@/api/app';
+import { hasCoords, project } from '@/lib/geo';
 
 /**
  * `delivery_address_sheet.dart` as a full screen: use current location, pick a
@@ -27,6 +29,30 @@ export function LocationScreen({ navigation }: { navigation: { navigate: (name: 
   useEffect(() => {
     void loadAddresses();
   }, [loadAddresses]);
+
+  const cities = useQuery<ServiceCity[]>(useCallback((signal: AbortSignal) => fetchCities(signal), []), {});
+  const list = useMemo(() => cities.data ?? [], [cities.data]);
+  const markers = useMemo<MapMarker[]>(() => {
+    const pinned = list.filter(hasCoords);
+    const positions = project(pinned);
+    return pinned.map((city, index) => ({
+      id: city.name,
+      label: `${city.name} · ${city.outlets} outlets`,
+      x: positions[index]?.x ?? 0.5,
+      y: positions[index]?.y ?? 0.5,
+      icon: 'store',
+      active: selectedAddress?.city === city.name,
+    }));
+  }, [list, selectedAddress?.city]);
+
+  const cityInfo = (city: ServiceCity): void => {
+    haptic.selection();
+    const here = selectedAddress?.city === city.name;
+    sheet.info(
+      city.name,
+      `${city.outlets} outlet${city.outlets === 1 ? '' : 's'} serve${city.outlets === 1 ? 's' : ''} ${city.name} on Aurasure.${here ? ' Your delivery address is here.' : ' Save an address in this city to order from them.'}`,
+    );
+  };
 
   const useCurrent = async (): Promise<void> => {
     setLocating(true);
@@ -54,7 +80,16 @@ export function LocationScreen({ navigation }: { navigation: { navigate: (name: 
     <Screen title="Delivery address" subtitle="Where should we bring it?" back={navigation.canGoBack()} scroll>
       <View style={{ gap: 0 }}>
         <View style={styles.mapWrap}>
-          <MapSurface />
+          <MapSurface
+            height={190}
+            markers={markers}
+            showUserDot={false}
+            userLabel={list.length > 0 ? `${list.length} cities served` : 'Loading cities…'}
+            onMarkerPress={(marker) => {
+              const city = list.find((row) => row.name === marker.id);
+              if (city) cityInfo(city);
+            }}
+          />
         </View>
 
         <View style={{ paddingHorizontal: spacing.edge, paddingTop: spacing.md, gap: spacing.sm }}>
@@ -113,21 +148,18 @@ export function LocationScreen({ navigation }: { navigation: { navigate: (name: 
 
         <View style={{ marginTop: spacing.lg, paddingHorizontal: spacing.edge }}>
           <Text variant="overline" tone="faint" style={{ paddingBottom: spacing.xs }}>
-            SERVICEABLE CITIES
+            SERVICEABLE CITIES · {list.length}
           </Text>
           <View style={styles.cityRow}>
-            {CITIES.map((city) => (
+            {list.map((city) => (
               <Pressable
-                key={city}
+                key={city.name}
                 accessibilityRole="button"
-                onPress={() => {
-                  haptic.selection();
-                  void sheet.info('City selected', `${city} is inside the Aurasure pilot zone. Stores in that area will show up once your address is saved.`);
-                }}
+                onPress={() => cityInfo(city)}
                 style={({ pressed }) => [styles.cityChip, { backgroundColor: pressed ? c.surfaceAlt : c.surfaceHi }]}
               >
                 <Text variant="caption" weight="medium">
-                  {city}
+                  {city.name} · {city.outlets}
                 </Text>
               </Pressable>
             ))}

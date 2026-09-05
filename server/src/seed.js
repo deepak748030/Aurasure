@@ -24,6 +24,11 @@ const ShopStore = require('./models/ShopStore');
 const Product = require('./models/Product');
 const Banner = require('./models/Banner');
 const Promo = require('./models/Promo');
+const Brand = require('./models/Brand');
+const FlashSale = require('./models/FlashSale');
+const Content = require('./models/Content');
+const AppSetting = require('./models/AppSetting');
+const Notification = require('./models/Notification');
 const User = require('./models/User');
 const Order = require('./models/Order');
 const Vendor = require('./models/Vendor');
@@ -432,6 +437,11 @@ async function main() {
       Product.deleteMany({}),
       Banner.deleteMany({}),
       Promo.deleteMany({}),
+      Brand.deleteMany({}),
+      FlashSale.deleteMany({}),
+      Content.deleteMany({}),
+      AppSetting.deleteMany({}),
+      Notification.deleteMany({}),
       DeliveryPartner.deleteMany({}),
       DeliveryTask.deleteMany({}),
     ]);
@@ -446,6 +456,11 @@ async function main() {
   const products = await upsert(Product, seed.products);
   const banners = await upsert(Banner, seed.banners);
   const promos = await upsert(Promo, seed.promos);
+  const brands = await upsert(Brand, seed.brands);
+  const flashSales = await upsert(FlashSale, seed.flashSales);
+  const contents = await upsert(Content, seed.contents);
+  const appSettings = await upsert(AppSetting, seed.appSettings);
+  const notifications = await upsert(Notification, seed.notifications);
 
   const demoUser = await seedDemoUser();
   const adminUser = await seedAdminUser();
@@ -473,6 +488,11 @@ async function main() {
   console.log('  products        ', products);
   console.log('  banners         ', banners);
   console.log('  promo codes     ', promos);
+  console.log('  brands          ', brands);
+  console.log('  flash sales     ', flashSales);
+  console.log('  contents        ', contents);
+  console.log('  app settings    ', appSettings);
+  console.log('  notifications   ', notifications);
   console.log(`  demo user       → phone ${demoUser.phone} / password ${process.env.SEED_USER_PASSWORD || 'aurasure123'}`);
 
   await disconnectDB();

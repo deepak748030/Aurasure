@@ -46,7 +46,7 @@ export function Input({
   return (
     <View style={[{ gap: 6 }, containerStyle]}>
       {label ? (
-        <Text variant="caption" weight="bold" tone="muted">
+        <Text variant="caption" weight="semibold" tone="muted">
           {label.toUpperCase()}
         </Text>
       ) : null}
@@ -59,12 +59,18 @@ export function Input({
             borderWidth: focused ? 1.4 : 1,
             borderRadius: multiline ? radius.lg : radius.pill,
             alignItems: multiline ? 'flex-start' : 'center',
+            justifyContent: 'center',
+            minHeight: multiline ? 84 : 48,
             paddingHorizontal: spacing.sm,
             paddingVertical: multiline ? 10 : 0,
           },
         ]}
       >
-        {icon ? <Icon name={icon} size={17} color={focused ? c.primary : c.textTertiary} style={{ marginRight: 6 }} /> : null}
+        {icon ? (
+          <View style={{ height: INPUT_LINE_HEIGHT, justifyContent: 'center', marginRight: 6, marginTop: multiline ? 1 : 0 }}>
+            <Icon name={icon} size={17} color={focused ? c.primary : c.textTertiary} />
+          </View>
+        ) : null}
         <TextInput
           value={value}
           placeholderTextColor={c.textTertiary}
@@ -74,12 +80,18 @@ export function Input({
           secureTextEntry={hidden}
           multiline={multiline}
           textAlignVertical={multiline ? 'top' : 'center'}
+          underlineColorAndroid="transparent"
           style={[
             styles.input,
             {
               color: c.text,
-              minHeight: multiline ? 84 : 46,
-              paddingTop: multiline ? 2 : 0,
+              height: multiline ? undefined : INPUT_HEIGHT,
+              minHeight: multiline ? 64 : INPUT_HEIGHT,
+              paddingVertical: 0,
+              paddingHorizontal: 0,
+              paddingTop: 0,
+              lineHeight: INPUT_LINE_HEIGHT,
+              includeFontPadding: false,
             },
           ]}
           {...rest}
@@ -90,7 +102,7 @@ export function Input({
             accessibilityLabel={hidden ? 'Show password' : 'Hide password'}
             hitSlop={10}
             onPress={() => setHidden((prev) => !prev)}
-            style={{ padding: 4 }}
+            style={{ padding: 4, alignSelf: 'center', justifyContent: 'center' }}
           >
             <Icon name={hidden ? 'eyeOff' : 'eye'} size={17} color={c.textTertiary} />
           </Pressable>
@@ -101,7 +113,7 @@ export function Input({
             hitSlop={10}
             onPress={onRightIconPress}
             disabled={!onRightIconPress}
-            style={{ padding: 4, opacity: onRightIconPress ? 1 : 0.5 }}
+            style={{ padding: 4, alignSelf: 'center', justifyContent: 'center', opacity: onRightIconPress ? 1 : 0.5 }}
           >
             <Icon name={rightIcon} size={17} color={c.primary} />
           </Pressable>
@@ -122,6 +134,14 @@ export function Input({
     </View>
   );
 }
+
+/**
+ * Single-line field geometry. The box is 48 (same as a medium button, so an
+ * input and a button side-by-side share a baseline), the text runs on a fixed
+ * 20px line with font padding stripped so Android cannot push it upwards.
+ */
+const INPUT_HEIGHT = 46;
+const INPUT_LINE_HEIGHT = 20;
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
@@ -173,7 +193,9 @@ export function SearchField({
         placeholderTextColor={c.textTertiary}
         autoFocus={autoFocus}
         returnKeyType="search"
-        style={{ flex: 1, fontSize: 14, color: c.text, paddingVertical: 0 }}
+        textAlignVertical="center"
+        underlineColorAndroid="transparent"
+        style={{ flex: 1, height: '100%', fontSize: 14, lineHeight: INPUT_LINE_HEIGHT, color: c.text, paddingVertical: 0, paddingHorizontal: 0, includeFontPadding: false }}
       />
       {value.length > 0 ? (
         <Pressable
@@ -184,6 +206,7 @@ export function SearchField({
             onChangeText('');
             onClear?.();
           }}
+          style={{ alignSelf: 'center', justifyContent: 'center' }}
         >
           <Icon name="circleX" size={16} color={c.textTertiary} />
         </Pressable>

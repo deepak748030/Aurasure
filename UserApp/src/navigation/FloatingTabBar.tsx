@@ -102,7 +102,7 @@ function CartFab({ onPress, badge }: { onPress: () => void; badge: number }): Re
       <Icon name="cart" size={24} color={c.onPrimary} />
       {badge > 0 ? (
         <View style={[styles.badge, { borderColor: c.tabBar }]}>
-          <Text variant="micro" weight="bold" color={c.white}>
+          <Text variant="micro" weight="semibold" color={c.white}>
             {badge > 9 ? '9+' : badge}
           </Text>
         </View>

@@ -76,7 +76,7 @@ export function HomeHeader({
             </Text>
             <Icon name="chevronDown" size={13} color={SOFT} />
           </View>
-          <Text variant="subtitle" weight="bold" color={c.onPrimary} numberOfLines={1}>
+          <Text variant="subtitle" weight="semibold" color={c.onPrimary} numberOfLines={1}>
             {selectedAddress ? selectedAddress.label : isLoggedIn ? 'Add delivery address' : 'Choose location'}
           </Text>
           <Text variant="micro" color={SOFT} numberOfLines={1}>
@@ -107,7 +107,7 @@ export function HomeHeader({
                 style={[styles.moduleChip, { backgroundColor: on ? c.onPrimary : CHIP }]}
               >
                 <Icon name={item === 'food' ? 'utensils' : 'store'} size={15} color={on ? c.primary : c.onPrimary} />
-                <Text variant="caption" weight="bold" color={on ? c.primary : c.onPrimary}>
+                <Text variant="caption" weight="semibold" color={on ? c.primary : c.onPrimary}>
                   {item === 'food' ? 'Food' : 'Shop'}
                 </Text>
               </Pressable>
@@ -150,7 +150,7 @@ export function HomeHeader({
           style={({ pressed }) => [styles.cartStrip, pressed && { opacity: 0.9 }]}
         >
           <View style={styles.cartDot}>
-            <Text variant="micro" weight="bold" color={c.primary}>
+            <Text variant="micro" weight="semibold" color={c.primary}>
               {totalCartCount}
             </Text>
           </View>

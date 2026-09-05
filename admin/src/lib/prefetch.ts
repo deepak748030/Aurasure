@@ -15,15 +15,19 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { api, apiRaw } from './api';
 import type {
+  AppSettingsDoc,
   AuditEntry,
+  ContentDoc,
   CustomerDetail,
   CustomerRow,
   DeliveryTaskRow,
+  NotificationRow,
   Order,
   PartnerApplication,
   ReportOverview,
   Rider,
   Stats,
+  SupportTicket,
   SystemInfo,
   Vendor,
 } from './types';
@@ -36,6 +40,8 @@ const RESOURCES: Record<string, { path: string; key: string }> = {
   '/food/items': { path: 'food/items', key: 'items' },
   '/food/categories': { path: 'food/categories', key: 'categories' },
   '/food/collections': { path: 'food/vibes', key: 'vibes' },
+  '/shop/brands': { path: 'shop/brands', key: 'brands' },
+  '/flash-sales': { path: 'flash-sales', key: 'sales' },
   '/shop/stores': { path: 'shop/stores', key: 'stores' },
   '/shop/products': { path: 'shop/products', key: 'products' },
   '/shop/categories': { path: 'shop/categories', key: 'categories' },
@@ -129,6 +135,43 @@ function prefetchSystem(qc: QueryClient) {
   });
 }
 
+function prefetchNotifications(qc: QueryClient, query: Query) {
+  void qc.prefetchQuery({
+    queryKey: ['notifications', query],
+    queryFn: async () => {
+      const res = await apiRaw<{ notifications: NotificationRow[] }>('/admin/notifications', { query });
+      return { rows: res.data.notifications ?? [], meta: res.meta };
+    },
+  });
+}
+
+function prefetchTickets(qc: QueryClient, query: Query) {
+  void qc.prefetchQuery({
+    queryKey: ['tickets', query],
+    queryFn: async () => {
+      const res = await apiRaw<{ tickets: SupportTicket[] }>('/admin/support-tickets', { query });
+      return { rows: res.data.tickets ?? [], meta: res.meta };
+    },
+  });
+}
+
+function prefetchContents(qc: QueryClient) {
+  void qc.prefetchQuery({
+    queryKey: ['contents'],
+    queryFn: async () => {
+      const res = await api<{ contents: ContentDoc[] }>('/admin/content');
+      return res.contents ?? [];
+    },
+  });
+}
+
+function prefetchAppSettings(qc: QueryClient) {
+  void qc.prefetchQuery({
+    queryKey: ['app-settings'],
+    queryFn: () => api<{ settings: AppSettingsDoc | null }>('/admin/app-settings'),
+  });
+}
+
 function prefetchResource(qc: QueryClient, path: string, key: string, query: Query) {
   void qc.prefetchQuery({
     queryKey: ['resource', path, query],
@@ -195,6 +238,18 @@ export function prefetchRoute(qc: QueryClient, href: string): void {
       break;
     case '/activity':
       prefetchAudit(qc, { page: 1, limit: 100 });
+      break;
+    case '/notifications':
+      prefetchNotifications(qc, { page: 1, limit: 20 });
+      break;
+    case '/support':
+      prefetchTickets(qc, { page: 1, limit: 20 });
+      break;
+    case '/content':
+      prefetchContents(qc);
+      break;
+    case '/app-config':
+      prefetchAppSettings(qc);
       break;
     case '/settings':
       prefetchStats(qc);

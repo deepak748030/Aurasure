@@ -97,7 +97,7 @@ export function CouponsScreen({ navigation }: { navigation: Nav }): React.ReactE
             icon="coupon"
             containerStyle={{ flex: 1 }}
           />
-          <Button title="Claim" onPress={() => void claim()} loading={busy} style={{ marginBottom: 2 }} />
+          <Button title="Claim" onPress={() => void claim()} loading={busy} />
         </View>
         {!isLoggedIn ? (
           <View style={{ padding: spacing.sm, borderRadius: radius.md, backgroundColor: c.surfaceHi }}>

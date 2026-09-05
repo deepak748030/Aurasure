@@ -161,7 +161,7 @@ export function AuthScreen({
               }}
               hitSlop={8}
             >
-              <Text variant="bodySm" weight="bold" color={c.primary}>
+              <Text variant="bodySm" weight="semibold" color={c.primary}>
                 {isLogin ? 'Create an account' : 'Sign in'}
               </Text>
             </Pressable>

@@ -6,9 +6,9 @@ import { radius, spacing } from '@/theme/tokens';
 
 /**
  * `flash_sale_timer_view_widget.dart` + `timer_widget.dart`: four primary tiles
- * (days · hours · mins · sec) counting down to the end of the running window.
- * The API has no flash-sale schedule, so the window is derived on the device —
- * every 6 hours, aligned to the clock — and the label says so.
+ * (days · hours · mins · sec) counting down to the sale's server `endsAt`.
+ * The 6-hour local window below is only a fallback for callers that render the
+ * timer without a live event (there are none left — both callers pass a target).
  */
 export const FLASH_WINDOW_HOURS = 6;
 
@@ -52,10 +52,10 @@ export function FlashSaleTimer({ target, compact = false }: { target?: Date; com
     <View style={[styles.row, compact && styles.rowCompact]}>
       {tiles.map((tile, index) => (
         <React.Fragment key={tile.unit}>
-          {index > 0 ? <Text variant="h3" weight="bold" color={c.primary}>:</Text> : null}
+          {index > 0 ? <Text variant="h3" weight="semibold" color={c.primary}>:</Text> : null}
           <View style={styles.tileWrap}>
             <View style={[styles.tile, { backgroundColor: c.primary }, compact && styles.tileCompact]}>
-              <Text variant={compact ? 'caption' : 'subtitle'} weight="bold" color={c.white}>
+              <Text variant={compact ? 'caption' : 'subtitle'} weight="semibold" color={c.white}>
                 {String(tile.value).padStart(2, '0')}
               </Text>
             </View>

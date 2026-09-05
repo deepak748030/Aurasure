@@ -15,6 +15,7 @@ import { useCart } from '@/context/CartContext';
 import { useSheet } from '@/components/sheet/SheetProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { joinedOn, money, tierFor } from '@/lib/format';
+import { useAppSettings } from '@/hooks/useAppSettings';
 import { haptic } from '@/lib/haptics';
 import type { Nav } from '@/navigation/types';
 import type { ModuleKey } from '@/types';
@@ -32,7 +33,8 @@ export function MenuScreen({ navigation }: { navigation: Nav }): React.ReactElem
 
   const wallet = useQuery<WalletState>(useCallback(() => (isLoggedIn ? fetchWallet() : Promise.resolve({ balance: 0, transactions: [] })), [isLoggedIn]), { enabled: isLoggedIn });
 
-  const tier = tierFor(user?.loyaltyPoints ?? 0);
+  const settings = useAppSettings();
+  const tier = tierFor(user?.loyaltyPoints ?? 0, settings.data?.loyalty.tiers);
 
   const rows: { group: string; items: { label: string; icon: IconName; onPress: () => void; badge?: string; tone?: 'primary' | 'success' | 'danger' | 'warning' | 'muted' }[] }[] = [
     {
@@ -122,7 +124,7 @@ export function MenuScreen({ navigation }: { navigation: Nav }): React.ReactElem
                 <Text variant="micro" color="rgba(255,255,255,0.8)">
                   WALLET
                 </Text>
-                <Text variant="title" weight="bold" color={c.white}>
+                <Text variant="title" weight="semibold" color={c.white}>
                   {isLoggedIn ? money(wallet.data?.balance ?? user?.wallet ?? 0) : '—'}
                 </Text>
               </View>
@@ -130,7 +132,7 @@ export function MenuScreen({ navigation }: { navigation: Nav }): React.ReactElem
                 <Text variant="micro" color="rgba(255,255,255,0.8)">
                   POINTS
                 </Text>
-                <Text variant="title" weight="bold" color={c.white}>
+                <Text variant="title" weight="semibold" color={c.white}>
                   {user?.loyaltyPoints ?? 0}
                 </Text>
               </View>
@@ -138,7 +140,7 @@ export function MenuScreen({ navigation }: { navigation: Nav }): React.ReactElem
                 <Text variant="micro" color="rgba(255,255,255,0.8)">
                   TIER
                 </Text>
-                <Text variant="title" weight="bold" color={c.white}>
+                <Text variant="title" weight="semibold" color={c.white}>
                   {tier.name}
                 </Text>
               </View>
@@ -153,7 +155,7 @@ export function MenuScreen({ navigation }: { navigation: Nav }): React.ReactElem
           <Pressable accessibilityRole="button" onPress={() => void switchModule()} style={({ pressed }) => [styles.quick, { backgroundColor: c.surface, borderColor: c.border, opacity: pressed ? 0.9 : 1 }]}>
             <Icon name={active === 'food' ? 'utensils' : 'store'} size={17} color={c.primary} />
             <View style={{ flex: 1 }}>
-              <Text variant="caption" weight="bold">
+              <Text variant="caption" weight="semibold">
                 {active === 'food' ? 'Food mode' : 'Shop mode'}
               </Text>
               <Text variant="micro" tone="muted">
@@ -172,7 +174,7 @@ export function MenuScreen({ navigation }: { navigation: Nav }): React.ReactElem
           >
             <Icon name={resolved === 'dark' ? 'moon' : 'sun'} size={17} color={c.primary} />
             <View style={{ flex: 1 }}>
-              <Text variant="caption" weight="bold">
+              <Text variant="caption" weight="semibold">
                 {resolved === 'dark' ? 'Dark theme' : 'Light theme'}
               </Text>
               <Text variant="micro" tone="muted">

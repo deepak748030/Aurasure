@@ -41,19 +41,43 @@ function starterCoupons() {
   ];
 }
 
-/** Convert loyalty points to wallet rupees (100 points = ₹10). */
+/**
+ * Loyalty math. Constants are the compiled-in fallback; callers pass the live
+ * `AppSetting.loyalty` section so Admin → App configuration stays in charge.
+ * Default rule: 100 points = ₹10 (10 points per rupee), redeem in hundreds.
+ */
 const POINTS_PER_RUPEE = 10; // 100 pts → ₹10
 const MIN_REDEEM_POINTS = 100;
 
-function pointsToRupees(points) {
-  return Math.floor(points / MIN_REDEEM_POINTS) * (MIN_REDEEM_POINTS / POINTS_PER_RUPEE);
+function pointsToRupees(points, redeemPoints = MIN_REDEEM_POINTS, redeemValue = MIN_REDEEM_POINTS / POINTS_PER_RUPEE) {
+  const step = Math.max(1, Number(redeemPoints) || MIN_REDEEM_POINTS);
+  const value = Number(redeemValue);
+  const perStep = Number.isFinite(value) && value > 0 ? value : MIN_REDEEM_POINTS / POINTS_PER_RUPEE;
+  return Math.floor((Number(points) || 0) / step) * perStep;
 }
 
-function loyaltyTier(points) {
-  if (points >= 5000) return { name: 'Platinum', color: '#64748B', progress: 1 };
-  if (points >= 2500) return { name: 'Gold', color: '#E5A710', progress: (points - 2500) / 2500 };
-  if (points >= 1000) return { name: 'Silver', color: '#94A3B8', progress: (points - 1000) / 1500 };
-  return { name: 'Bronze', color: '#C2703D', progress: points / 1000 };
+const DEFAULT_TIERS = [
+  { name: 'Bronze', min: 0, color: '#C2703D' },
+  { name: 'Silver', min: 1000, color: '#94A3B8' },
+  { name: 'Gold', min: 2500, color: '#E5A710' },
+  { name: 'Platinum', min: 5000, color: '#64748B' },
+];
+
+function loyaltyTier(points, tiers = DEFAULT_TIERS) {
+  const rows = (Array.isArray(tiers) && tiers.length ? tiers : DEFAULT_TIERS)
+    .map((row) => ({ name: String(row.name), min: Number(row.min) || 0, color: String(row.color || '#C2703D') }))
+    .sort((a, b) => a.min - b.min);
+  const total = Number(points) || 0;
+  let current = rows[0];
+  let next = null;
+  for (let i = 0; i < rows.length; i += 1) {
+    if (total >= rows[i].min) {
+      current = rows[i];
+      next = rows[i + 1] || null;
+    }
+  }
+  const progress = next ? Math.min(1, Math.max(0, (total - current.min) / Math.max(1, next.min - current.min))) : 1;
+  return { name: current.name, color: current.color, progress, nextTier: next ? next.name : current.name, nextAt: next ? next.min : null };
 }
 
 module.exports = {

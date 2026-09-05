@@ -9,7 +9,7 @@ import { SkeletonHero, SkeletonList } from '@/components/ui/Skeleton';
 import { FlashSaleTimer } from '@/components/home/FlashSaleTimer';
 import { useQuery } from '@/hooks/useQuery';
 import { useCartActions } from '@/hooks/useCartActions';
-import { fetchFoodOffers, fetchShopOffers } from '@/api/catalog';
+import { fetchActiveFlashSale, type FlashSalePayload } from '@/api/app';
 import { useCart } from '@/context/CartContext';
 import { useSession } from '@/context/SessionContext';
 import { useColors } from '@/theme/ThemeContext';
@@ -19,28 +19,44 @@ import type { CatalogItem } from '@/types';
 import type { ScreenProps } from '@/navigation/types';
 
 /**
- * `flash_sale_details_screen.dart`: timer band on a primary tint, then the
- * discounted items with their remaining stock. Data is the real offers feed
- * (`/food/offers`, `/shop/offers`) — the API has no flash-sale collection, so
- * the "flash" cut here is simply the live discounts, deepest first.
+ * `flash_sale_details_screen.dart`: the live flash-sale event — countdown to
+ * the server's `endsAt`, then the sale items with real outlet snapshots for
+ * the cart. Empty state when no event is live.
  */
 export function FlashSaleScreen({ navigation, route }: ScreenProps<'FlashSale'>): React.ReactElement {
   const c = useColors();
   const cart = useCart();
   const actions = useCartActions();
-  const { module, isFavorite, toggleFavorite } = useSession();
+  const { module } = useSession();
 
-  const query = useQuery<CatalogItem[]>(useCallback(() => (module === 'food' ? fetchFoodOffers(40) : fetchShopOffers(40)), [module]), {});
+  const query = useQuery<FlashSalePayload>(
+    useCallback((signal: AbortSignal) => fetchActiveFlashSale(module, signal), [module]),
+    {},
+  );
+  const sale = query.data?.sale ?? null;
+  const rows = useMemo(() => query.data?.items ?? [], [query.data]);
+  const endAt = useMemo(() => (sale ? new Date(sale.endsAt) : undefined), [sale]);
 
-  const rows = useMemo(() => {
-    const list = (query.data ?? []).filter((item) => discountPercent(item.mrp, item.price) >= 5);
-    return list.sort((a, b) => discountPercent(b.mrp, b.price) - discountPercent(a.mrp, a.price));
-  }, [query.data]);
+  const outletFor = useCallback(
+    (item: CatalogItem) => {
+      const outletId = module === 'food' ? item.restaurantId ?? '' : item.storeId ?? '';
+      return (
+        query.data?.outlets[outletId] ?? {
+          id: outletId,
+          name: '',
+          deliveryFee: 0,
+          minOrder: 0,
+          etaMinutes: item.prepTime ?? item.deliveryMins ?? 30,
+        }
+      );
+    },
+    [module, query.data],
+  );
 
   return (
     <Screen
-      title="Flash sale"
-      subtitle={query.loading ? 'Loading deals…' : `${rows.length} live discounts`}
+      title={sale?.title ?? 'Flash sale'}
+      subtitle={query.loading ? 'Loading deals…' : sale ? `${rows.length} deals · ${sale.subtitle}` : 'No event live'}
       back
       padded={false}
       onRefresh={query.refresh}
@@ -50,13 +66,13 @@ export function FlashSaleScreen({ navigation, route }: ScreenProps<'FlashSale'>)
         <View style={[styles.band, { backgroundColor: c.primaryFaint, borderColor: c.primarySoft }]}>
           <View style={{ flex: 1, gap: 3 }}>
             <Text variant="h3" weight="bold">
-              Ends in
+              {sale ? 'Ends in' : 'Between sales'}
             </Text>
             <Text variant="micro" tone="muted">
-              Window resets every 6 hours · prices come from the live offers feed
+              {sale ? sale.subtitle : 'The next event appears here when it starts'}
             </Text>
           </View>
-          <FlashSaleTimer />
+          {endAt ? <FlashSaleTimer target={endAt} /> : null}
         </View>
       </View>
 
@@ -67,11 +83,11 @@ export function FlashSaleScreen({ navigation, route }: ScreenProps<'FlashSale'>)
             <SkeletonList rows={4} thumb={62} />
           </View>
         </View>
-      ) : rows.length === 0 ? (
+      ) : !sale || rows.length === 0 ? (
         <EmptyState
           icon="zap"
-          title="No flash deals right now"
-          subtitle="Nothing in this store is discounted at the moment. New offers appear through the day."
+          title="No flash sale right now"
+          subtitle="Sales run for a few hours at a time. The next one shows up here with its own countdown."
           actionLabel="Browse menu"
           onAction={() => navigation.navigate('Tabs')}
         />
@@ -89,7 +105,7 @@ export function FlashSaleScreen({ navigation, route }: ScreenProps<'FlashSale'>)
                     <SmartImage source={item.image} name={item.name} style={styles.thumb} radiusOverride={radius.md} />
                     {off > 0 ? (
                       <View style={[styles.offTag, { backgroundColor: c.primary }]}>
-                        <Text variant="micro" weight="bold" color={c.white}>
+                        <Text variant="micro" weight="semibold" color={c.white}>
                           {off}%
                         </Text>
                       </View>
@@ -116,9 +132,9 @@ export function FlashSaleScreen({ navigation, route }: ScreenProps<'FlashSale'>)
                 {stock !== null ? (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 }}>
                     <View style={{ flex: 1 }}>
-                      <Progress value={Math.max(0.04, Math.min(1, stock / Math.max(stock, 12)))} tone={stock <= 3 ? 'danger' : 'warning'} />
+                      <Progress value={Math.max(0.04, Math.min(1, stock / Math.max(stock, 12)))} tone={stock <= 3 ? c.danger : c.warning} />
                     </View>
-                    <Text variant="micro" weight="bold" color={stock <= 3 ? c.danger : c.textSecondary}>
+                    <Text variant="micro" weight="semibold" color={stock <= 3 ? c.danger : c.textSecondary}>
                       {stock} left
                     </Text>
                   </View>
@@ -130,29 +146,23 @@ export function FlashSaleScreen({ navigation, route }: ScreenProps<'FlashSale'>)
                     {module === 'food' ? `Ready in ${item.prepTime ?? 25} min` : `Delivered in ${item.deliveryMins ?? 45} min`}
                   </Text>
                   {soldOut ? (
-                    <Text variant="caption" weight="bold" color={c.danger}>
+                    <Text variant="caption" weight="semibold" color={c.danger}>
                       Unavailable
                     </Text>
                   ) : (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                       {qty > 0 ? (
-                        <Text variant="caption" weight="bold" color={c.primary}>
+                        <Text variant="caption" weight="semibold" color={c.primary}>
                           {qty} in cart
                         </Text>
                       ) : null}
                       <View style={{ backgroundColor: c.primary, borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 6 }}>
                         <Text
                           variant="micro"
-                          weight="bold"
+                          weight="semibold"
                           color={c.onPrimary}
                           onPress={() => {
-                            void actions.quickAdd(module, item, {
-                              id: module === 'food' ? item.restaurantId ?? '' : item.storeId ?? '',
-                              name: '',
-                              deliveryFee: 0,
-                              minOrder: 0,
-                              etaMinutes: item.prepTime ?? item.deliveryMins ?? 30,
-                            });
+                            void actions.quickAdd(module, item, outletFor(item));
                           }}
                         >
                           {qty > 0 ? 'ADD MORE' : 'ADD'}

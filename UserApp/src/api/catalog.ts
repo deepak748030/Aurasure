@@ -137,6 +137,45 @@ export function fetchStoresPage(params: {
   );
 }
 
+export interface OutletSnapshot {
+  id: string;
+  name: string;
+  deliveryFee: number;
+  minOrder: number;
+  etaMinutes: number;
+}
+
+/**
+ * Real outlet snapshot for cart validation. Screens that list items without
+ * their outlets (search results, favourites, vibes…) resolve through here
+ * instead of passing a zeroed stub.
+ */
+export async function fetchOutletSnapshot(module: ModuleKey, outletId: string): Promise<OutletSnapshot | null> {
+  if (!outletId) return null;
+  try {
+    if (module === 'food') {
+      const { restaurant } = await fetchRestaurant(outletId);
+      return {
+        id: restaurant.id,
+        name: restaurant.name,
+        deliveryFee: restaurant.deliveryFee ?? 0,
+        minOrder: restaurant.minOrder ?? 0,
+        etaMinutes: restaurant.deliveryTime ?? 30,
+      };
+    }
+    const { store } = await fetchStore(outletId);
+    return {
+      id: store.id,
+      name: store.name,
+      deliveryFee: store.deliveryFee ?? 0,
+      minOrder: store.minOrder ?? 0,
+      etaMinutes: store.deliveryMins ?? 40,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function fetchStore(id: string): Promise<{ store: ShopStore; products: CatalogItem[] }> {
   return apiGet<{ store: ShopStore; products: CatalogItem[] }>(`/shop/stores/${encodeURIComponent(id)}`).then((r) => ({
     store: r.store,

@@ -74,6 +74,7 @@ export interface Stats {
   pendingPartners: number;
   pendingVendors?: number;
   pendingRiders?: number;
+  openTickets?: number;
   deliveryPartners?: number;
   ridersOnline?: number;
   partnerKinds: Record<string, number>;
@@ -345,3 +346,72 @@ export interface SystemInfo {
 
 /** Anything the generic catalogue CRUD screens render. */
 export type CatalogRecord = Record<string, unknown> & { id: string };
+
+export interface NotificationRow {
+  id: string;
+  userId?: string | null;
+  broadcast: boolean;
+  module: 'all' | 'food' | 'shop';
+  title: string;
+  body: string;
+  icon: string;
+  tone: 'primary' | 'success' | 'warning' | 'danger' | 'muted';
+  kind: 'orders' | 'money' | 'promo' | 'support';
+  orderId?: string | null;
+  readBy: string[];
+  createdAt: string;
+}
+
+export type TicketStatus = 'open' | 'in_progress' | 'resolved';
+
+export interface SupportTicket {
+  id: string;
+  userId: string;
+  userPublicId: string;
+  name: string;
+  phone: string;
+  message: string;
+  orderCode?: string | null;
+  status: TicketStatus;
+  response: string;
+  resolvedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ContentDoc {
+  id: string;
+  key: string;
+  title: string;
+  data: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LoyaltyTierSetting {
+  name: string;
+  min: number;
+  color: string;
+}
+
+export interface PaymentMethodSetting {
+  key: string;
+  label: string;
+  sub: string;
+  icon: string;
+  enabled: boolean;
+}
+
+export interface AppSettingsDoc {
+  id: string;
+  key: string;
+  referral: { walletReward: number; pointsReward: number; referrerWallet: number; terms: string[] };
+  loyalty: { earnPer100: number; redeemPoints: number; redeemValue: number; tiers: LoyaltyTierSetting[] };
+  wallet: { topupPresets: number[]; minTopup: number; maxTopup: number };
+  support: { phone: string; displayPhone: string; email: string; hours: string; slaMinutes: number };
+  payments: PaymentMethodSetting[];
+  checkout: { tips: number[] };
+  search: { food: string[]; shop: string[] };
+  delivery: { defaultEta: number; minEta: number; maxEta: number };
+  cityCenters: Record<string, { lat: number; lng: number }>;
+}

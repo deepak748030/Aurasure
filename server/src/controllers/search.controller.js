@@ -8,6 +8,7 @@ const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { ok, paginate } = require('../utils/response');
 const { toAppImage } = require('../utils/imageRef');
+const { getAppSettings } = require('../utils/settings');
 
 const VISIBLE_APPROVAL = { approvalStatus: { $in: ['approved', null] } };
 
@@ -54,4 +55,11 @@ const search = asyncHandler(async (req, res) => {
   return ok(res, { query: q, module, items: [], restaurants: [], products: clean(products), stores: clean(stores) });
 });
 
-module.exports = { search, ApiError };
+/** GET /api/v1/search/trending?module= — curated popular searches. */
+const trending = asyncHandler(async (req, res) => {
+  const module = req.query.module === 'shop' ? 'shop' : 'food';
+  const settings = await getAppSettings();
+  return ok(res, { module, trending: settings.search?.[module] || [] });
+});
+
+module.exports = { search, trending, ApiError };

@@ -80,6 +80,8 @@ export default function StoresPage() {
     { name: 'road', label: 'Road / area', type: 'text' },
     { name: 'house', label: 'House / shop no.', type: 'text' },
     { name: 'pin', label: 'PIN code', type: 'text' },
+    { name: 'lat', label: 'Latitude', type: 'coordinate', placeholder: '21.2514' },
+    { name: 'lng', label: 'Longitude', type: 'coordinate', placeholder: '81.6296' },
     { name: 'cover', label: 'Cover image', type: 'image' },
     { name: 'rating', label: 'Rating (0-5)', type: 'number' },
     { name: 'reviews', label: 'Review count', type: 'number' },

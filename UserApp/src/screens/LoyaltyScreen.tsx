@@ -8,7 +8,7 @@ import { ListRow, ListSection, MetaRow } from '@/components/list/ListRow';
 import { Progress, Tag } from '@/components/ui/Primitives';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useQuery } from '@/hooks/useQuery';
-import { MIN_REDEEM_POINTS, POINTS_PER_RUPEE, fetchLoyalty, redeemLoyalty, type LoyaltyState } from '@/api/rewards';
+import { fetchLoyalty, loyaltyRules, redeemLoyalty, type LoyaltyState } from '@/api/rewards';
 import { ApiError } from '@/api/client';
 import { useSession } from '@/context/SessionContext';
 import { useColors } from '@/theme/ThemeContext';
@@ -18,9 +18,7 @@ import { money, relative, tierFor } from '@/lib/format';
 import { haptic } from '@/lib/haptics';
 import type { Nav } from '@/navigation/types';
 
-const TIERS = ['Bronze', 'Silver', 'Gold', 'Platinum'] as const;
-
-/** Loyalty: 5 points per ₹100, 100 points = ₹10, redeem in hundreds. */
+/** Loyalty rules (earn/redeem/tiers) come from the server payload. */
 export function LoyaltyScreen({ navigation }: { navigation: Nav }): React.ReactElement {
   const c = useColors();
   const sheet = useSheet();
@@ -29,29 +27,32 @@ export function LoyaltyScreen({ navigation }: { navigation: Nav }): React.ReactE
 
   const query = useQuery<LoyaltyState>(useCallback(() => fetchLoyalty(), [user?.loyaltyPoints]), { enabled: isLoggedIn });
   const points = query.data?.points ?? user?.loyaltyPoints ?? 0;
-  const tier = tierFor(points);
+  const rules = loyaltyRules(query.data);
+  const step = rules.redeemPoints;
+  const rupeesFor = (pts: number): number => Math.floor(pts / step) * rules.redeemValue;
+  const tier = tierFor(points, rules.tiers);
   const activity = query.data?.activity ?? [];
-  const nextTier = TIERS[Math.min(TIERS.length - 1, TIERS.indexOf(tier.name as never) + 1)];
-  const toNext = nextTier === tier.name ? 0 : Math.max(0, nextTier === 'Silver' ? 1000 : nextTier === 'Gold' ? 2500 : 5000) - points;
-  const redeemable = Math.floor(points / MIN_REDEEM_POINTS) * MIN_REDEEM_POINTS;
+  const toNext = tier.nextAt === null ? 0 : Math.max(0, tier.nextAt - points);
+  const redeemable = Math.floor(points / step) * step;
 
   const redeem = async (): Promise<void> => {
-    if (redeemable < MIN_REDEEM_POINTS) {
-      sheet.warning('Not enough points', `You need at least ${MIN_REDEEM_POINTS} points to redeem ${money(MIN_REDEEM_POINTS / POINTS_PER_RUPEE)}.`);
+    if (redeemable < step) {
+      sheet.warning('Not enough points', `You need at least ${step} points to redeem ${money(rules.redeemValue)}.`);
       return;
     }
+    const quickSteps = [step, step * 2, step * 5].filter((amount) => amount <= redeemable && amount < redeemable);
     const value = await sheet.pick({
       title: 'Redeem points',
-      subtitle: `${redeemable} points available · ${money(redeemable / POINTS_PER_RUPEE)} value`,
+      subtitle: `${redeemable} points available · ${money(rupeesFor(redeemable))} value`,
       options: [
-        { label: `Redeem all (${money(redeemable / POINTS_PER_RUPEE)})`, value: String(redeemable), description: 'Converted to wallet cash', icon: 'loyalty' },
-        ...[100, 200, 500].filter((amount) => amount <= redeemable).map((amount) => ({ label: `Redeem ${amount} points`, value: String(amount), description: `${money(amount / POINTS_PER_RUPEE)} to wallet`, icon: 'gift' as const })),
+        { label: `Redeem all (${money(rupeesFor(redeemable))})`, value: String(redeemable), description: 'Converted to wallet cash', icon: 'loyalty' },
+        ...quickSteps.map((amount) => ({ label: `Redeem ${amount} points`, value: String(amount), description: `${money(rupeesFor(amount))} to wallet`, icon: 'gift' as const })),
       ],
     });
     if (!value) return;
     const ok = await sheet.confirm({
       title: 'Redeem now?',
-      message: `${value} points become ${money(Number(value) / POINTS_PER_RUPEE)} in your wallet.`,
+      message: `${value} points become ${money(rupeesFor(Number(value)))} in your wallet.`,
       confirmLabel: 'Redeem',
       icon: 'loyalty',
     });
@@ -79,7 +80,7 @@ export function LoyaltyScreen({ navigation }: { navigation: Nav }): React.ReactE
       refreshing={query.refreshing}
       stickyFooter={
         <View style={{ paddingHorizontal: spacing.edge, paddingBottom: spacing.sm, gap: 6 }}>
-          <Button title={busy ? 'Redeeming…' : redeemable >= MIN_REDEEM_POINTS ? `Redeem ${money(redeemable / POINTS_PER_RUPEE)}` : 'Not enough points yet'} icon="gift" size="lg" loading={busy} onPress={() => void redeem()} style={{ alignSelf: 'stretch' }} />
+          <Button title={busy ? 'Redeeming…' : redeemable >= step ? `Redeem ${money(rupeesFor(redeemable))}` : 'Not enough points yet'} icon="gift" size="lg" loading={busy} onPress={() => void redeem()} style={{ alignSelf: 'stretch' }} />
         </View>
       }
     >
@@ -94,7 +95,7 @@ export function LoyaltyScreen({ navigation }: { navigation: Nav }): React.ReactE
                 {points}
               </Text>
               <Text variant="caption" tone="muted">
-                points · worth {money(Math.floor(points / POINTS_PER_RUPEE / 10) * 10)}
+                points · worth {money(rupeesFor(points))}
               </Text>
             </View>
             <Tag label={tier.name} tone="warning" icon="star" />
@@ -104,9 +105,9 @@ export function LoyaltyScreen({ navigation }: { navigation: Nav }): React.ReactE
             <Progress value={tier.progress} tone={tier.color} />
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Text variant="micro" tone="muted" style={{ flex: 1 }}>
-                {toNext > 0 ? `${toNext} points to ${nextTier}` : 'Top tier — you are all the way up'}
+                {toNext > 0 ? `${toNext} points to ${tier.nextTier}` : 'Top tier — you are all the way up'}
               </Text>
-              <Text variant="micro" weight="bold" color={c.primary}>
+              <Text variant="micro" weight="semibold" color={c.primary}>
                 {Math.round(tier.progress * 100)}%
               </Text>
             </View>
@@ -114,16 +115,15 @@ export function LoyaltyScreen({ navigation }: { navigation: Nav }): React.ReactE
         </View>
 
         <View style={styles.tierRow}>
-          {TIERS.map((name) => {
-            const on = name === tier.name;
-            const need = name === 'Bronze' ? 0 : name === 'Silver' ? 1000 : name === 'Gold' ? 2500 : 5000;
+          {rules.tiers.map((band) => {
+            const on = band.name === tier.name;
             return (
-              <Pressable key={name} accessibilityRole="button" onPress={() => sheet.info(`${name} tier`, `${money(need)} lifetime spend or more. Points never expire while your account is active.`)} style={({ pressed }) => [styles.tierChip, { borderColor: on ? c.primary : c.border, backgroundColor: on ? c.primaryFaint : c.surface, opacity: pressed ? 0.92 : 1 }]}>
-                <Text variant="micro" weight="bold" color={on ? c.primary : c.textSecondary}>
-                  {name}
+              <Pressable key={band.name} accessibilityRole="button" onPress={() => sheet.info(`${band.name} tier`, `${band.min} lifetime points or more. Points never expire while your account is active.`)} style={({ pressed }) => [styles.tierChip, { borderColor: on ? c.primary : c.border, backgroundColor: on ? c.primaryFaint : c.surface, opacity: pressed ? 0.92 : 1 }]}>
+                <Text variant="micro" weight="semibold" color={on ? c.primary : c.textSecondary}>
+                  {band.name}
                 </Text>
                 <Text variant="micro" tone="faint">
-                  {need === 0 ? 'start' : money(need)}
+                  {band.min === 0 ? 'start' : `${band.min} pts`}
                 </Text>
               </Pressable>
             );
@@ -134,9 +134,9 @@ export function LoyaltyScreen({ navigation }: { navigation: Nav }): React.ReactE
           <Text variant="overline" tone="faint">
             HOW IT WORKS
           </Text>
-          <MetaRow label="Earn rate" value="5 points per ₹100" />
-          <MetaRow label="Redeem rate" value="100 points = ₹10" />
-          <MetaRow label="Redeem step" value="Multiples of 100" />
+          <MetaRow label="Earn rate" value={`${rules.earnPer100} points per ₹100`} />
+          <MetaRow label="Redeem rate" value={`${step} points = ${money(rules.redeemValue)}`} />
+          <MetaRow label="Redeem step" value={`Multiples of ${step}`} />
           <MetaRow label="On cancellation" value="Points reversed" tone="danger" />
         </View>
 
@@ -161,7 +161,7 @@ export function LoyaltyScreen({ navigation }: { navigation: Nav }): React.ReactE
                   iconTone={row.type === 'earned' ? 'success' : row.type === 'redeemed' ? 'primary' : 'warning'}
                   trailing={
                     <View style={{ alignItems: 'flex-end', gap: 2 }}>
-                      <Text variant="subtitle" weight="bold" color={row.type === 'earned' ? c.success : row.type === 'redeemed' ? c.text : c.warning}>
+                      <Text variant="subtitle" weight="semibold" color={row.type === 'earned' ? c.success : row.type === 'redeemed' ? c.text : c.warning}>
                         {row.type === 'earned' ? '+' : '-'}
                         {Math.abs(row.points)} pts
                       </Text>

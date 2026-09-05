@@ -28,7 +28,9 @@ export type FieldType =
   | 'tags'
   | 'image'
   | 'color'
-  | 'date';
+  | 'date'
+  | 'datetime'
+  | 'coordinate';
 
 export interface FieldDef {
   name: string;
@@ -88,9 +90,19 @@ function rowToForm(fields: FieldDef[], row: CatalogRecord): Record<string, unkno
     else if (field.type === 'image') form[field.name] = imageUrl(raw) ?? '';
     else if (field.type === 'toggle') form[field.name] = Boolean(raw);
     else if (field.type === 'date') form[field.name] = raw ? String(raw).slice(0, 10) : '';
+    else if (field.type === 'datetime') form[field.name] = toLocalInput(raw);
     else form[field.name] = raw === null || raw === undefined ? '' : raw;
   }
   return form;
+}
+
+/** ISO string → `datetime-local` value (`YYYY-MM-DDTHH:mm`) in local time. */
+function toLocalInput(raw: unknown): string {
+  if (!raw) return '';
+  const date = new Date(String(raw));
+  if (Number.isNaN(date.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function formToPayload(fields: FieldDef[], form: Record<string, unknown>): Record<string, unknown> {
@@ -99,6 +111,9 @@ function formToPayload(fields: FieldDef[], form: Record<string, unknown>): Recor
     const value = form[field.name];
     if (field.type === 'number') {
       payload[field.name] = value === '' || value === null ? 0 : Number(value);
+    } else if (field.type === 'coordinate') {
+      // Empty coordinate = unknown (null); 0 is a real place in the ocean.
+      payload[field.name] = value === '' || value === null || value === undefined ? null : Number(value);
     } else if (field.type === 'tags') {
       payload[field.name] = String(value ?? '')
         .split(',')
@@ -111,6 +126,8 @@ function formToPayload(fields: FieldDef[], form: Record<string, unknown>): Recor
     } else if (field.type === 'date') {
       // Empty date = "no bound"; the API stores null.
       payload[field.name] = value ? new Date(`${String(value)}T00:00:00`).toISOString() : null;
+    } else if (field.type === 'datetime') {
+      payload[field.name] = value ? new Date(String(value)).toISOString() : null;
     } else {
       payload[field.name] = typeof value === 'string' ? value.trim() : value;
     }
@@ -307,6 +324,24 @@ export function ResourcePage<T extends CatalogRecord>({
               return (
                 <Input
                   type="date"
+                  value={String(value ?? '')}
+                  onChange={(event) => setValue(field.name, event.target.value)}
+                />
+              );
+            case 'datetime':
+              return (
+                <Input
+                  type="datetime-local"
+                  value={String(value ?? '')}
+                  onChange={(event) => setValue(field.name, event.target.value)}
+                />
+              );
+            case 'coordinate':
+              return (
+                <Input
+                  type="number"
+                  step="any"
+                  placeholder={field.placeholder}
                   value={String(value ?? '')}
                   onChange={(event) => setValue(field.name, event.target.value)}
                 />

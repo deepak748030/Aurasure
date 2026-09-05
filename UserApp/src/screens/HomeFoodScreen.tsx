@@ -365,7 +365,7 @@ export function HomeFoodScreen({ navigation }: { navigation: Nav }): React.React
             onPress={() => navigation.navigate('SeeAll', { kind: 'restaurants', title: 'All restaurants' })}
             style={({ pressed }) => [styles.seeAll, { backgroundColor: c.surface, borderColor: c.border, opacity: pressed ? 0.9 : 1 }]}
           >
-            <Text variant="subtitle" weight="bold" color={c.primary}>
+            <Text variant="subtitle" weight="semibold" color={c.primary}>
               Browse all restaurants
             </Text>
             <Icon name="arrowRight" size={16} color={c.primary} />

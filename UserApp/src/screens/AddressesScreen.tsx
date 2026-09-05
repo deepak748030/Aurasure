@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
@@ -7,7 +7,8 @@ import { type IconName } from '@/lib/icons';
 import { EmptyState, Tag } from '@/components/ui/Primitives';
 import { ListRow, ListSection } from '@/components/list/ListRow';
 import { SkeletonList } from '@/components/ui/Skeleton';
-import { MapSurface } from '@/components/map/MapSurface';
+import { MapSurface, type MapMarker } from '@/components/map/MapSurface';
+import { hasCoords, project } from '@/lib/geo';
 import { useSession } from '@/context/SessionContext';
 import { useColors } from '@/theme/ThemeContext';
 import { useSheet } from '@/components/sheet/SheetProvider';
@@ -36,6 +37,19 @@ export function AddressesScreen({ navigation }: { navigation: Nav }): React.Reac
       setLoading(false);
     }
   }, [isLoggedIn, loadAddresses]);
+
+  const pinned = useMemo(() => addresses.filter(hasCoords), [addresses]);
+  const markers = useMemo<MapMarker[]>(() => {
+    const positions = project(pinned);
+    return pinned.map((address, index) => ({
+      id: address.id,
+      label: address.label,
+      x: positions[index]?.x ?? 0.5,
+      y: positions[index]?.y ?? 0.5,
+      icon: LABEL_ICON[address.label] ?? 'mapPin',
+      active: address.id === selectedAddressId,
+    }));
+  }, [pinned, selectedAddressId]);
 
   const askDelete = async (address: UserAddress): Promise<void> => {
     const ok = await sheet.confirm({
@@ -102,15 +116,20 @@ export function AddressesScreen({ navigation }: { navigation: Nav }): React.Reac
         <MapSurface
           height={150}
           showControls={false}
-          userLabel={selectedAddress ? `${selectedAddress.label} · ${selectedAddress.city}` : 'No address selected'}
-          markers={addresses.map((address, index) => ({
-            id: address.id,
-            label: address.label,
-            x: 0.3 + (index % 3) * 0.2,
-            y: 0.35 + Math.floor(index / 3) * 0.2,
-            icon: LABEL_ICON[address.label] ?? 'mapPin',
-            active: address.id === selectedAddressId,
-          }))}
+          userLabel={
+            selectedAddress
+              ? `${selectedAddress.label} · ${selectedAddress.city}`
+              : 'No address selected'
+          }
+          showUserDot={false}
+          markers={markers}
+          footer={
+            addresses.length > 0 && pinned.length === 0 ? (
+              <Text variant="micro" tone="muted">
+                No pins saved yet — open an address and save its map pin.
+              </Text>
+            ) : undefined
+          }
         />
       </View>
 

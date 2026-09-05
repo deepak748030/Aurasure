@@ -202,14 +202,14 @@ export function OutletList({
           <View style={{ width: 52, height: 52 }}>
             <SmartImage source={row.image} name={row.name} style={{ width: 52, height: 52 }} radiusOverride={radius.md} />
           </View>
-          <View style={{ flex: 1, gap: 3 }}>
-            <Text variant="title" weight="bold" numberOfLines={1}>
+          <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
+            <Text variant="title" weight="semibold" numberOfLines={1}>
               {row.name}
             </Text>
             <Text variant="caption" tone="muted" numberOfLines={1}>
               {row.line}
             </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, rowGap: 4, flexWrap: 'wrap' }}>
               <Tag label={row.rating > 0 ? `${row.rating.toFixed(1)} ★` : 'New'} tone={row.rating >= 4.5 ? 'success' : 'muted'} />
               <Tag label={row.eta} icon="clock" tone="muted" />
               {row.promo ? <Tag label={row.promo} icon="percent" /> : null}

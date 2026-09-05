@@ -190,7 +190,7 @@ export function CartScreen({ navigation }: { navigation: Nav }): React.ReactElem
               style={[styles.tab, { backgroundColor: module === key ? c.primary : 'transparent', borderColor: module === key ? c.primary : c.border }]}
             >
               <Icon name={key === 'food' ? 'utensils' : 'store'} size={14} color={module === key ? c.onPrimary : c.textSecondary} />
-              <Text variant="caption" weight="bold" color={module === key ? c.onPrimary : c.textSecondary}>
+              <Text variant="caption" weight="semibold" color={module === key ? c.onPrimary : c.textSecondary}>
                 {key === 'food' ? `Food · ${cart.countFor('food')}` : `Shop · ${cart.countFor('shop')}`}
               </Text>
             </Pressable>
@@ -212,7 +212,7 @@ export function CartScreen({ navigation }: { navigation: Nav }): React.ReactElem
             <View style={{ paddingHorizontal: spacing.edge, paddingTop: spacing.sm, paddingBottom: spacing.xs, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Icon name={module === 'food' ? 'storefront' : 'store'} size={15} color={c.primary} />
               <View style={{ flex: 1 }}>
-                <Text variant="subtitle" weight="bold">
+                <Text variant="subtitle" weight="semibold">
                   {outlet.name}
                 </Text>
                 <Text variant="micro" tone="muted">
@@ -289,7 +289,7 @@ export function CartScreen({ navigation }: { navigation: Nav }): React.ReactElem
               >
                 <Icon name="coupon" size={18} color={c.primary} />
                 <View style={{ flex: 1 }}>
-                  <Text variant="subtitle" weight="bold" color={c.primary}>
+                  <Text variant="subtitle" weight="semibold" color={c.primary}>
                     Apply coupon
                   </Text>
                   <Text variant="micro" tone="muted">
@@ -364,7 +364,7 @@ function CartRow({
           </Text>
         ) : null}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text variant="subtitle" weight="bold">
+          <Text variant="subtitle" weight="semibold">
             {money(line.linePrice * line.qty)}
           </Text>
           {line.unitPrice !== line.linePrice ? (
@@ -378,7 +378,7 @@ function CartRow({
             <Pressable accessibilityRole="button" accessibilityLabel="Decrease" onPress={line.qty <= 1 ? onRemove : onDec} hitSlop={6} style={styles.stepBtn}>
               <Icon name={line.qty <= 1 ? 'trash' : 'minus'} size={13} color={line.qty <= 1 ? c.danger : c.primary} />
             </Pressable>
-            <Text variant="caption" weight="bold" color={c.primary}>
+            <Text variant="caption" weight="semibold" color={c.primary}>
               {line.qty}
             </Text>
             <Pressable accessibilityRole="button" accessibilityLabel="Increase" onPress={onInc} hitSlop={6} style={styles.stepBtn}>
@@ -386,7 +386,7 @@ function CartRow({
             </Pressable>
           </View>
           <Pressable accessibilityRole="button" onPress={onRemove} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-            <Text variant="micro" weight="bold" color={c.textTertiary}>
+            <Text variant="micro" weight="semibold" color={c.textTertiary}>
               Remove
             </Text>
           </Pressable>

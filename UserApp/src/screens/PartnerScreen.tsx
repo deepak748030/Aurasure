@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Icon, type IconName } from '@/lib/icons';
+import { Icon } from '@/lib/icons';
 import { MetaRow } from '@/components/list/ListRow';
 import { Tag } from '@/components/ui/Primitives';
 import { useSession } from '@/context/SessionContext';
@@ -12,22 +12,21 @@ import { useColors } from '@/theme/ThemeContext';
 import { useSheet } from '@/components/sheet/SheetProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { money } from '@/lib/format';
+import { useQuery } from '@/hooks/useQuery';
+import { fetchPartnerPerks, type PartnerPerks } from '@/api/app';
 import { applyAsDeliveryPartner } from '@/api/account';
 import { ApiError } from '@/api/client';
 import { haptic } from '@/lib/haptics';
 import type { Nav } from '@/navigation/types';
 
-const PERKS: { icon: IconName; title: string; body: string }[] = [
-  { icon: 'wallet', title: 'Paid weekly', body: 'Settlements every Monday for the trips you finished.' },
-  { icon: 'navigation', title: 'Your own hours', body: 'Go online when you want; the app never books you in.' },
-  { icon: 'shieldCheck', title: 'Verified outlets', body: 'Pick-ups happen from Aurasure-approved stores only.' },
-];
-
-/** Become a delivery partner — `POST /users/me/partner-application`. */
+/** Become a delivery partner — `POST /users/me/partner-application`; hero + perks from content. */
 export function PartnerScreen({ navigation }: { navigation: Nav }): React.ReactElement {
   const c = useColors();
   const sheet = useSheet();
   const { user, isLoggedIn, refreshUser } = useSession();
+  const content = useQuery<PartnerPerks>(useCallback((signal: AbortSignal) => fetchPartnerPerks(signal), []), {});
+  const perks = content.data?.perks ?? [];
+  const hero = content.data?.hero ?? { title: 'Become a delivery partner', subtitle: 'Earn with Aurasure in your city' };
   const [name, setName] = useState(user?.name ?? '');
   const [city, setCity] = useState('');
   const [busy, setBusy] = useState(false);
@@ -75,8 +74,8 @@ export function PartnerScreen({ navigation }: { navigation: Nav }): React.ReactE
 
   return (
     <Screen
-      title="Become a delivery partner"
-      subtitle={applied ? `Application ${applied.status.toLowerCase()}` : 'Earn with Aurasure in your city'}
+      title={hero.title}
+      subtitle={applied ? `Application ${applied.status.toLowerCase()}` : hero.subtitle}
       back
       stickyFooter={
         applied ? undefined : (
@@ -101,13 +100,13 @@ export function PartnerScreen({ navigation }: { navigation: Nav }): React.ReactE
           </View>
         </View>
 
-        {PERKS.map((perk) => (
+        {perks.map((perk) => (
           <Pressable key={perk.title} accessibilityRole="button" onPress={() => sheet.info(perk.title, perk.body, perk.icon)} style={({ pressed }) => [styles.perk, { backgroundColor: c.surface, borderColor: c.border, opacity: pressed ? 0.95 : 1 }]}>
             <View style={[styles.perkIcon, { backgroundColor: c.secondarySoft }]}>
               <Icon name={perk.icon} size={16} color={c.success} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text variant="bodySm" weight="bold">
+              <Text variant="bodySm" weight="semibold">
                 {perk.title}
               </Text>
               <Text variant="micro" tone="muted">

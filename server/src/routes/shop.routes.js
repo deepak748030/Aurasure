@@ -16,6 +16,9 @@ router.get('/stores/:id/products', controller.getStoreProducts);
 router.get('/products', controller.listProducts);
 router.get('/products/:id', controller.getProduct);
 
+router.get('/brands', controller.listBrands);
+router.get('/brands/:id', controller.getBrand);
+
 router.get('/popular', controller.listPopular);
 router.get('/offers', controller.listOffers);
 

@@ -8,6 +8,7 @@ import { EmptyState, ErrorState } from '@/components/ui/Primitives';
 import { SkeletonList, SkeletonRail } from '@/components/ui/Skeleton';
 import { OutletFilterBar, OutletList, useOutletList, type StoreFilterKey } from '@/components/outlets/OutletList';
 import { useCartActions } from '@/hooks/useCartActions';
+import { useOutletResolver } from '@/hooks/useOutletResolver';
 import { usePaginated, useQuery } from '@/hooks/useQuery';
 import { fetchFoodItemsPage, fetchFoodCategories, fetchShopCategories, fetchProductsPage } from '@/api/catalog';
 import { useCart } from '@/context/CartContext';
@@ -24,6 +25,7 @@ export function SeeAllScreen({ navigation, route }: ScreenProps<'SeeAll'>): Reac
   const cart = useCart();
   const actions = useCartActions();
   const { module, isFavorite, toggleFavorite } = useSession();
+  const resolveOutlet = useOutletResolver(module);
   const kind = route.params.kind;
   const isOutletKind = (OUTLET_KINDS as readonly string[]).includes(kind);
 
@@ -129,8 +131,7 @@ export function SeeAllScreen({ navigation, route }: ScreenProps<'SeeAll'>): Reac
               onFavorite={() => void toggleFavorite(module, item.id)}
               onOpen={() => navigation.navigate('Item', { module, id: item.id })}
               onAdd={() => {
-                const outletId = module === 'food' ? item.restaurantId ?? '' : item.storeId ?? '';
-                void actions.quickAdd(module, item, { id: outletId, name: '', deliveryFee: 0, minOrder: 0, etaMinutes: item.prepTime ?? 30 });
+                void (async () => actions.quickAdd(module, item, await resolveOutlet(item)))();
               }}
               onInc={() => {
                 const line = cart.linesFor(module).find((row) => row.refId === item.id);
@@ -152,7 +153,7 @@ export function SeeAllScreen({ navigation, route }: ScreenProps<'SeeAll'>): Reac
           ) : (
             <Pressable onPress={pages.loadMore} style={({ pressed }) => [styles.more, { borderColor: c.border, opacity: pressed ? 0.92 : 1 }]}>
               <Icon name={pages.loadingMore ? 'refresh' : 'plus'} size={14} color={c.primary} />
-              <Text variant="caption" weight="bold" color={c.primary}>
+              <Text variant="caption" weight="semibold" color={c.primary}>
                 {pages.loadingMore ? 'Loading…' : `Load ${Math.min(20, Math.max(1, (pages.total || 0) - items.length)) || 'more'} more`}
               </Text>
             </Pressable>

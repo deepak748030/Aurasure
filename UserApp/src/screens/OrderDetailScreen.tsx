@@ -188,7 +188,7 @@ export function OrderDetailScreen({ navigation, route }: { navigation: Nav; rout
                 <Text variant="micro" tone="muted">
                   {line.qty}×
                 </Text>
-                <Text variant="bodySm" weight="bold">
+                <Text variant="bodySm" weight="semibold">
                   {money(line.unitPrice * line.qty)}
                 </Text>
               </Pressable>
@@ -216,7 +216,7 @@ export function OrderDetailScreen({ navigation, route }: { navigation: Nav; rout
           <View style={{ flexDirection: 'row', gap: spacing.sm }}>
             <Icon name="mapPin" size={16} color={c.primary} />
             <View style={{ flex: 1 }}>
-              <Text variant="bodySm" weight="bold">
+              <Text variant="bodySm" weight="semibold">
                 {order.address.split(',')[0] ?? 'Delivery address'}
               </Text>
               <Text variant="micro" tone="muted">
@@ -242,7 +242,7 @@ export function OrderDetailScreen({ navigation, route }: { navigation: Nav; rout
                 <Icon name="bike" size={19} color={c.primary} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text variant="subtitle" weight="bold">
+                <Text variant="subtitle" weight="semibold">
                   {order.deliveryPartnerName ?? 'Your rider'}
                 </Text>
                 <Text variant="micro" tone="muted">
@@ -264,7 +264,7 @@ export function OrderDetailScreen({ navigation, route }: { navigation: Nav; rout
 
         {order.status === 'delivered' && user ? (
           <View style={{ padding: spacing.md, borderRadius: radius.lg, borderWidth: 1, borderColor: c.border, backgroundColor: c.surfaceHi, gap: 4 }}>
-            <Text variant="subtitle" weight="bold">
+            <Text variant="subtitle" weight="semibold">
               Thanks for ordering
             </Text>
             <Text variant="caption" tone="muted">

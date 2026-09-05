@@ -5,6 +5,8 @@ const { body } = require('express-validator');
 const controller = require('../controllers/user.controller');
 const rewards = require('../controllers/rewards.controller');
 const promos = require('../controllers/promo.controller');
+const notifications = require('../controllers/notification.controller');
+const support = require('../controllers/support.controller');
 const { authenticate } = require('../middlewares/auth');
 const validate = require('../middlewares/validate');
 
@@ -23,11 +25,21 @@ router.post(
     body('line').trim().isLength({ min: 3, max: 160 }).withMessage('Address line required'),
     body('city').trim().isLength({ min: 2, max: 60 }).withMessage('City required'),
     body('pin').trim().isLength({ min: 4, max: 10 }).withMessage('PIN required'),
+    body('lat').optional({ nullable: true }).isFloat({ min: -90, max: 90 }).withMessage('Invalid latitude'),
+    body('lng').optional({ nullable: true }).isFloat({ min: -180, max: 180 }).withMessage('Invalid longitude'),
   ],
   validate,
   controller.addAddress,
 );
-router.put('/me/addresses/:addressId', controller.updateAddress);
+router.put(
+  '/me/addresses/:addressId',
+  [
+    body('lat').optional({ nullable: true }).isFloat({ min: -90, max: 90 }).withMessage('Invalid latitude'),
+    body('lng').optional({ nullable: true }).isFloat({ min: -180, max: 180 }).withMessage('Invalid longitude'),
+  ],
+  validate,
+  controller.updateAddress,
+);
 router.delete('/me/addresses/:addressId', controller.deleteAddress);
 
 router.get('/me/favorites', controller.getFavorites);
@@ -74,6 +86,19 @@ router.post(
   validate,
   promos.claimPromo,
 );
+
+router.get('/me/delivery-estimate', controller.getDeliveryEstimate);
+
+router.get('/me/notifications', notifications.listMine);
+router.post('/me/notifications/read', notifications.markRead);
+
+router.post(
+  '/me/support-tickets',
+  [body('message').trim().isLength({ min: 12, max: 1000 }).withMessage('Message must be 12–1000 characters')],
+  validate,
+  support.createTicket,
+);
+router.get('/me/support-tickets', support.listMyTickets);
 
 router.get('/me/referral', rewards.getReferral);
 router.post(

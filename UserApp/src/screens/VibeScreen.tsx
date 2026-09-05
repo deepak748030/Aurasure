@@ -8,6 +8,7 @@ import { EmptyState, ErrorState, Tag } from '@/components/ui/Primitives';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useQuery } from '@/hooks/useQuery';
 import { useCartActions } from '@/hooks/useCartActions';
+import { useOutletResolver } from '@/hooks/useOutletResolver';
 import { fetchVibeItems } from '@/api/catalog';
 import { useCart } from '@/context/CartContext';
 import { useSession } from '@/context/SessionContext';
@@ -20,6 +21,7 @@ export function VibeScreen({ navigation, route }: ScreenProps<'Vibe'>): React.Re
   const c = useColors();
   const cart = useCart();
   const actions = useCartActions();
+  const resolveOutlet = useOutletResolver('food');
   const { isFavorite, toggleFavorite } = useSession();
   const query = useQuery(useCallback(() => fetchVibeItems(route.params.id), [route.params.id]), {});
   const items = query.data?.items ?? [];
@@ -73,7 +75,7 @@ export function VibeScreen({ navigation, route }: ScreenProps<'Vibe'>): React.Re
               onFavorite={() => void toggleFavorite('food', item.id)}
               onOpen={() => navigation.navigate('Item', { module: 'food', id: item.id })}
               onAdd={() => {
-                void actions.quickAdd('food', item, { id: item.restaurantId ?? '', name: '', deliveryFee: 0, minOrder: 0, etaMinutes: item.prepTime ?? 30 });
+                void (async () => actions.quickAdd('food', item, await resolveOutlet(item)))();
               }}
               onInc={() => {
                 const line = cart.linesFor('food').find((row) => row.refId === item.id);

@@ -207,7 +207,7 @@ export function IconButton({
             borderColor: c.surface,
           }}
         >
-          <Text variant="micro" weight="bold" color={c.white}>
+          <Text variant="micro" weight="semibold" color={c.white}>
             {badge > 9 ? '9+' : badge}
           </Text>
         </View>

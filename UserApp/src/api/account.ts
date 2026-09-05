@@ -26,6 +26,8 @@ export interface AddressInput {
   city: string;
   pin: string;
   isDefault?: boolean;
+  lat?: number | null;
+  lng?: number | null;
 }
 
 export function addAddress(input: AddressInput): Promise<UserAddress> {

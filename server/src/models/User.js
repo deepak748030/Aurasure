@@ -10,6 +10,8 @@ const addressSchema = new mongoose.Schema(
     city: { type: String, required: true },
     pin: { type: String, required: true },
     isDefault: { type: Boolean, default: false },
+    lat: { type: Number, default: null },
+    lng: { type: Number, default: null },
   },
   { _id: false },
 );
@@ -92,6 +94,7 @@ const userSchema = new mongoose.Schema(
     partnerApplication: { type: mongoose.Schema.Types.Mixed, default: null },
     addresses: { type: [addressSchema], default: [] },
     favorites: { type: [favoriteSchema], default: [] },
+    notificationsReadAt: { type: Date, default: null },
   },
   {
     timestamps: true,

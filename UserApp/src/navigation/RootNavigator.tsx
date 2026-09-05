@@ -89,12 +89,15 @@ export function RootNavigator(): React.ReactElement {
     [resolved, c],
   );
 
-  // Android: keep the system navigation bar in step with the app surface.
+  // Android: only the button (icon) style is still honored. The app runs
+  // edge-to-edge (see app.json `edgeToEdgeEnabled`), where the navigation bar
+  // is transparent and `setBackgroundColorAsync` is a no-op that logs a
+  // "`setBackgroundColorAsync` is not supported with edge-to-edge enabled"
+  // warning on every call — so it is intentionally not called here.
   useEffect(() => {
     if (Platform.OS !== 'android') return;
-    void NavigationBar.setBackgroundColorAsync(c.surface).catch(() => undefined);
     void NavigationBar.setButtonStyleAsync(resolved === 'dark' ? 'light' : 'dark').catch(() => undefined);
-  }, [c.surface, resolved]);
+  }, [resolved]);
 
   useEffect(() => {
     const timer = setInterval(() => void checkHealth(), 5 * 60_000);

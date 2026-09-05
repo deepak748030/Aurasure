@@ -10,6 +10,7 @@ import { useQuery } from '@/hooks/useQuery';
 import { fetchCatalog, fetchRestaurants, fetchStores } from '@/api/catalog';
 import { useCart } from '@/context/CartContext';
 import { useCartActions } from '@/hooks/useCartActions';
+import { useOutletResolver } from '@/hooks/useOutletResolver';
 import { useSession } from '@/context/SessionContext';
 import { useColors } from '@/theme/ThemeContext';
 import { useSheet } from '@/components/sheet/SheetProvider';
@@ -29,6 +30,7 @@ export function FavoritesScreen({ navigation }: { navigation: Nav }): React.Reac
   const cart = useCart();
   const actions = useCartActions();
   const { module, favorites, isFavorite, toggleFavorite, isLoggedIn } = useSession();
+  const resolveOutlet = useOutletResolver(module);
   const [tab, setTab] = useState<Tab>('items');
 
   const catalog = useQuery<CatalogItem[]>(useCallback(() => fetchCatalog(module, 200), [module]), { enabled: isLoggedIn });
@@ -125,7 +127,7 @@ export function FavoritesScreen({ navigation }: { navigation: Nav }): React.Reac
                 favorite={isFavorite(module, item.id)}
                 onFavorite={() => void askRemove(item.id, item.name)}
                 onOpen={() => navigation.navigate('Item', { module, id: item.id })}
-                onAdd={() => void actions.quickAdd(module, item, { id: (module === 'food' ? item.restaurantId : item.storeId) ?? '', name: '', deliveryFee: 0, minOrder: 0, etaMinutes: 30 })}
+                onAdd={() => void (async () => actions.quickAdd(module, item, await resolveOutlet(item)))()}
                 onInc={() => {
                   const line = cart.linesFor(module).find((row) => row.refId === item.id);
                   if (line) actions.inc(module, line.id, line.qty);

@@ -20,6 +20,7 @@ import { radius, spacing } from '@/theme/tokens';
 import { minutes } from '@/lib/format';
 import { fetchFoodItem, fetchFoodPopular, fetchProduct, fetchShopPopular } from '@/api/catalog';
 import { needsChoices } from '@/hooks/useCartActions';
+import { useOutletResolver } from '@/hooks/useOutletResolver';
 import type { Nav, Route } from '@/navigation/types';
 import type { CatalogItem } from '@/types';
 
@@ -34,6 +35,7 @@ export function ItemDetailScreen({ navigation, route }: { navigation: Nav; route
   const isFood = module === 'food';
   const cart = useCart();
   const actions = useCartActions();
+  const resolveOutlet = useOutletResolver(module);
   const { isFavorite, toggleFavorite } = useSession();
   const [sheet, setSheet] = useState(false);
 
@@ -43,15 +45,15 @@ export function ItemDetailScreen({ navigation, route }: { navigation: Nav; route
   const item = itemQuery.data;
   const inCart = item ? cart.qtyOf(module, item.id) : 0;
 
-  const outletOf = useCallback(
-    (row: CatalogItem) => ({
-      id: (isFood ? row.restaurantId : row.storeId) ?? '',
-      name: '',
-      deliveryFee: 0,
-      minOrder: 0,
-      etaMinutes: isFood ? (row.prepTime ?? 25) : (row.deliveryMins ?? 40),
-    }),
-    [isFood],
+  const outletOf = useCallback((row: CatalogItem) => resolveOutlet(row), [resolveOutlet]);
+
+  const outletNameQuery = useQuery<string | undefined>(
+    useCallback(async () => {
+      if (!item) return undefined;
+      const snapshot = await resolveOutlet(item);
+      return snapshot.name || undefined;
+    }, [resolveOutlet, item]),
+    {},
   );
 
   const add = (row: CatalogItem): void => {
@@ -59,7 +61,7 @@ export function ItemDetailScreen({ navigation, route }: { navigation: Nav; route
       setSheet(true);
       return;
     }
-    void actions.quickAdd(module, row, outletOf(row));
+    void (async () => actions.quickAdd(module, row, await outletOf(row)))();
   };
 
   return (
@@ -156,7 +158,7 @@ export function ItemDetailScreen({ navigation, route }: { navigation: Nav; route
               >
                 <Icon name="sliders" size={17} color={c.primary} />
                 <View style={{ flex: 1 }}>
-                  <Text variant="subtitle" weight="bold">
+                  <Text variant="subtitle" weight="semibold">
                     {isFood ? 'Choose size and add-ons' : 'Choose size and colour'}
                   </Text>
                   <Text variant="micro" tone="muted">
@@ -203,8 +205,8 @@ export function ItemDetailScreen({ navigation, route }: { navigation: Nav; route
                     favorite={isFavorite(module, row.id)}
                     onFavorite={() => void toggleFavorite(module, row.id)}
                     onOpen={() => navigation.navigate('Item', { module, id: row.id })}
-                    onAdd={() => void actions.quickAdd(module, row, outletOf(row))}
-                    onInc={() => void actions.quickAdd(module, row, outletOf(row))}
+                    onAdd={() => void (async () => actions.quickAdd(module, row, await outletOf(row)))()}
+                    onInc={() => void (async () => actions.quickAdd(module, row, await outletOf(row)))()}
                     onDec={() => {
                       const line = cart.linesFor(module).find((row2) => row2.refId === row.id);
                       if (line) actions.dec(module, line.id, line.qty);
@@ -227,11 +229,11 @@ export function ItemDetailScreen({ navigation, route }: { navigation: Nav; route
         item={item ?? null}
         module={module}
         onClose={() => setSheet(false)}
-        outletName={item?.restaurantId ? 'Aurasure partner kitchen' : undefined}
+        outletName={outletNameQuery.data ?? undefined}
         onSubmit={(selection) => {
           if (!item) return;
           setSheet(false);
-          void actions.addSelection(module, { ...selection, item }, outletOf(item));
+          void (async () => actions.addSelection(module, { ...selection, item }, await outletOf(item)))();
         }}
       />
     </Screen>

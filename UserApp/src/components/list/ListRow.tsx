@@ -61,14 +61,14 @@ export function ListRow({
             <Icon name={icon} size={17} color={toneColor} />
           </View>
         ) : null)}
-      <View style={{ flex: 1, gap: 2 }}>
+      <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <Text variant="title" weight="semibold" numberOfLines={1} style={{ flexShrink: 1 }}>
             {title}
           </Text>
           {badge ? (
-            <View style={{ paddingHorizontal: 6, paddingVertical: 2, borderRadius: radius.xs, backgroundColor: toneBg }}>
-              <Text variant="micro" weight="bold" color={toneColor}>
+            <View style={{ paddingHorizontal: 6, paddingVertical: 2, borderRadius: radius.xs, backgroundColor: toneBg, flexShrink: 0 }}>
+              <Text variant="micro" weight="semibold" color={toneColor} numberOfLines={1}>
                 {badge}
               </Text>
             </View>
@@ -136,7 +136,7 @@ export function ListSection({
           </Text>
           {action ? (
             <Pressable accessibilityRole="button" onPress={onAction} hitSlop={8}>
-              <Text variant="caption" weight="bold" color={c.primary}>
+              <Text variant="caption" weight="semibold" color={c.primary} numberOfLines={1}>
                 {action}
               </Text>
             </Pressable>

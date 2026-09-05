@@ -25,6 +25,8 @@ const ShopStore = require('../models/ShopStore');
 const Product = require('../models/Product');
 const Banner = require('../models/Banner');
 const Promo = require('../models/Promo');
+const Brand = require('../models/Brand');
+const FlashSale = require('../models/FlashSale');
 
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
@@ -224,9 +226,9 @@ const resources = {
     fields: [
       'name', 'cuisines', 'rating', 'reviews', 'deliveryTime', 'deliveryFee', 'minOrder',
       'distanceKm', 'priceForTwo', 'promo', 'isVeg', 'isNew', 'isNewlyJoined', 'isClosed',
-      'isPopular', 'offer', 'line', 'cover', 'tags', 'categoryIds',
+      'isPopular', 'offer', 'line', 'city', 'lat', 'lng', 'cover', 'tags', 'categoryIds',
     ],
-    search: ['name', 'line', 'promo', 'id'],
+    search: ['name', 'line', 'promo', 'city', 'id'],
     sort: { createdAt: -1 },
     filter: (query, req) => {
       if (req.query.category) query.categoryIds = req.query.category;
@@ -271,6 +273,7 @@ const resources = {
     fields: [
       'name', 'brand', 'road', 'house', 'city', 'pin', 'rating', 'reviews', 'deliveryMins',
       'deliveryFee', 'minOrder', 'promo', 'isNiche', 'isPopular', 'tags', 'categoryIds', 'cover',
+      'lat', 'lng',
     ],
     search: ['name', 'brand', 'city', 'road', 'id'],
     sort: { createdAt: -1 },
@@ -310,6 +313,41 @@ const resources = {
       if (req.query.module === 'food' || req.query.module === 'shop') query.module = req.query.module;
       const active = asBool(req.query.active);
       if (active !== undefined) query.active = active;
+    },
+  }),
+
+  'shop/brands': crud({
+    model: Brand,
+    key: 'brands',
+    prefix: 'brd',
+    fields: ['name', 'tagline', 'image', 'featured', 'sortOrder', 'active'],
+    search: ['name', 'tagline', 'id'],
+    sort: { sortOrder: 1 },
+    filter: (query, req) => {
+      const active = asBool(req.query.active);
+      if (active !== undefined) query.active = active;
+      const featured = asBool(req.query.featured);
+      if (featured !== undefined) query.featured = featured;
+    },
+  }),
+
+  'flash-sales': crud({
+    model: FlashSale,
+    key: 'sales',
+    prefix: 'fls',
+    fields: ['module', 'title', 'subtitle', 'badge', 'startsAt', 'endsAt', 'itemIds', 'active'],
+    search: ['title', 'subtitle', 'badge', 'id'],
+    sort: { startsAt: -1 },
+    filter: (query, req) => {
+      if (req.query.module === 'food' || req.query.module === 'shop') query.module = req.query.module;
+      const active = asBool(req.query.active);
+      if (active !== undefined) query.active = active;
+      if (req.query.status === 'live') {
+        const now = new Date();
+        query.active = true;
+        query.startsAt = { $lte: now };
+        query.endsAt = { $gte: now };
+      }
     },
   }),
 

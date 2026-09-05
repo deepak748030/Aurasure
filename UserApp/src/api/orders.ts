@@ -54,9 +54,11 @@ export function createOrder(input: CreateOrderInput): Promise<CreateOrderResult>
 
 export function listOrders(
   params: { module?: ModuleKey; status?: OrderStatus | 'running'; page?: number; limit?: number } = {},
+  signal?: AbortSignal,
 ): Promise<{ orders: Order[]; meta?: Meta }> {
   return apiGetFull<{ orders: Order[] }>(`/orders${query({ ...params, limit: params.limit ?? 20 })}`, {
     auth: true,
+    signal,
   }).then((r) => ({ orders: r.data.orders ?? [], meta: r.meta }));
 }
 

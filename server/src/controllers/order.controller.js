@@ -16,6 +16,11 @@ const { getAppSettings } = require('../utils/settings');
 
 const VISIBLE_APPROVAL = { approvalStatus: { $in: ['approved', null] } };
 
+/** Mirrors the `status` enum on the Order model. */
+const ORDER_STATUSES = ['placed', 'confirmed', 'preparing', 'out_for_delivery', 'delivered', 'cancelled'];
+/** "Live" orders — the set the apps mean when they ask for `status=running`. */
+const RUNNING_STATUSES = ['placed', 'confirmed', 'preparing', 'out_for_delivery'];
+
 function makeOrderCode(module) {
   const stamp = Date.now().toString(36).toUpperCase().slice(-6);
   return `AUR-${module === 'shop' ? 'SH' : 'FD'}-${stamp}`;
@@ -235,7 +240,16 @@ const listOrders = asyncHandler(async (req, res) => {
 
   const query = { user: req.user._id };
   if (module === 'food' || module === 'shop') query.module = module;
-  if (status) query.status = status;
+  // `running` is a *group* of live statuses, not a stored value. The apps ask
+  // for it by name (`GET /orders?status=running`); matching it literally
+  // against the enum can never hit a document, which silently returned an
+  // empty list for every in-progress order. Unknown values are ignored rather
+  // than passed through, so a typo can no longer blank the screen either.
+  if (status === 'running') {
+    query.status = { $in: RUNNING_STATUSES };
+  } else if (ORDER_STATUSES.includes(status)) {
+    query.status = status;
+  }
 
   const total = await Order.countDocuments(query);
   const orders = await Order.find(query).sort({ placedAt: -1 }).skip(skip).limit(limit);

@@ -52,10 +52,10 @@ export function FlashSaleTimer({ target, compact = false }: { target?: Date; com
     <View style={[styles.row, compact && styles.rowCompact]}>
       {tiles.map((tile, index) => (
         <React.Fragment key={tile.unit}>
-          {index > 0 ? <Text variant="h3" weight="bold" color={c.primary}>:</Text> : null}
+          {index > 0 ? <Text variant="h3" weight="semibold" color={c.primary}>:</Text> : null}
           <View style={styles.tileWrap}>
             <View style={[styles.tile, { backgroundColor: c.primary }, compact && styles.tileCompact]}>
-              <Text variant={compact ? 'caption' : 'subtitle'} weight="bold" color={c.white}>
+              <Text variant={compact ? 'caption' : 'subtitle'} weight="semibold" color={c.white}>
                 {String(tile.value).padStart(2, '0')}
               </Text>
             </View>

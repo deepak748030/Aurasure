@@ -56,7 +56,7 @@ export function BrandsScreen({ navigation }: { navigation: Nav }): React.ReactEl
                 <SmartImage source={brand.image} name={brand.name} style={styles.art} radiusOverride={radius.md} />
               ) : (
                 <View style={[styles.art, styles.letterPlate, { backgroundColor: c.primarySoft }]}>
-                  <Text variant="subtitle" weight="bold" color={c.primary}>
+                  <Text variant="subtitle" weight="semibold" color={c.primary}>
                     {initials(brand.name)}
                   </Text>
                 </View>

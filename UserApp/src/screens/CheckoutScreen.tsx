@@ -259,7 +259,7 @@ export function CheckoutScreen({ navigation }: { navigation: Nav }): React.React
                 <Icon name={module === 'food' ? 'storefront' : 'store'} size={17} color={c.primary} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text variant="title" weight="bold">
+                <Text variant="title" weight="semibold">
                   {outlet?.name || 'Aurasure store'}
                 </Text>
                 <Text variant="micro" tone="muted">
@@ -280,7 +280,7 @@ export function CheckoutScreen({ navigation }: { navigation: Nav }): React.React
                 <View key={line.id}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.sm }}>
                     <View style={[styles.qtyBadge, { backgroundColor: c.primarySoft }]}>
-                      <Text variant="caption" weight="bold" color={c.primary}>
+                      <Text variant="caption" weight="semibold" color={c.primary}>
                         {line.qty}×
                       </Text>
                     </View>
@@ -294,7 +294,7 @@ export function CheckoutScreen({ navigation }: { navigation: Nav }): React.React
                         </Text>
                       ) : null}
                     </View>
-                    <Text variant="bodySm" weight="bold">
+                    <Text variant="bodySm" weight="semibold">
                       {money(line.linePrice * line.qty)}
                     </Text>
                   </View>

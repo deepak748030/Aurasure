@@ -135,7 +135,7 @@ export function HelpScreen({ navigation }: { navigation: Nav }): React.ReactElem
               <View style={[styles.channelIcon, { backgroundColor: c.primarySoft }]}>
                 <Icon name={row.icon} size={16} color={c.primary} />
               </View>
-              <Text variant="caption" weight="bold">
+              <Text variant="caption" weight="semibold">
                 {row.label}
               </Text>
               <Text variant="micro" tone="faint" numberOfLines={1}>
@@ -171,7 +171,7 @@ export function HelpScreen({ navigation }: { navigation: Nav }): React.ReactElem
                     <Icon name={faq.icon} size={15} color={expanded ? c.onPrimary : c.primary} />
                   </View>
                   <View style={{ flex: 1, gap: 3 }}>
-                    <Text variant="bodySm" weight="bold">
+                    <Text variant="bodySm" weight="semibold">
                       {faq.q}
                     </Text>
                     {expanded ? (
@@ -194,7 +194,7 @@ export function HelpScreen({ navigation }: { navigation: Nav }): React.ReactElem
 
         {/* Write to us */}
         <View style={{ padding: spacing.md, borderRadius: radius.lg, borderWidth: 1, borderColor: c.border, backgroundColor: c.surface, gap: spacing.sm }}>
-          <Text variant="subtitle" weight="bold">
+          <Text variant="subtitle" weight="semibold">
             Write to us
           </Text>
           <Input label="What happened?" value={ticket} onChangeText={setTicket} multiline placeholder="Order AUR-FD-1042 arrived without the dip. The store did not answer." hint="No ticket API exists on this build — we will not pretend otherwise" icon="chat" />

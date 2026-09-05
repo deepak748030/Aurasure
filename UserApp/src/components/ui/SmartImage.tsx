@@ -59,7 +59,7 @@ export function SmartImage({
         ]}
       >
         {name ? (
-          <Text variant="caption" weight="bold" color={c.primary} center numberOfLines={3} style={{ padding: 6, opacity: 0.85 }}>
+          <Text variant="caption" weight="semibold" color={c.primary} center numberOfLines={3} style={{ padding: 6, opacity: 0.85 }}>
             {name}
           </Text>
         ) : (

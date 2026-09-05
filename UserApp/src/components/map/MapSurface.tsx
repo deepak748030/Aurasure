@@ -190,7 +190,7 @@ export function MapSurface({
           style={({ pressed }) => [styles.chip, { backgroundColor: pressed ? c.sheet : c.sheet, borderColor: c.border }]}
         >
           <Icon name="crosshairs" size={13} color={c.primary} />
-          <Text variant="micro" weight="bold" color={c.text}>
+          <Text variant="micro" weight="semibold" color={c.text}>
             {userLabel}
           </Text>
         </Pressable>

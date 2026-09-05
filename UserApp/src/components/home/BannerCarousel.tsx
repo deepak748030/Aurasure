@@ -66,12 +66,12 @@ export function BannerCarousel({ banners, onPress }: { banners: Banner[]; onPres
               <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, top: 0, justifyContent: 'flex-end', padding: spacing.md, backgroundColor: 'rgba(20,6,20,0.30)' }}>
                 {item.badge ? (
                   <View style={{ alignSelf: 'flex-start', marginBottom: 6, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.xs, backgroundColor: c.secondary }}>
-                    <Text variant="micro" weight="bold" color="#10241D">
+                    <Text variant="micro" weight="semibold" color="#10241D">
                       {item.badge}
                     </Text>
                   </View>
                 ) : null}
-                <Text variant="h3" weight="bold" color={c.white} numberOfLines={2}>
+                <Text variant="h3" weight="semibold" color={c.white} numberOfLines={2}>
                   {item.title}
                 </Text>
                 <Text variant="caption" color="rgba(255,255,255,0.86)" numberOfLines={2}>
@@ -108,7 +108,7 @@ export function BannerStrip({ banner }: { banner: Banner }): React.ReactElement 
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: spacing.edge, paddingVertical: 6, backgroundColor: c.surfaceHi }}>
       <Icon name="megaphone" size={14} color={c.primary} />
-      <Text variant="caption" weight="semibold" numberOfLines={1} style={{ flex: 1 }}>
+      <Text variant="caption" weight="medium" numberOfLines={1} style={{ flex: 1 }}>
         {banner.title}
       </Text>
     </View>

@@ -152,7 +152,7 @@ export function SeeAllScreen({ navigation, route }: ScreenProps<'SeeAll'>): Reac
           ) : (
             <Pressable onPress={pages.loadMore} style={({ pressed }) => [styles.more, { borderColor: c.border, opacity: pressed ? 0.92 : 1 }]}>
               <Icon name={pages.loadingMore ? 'refresh' : 'plus'} size={14} color={c.primary} />
-              <Text variant="caption" weight="bold" color={c.primary}>
+              <Text variant="caption" weight="semibold" color={c.primary}>
                 {pages.loadingMore ? 'Loading…' : `Load ${Math.min(20, Math.max(1, (pages.total || 0) - items.length)) || 'more'} more`}
               </Text>
             </Pressable>

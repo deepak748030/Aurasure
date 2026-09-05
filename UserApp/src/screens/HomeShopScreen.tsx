@@ -229,7 +229,7 @@ export function HomeShopScreen({ navigation }: { navigation: Nav }): React.React
                   <SectionHeader title="Flash sale" subtitle="Deepest discounts, ending soon" icon="zap" actionLabel={`${flashSale.length} deals`} />
                 </View>
                 <Pressable accessibilityRole="button" onPress={() => navigation.navigate('FlashSale')} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: 3, paddingBottom: spacing.md }}>
-                  <Text variant="caption" weight="bold" color={c.primary}>
+                  <Text variant="caption" weight="semibold" color={c.primary}>
                     See all
                   </Text>
                   <Icon name="chevronRight" size={13} color={c.primary} />
@@ -267,7 +267,7 @@ export function HomeShopScreen({ navigation }: { navigation: Nav }): React.React
                       <SmartImage source={brand.image} name={brand.name} style={styles.brandArt} radiusOverride={radius.md} />
                     ) : (
                       <View style={[styles.brandArt, styles.brandPlate, { backgroundColor: c.primarySoft }]}>
-                        <Text variant="caption" weight="bold" color={c.primary}>
+                        <Text variant="caption" weight="semibold" color={c.primary}>
                           {brand.name.slice(0, 2).toUpperCase()}
                         </Text>
                       </View>
@@ -367,7 +367,7 @@ export function HomeShopScreen({ navigation }: { navigation: Nav }): React.React
               },
             ]}
           >
-            <Text variant="subtitle" weight="bold" color={c.primary}>
+            <Text variant="subtitle" weight="semibold" color={c.primary}>
               Browse all stores
             </Text>
             <Icon name="arrowRight" size={16} color={c.primary} />

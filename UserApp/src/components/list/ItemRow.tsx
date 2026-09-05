@@ -71,18 +71,19 @@ export function ItemRow({
               {item.description}
             </Text>
           ) : null}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, rowGap: 4, flexWrap: 'wrap' }}>
             {item.rating > 0 ? <RatingPill value={item.rating} count={item.reviews} compact /> : null}
             {item.isBestseller ? <Tag label="Bestseller" tone="warning" /> : null}
             {unavailable ? <Tag label="Unavailable" tone="danger" /> : null}
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Price price={item.price} mrp={item.mrp} size="sm" />
-            <View style={{ flex: 1 }} />
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Price price={item.price} mrp={item.mrp} size="sm" />
+            </View>
             {unavailable ? null : needsChoices(item) && qty === 0 ? (
               <Pressable accessibilityRole="button" onPress={onAdd} hitSlop={6} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, height: 28, borderRadius: radius.pill, borderWidth: 1.2, borderColor: c.primary }}>
                 <Icon name="sliders" size={12} color={c.primary} />
-                <Text variant="micro" weight="bold" color={c.primary}>
+                <Text variant="micro" weight="semibold" color={c.primary}>
                   CHOOSE
                 </Text>
               </Pressable>

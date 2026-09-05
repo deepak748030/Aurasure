@@ -122,7 +122,7 @@ export function MenuScreen({ navigation }: { navigation: Nav }): React.ReactElem
                 <Text variant="micro" color="rgba(255,255,255,0.8)">
                   WALLET
                 </Text>
-                <Text variant="title" weight="bold" color={c.white}>
+                <Text variant="title" weight="semibold" color={c.white}>
                   {isLoggedIn ? money(wallet.data?.balance ?? user?.wallet ?? 0) : '—'}
                 </Text>
               </View>
@@ -130,7 +130,7 @@ export function MenuScreen({ navigation }: { navigation: Nav }): React.ReactElem
                 <Text variant="micro" color="rgba(255,255,255,0.8)">
                   POINTS
                 </Text>
-                <Text variant="title" weight="bold" color={c.white}>
+                <Text variant="title" weight="semibold" color={c.white}>
                   {user?.loyaltyPoints ?? 0}
                 </Text>
               </View>
@@ -138,7 +138,7 @@ export function MenuScreen({ navigation }: { navigation: Nav }): React.ReactElem
                 <Text variant="micro" color="rgba(255,255,255,0.8)">
                   TIER
                 </Text>
-                <Text variant="title" weight="bold" color={c.white}>
+                <Text variant="title" weight="semibold" color={c.white}>
                   {tier.name}
                 </Text>
               </View>
@@ -153,7 +153,7 @@ export function MenuScreen({ navigation }: { navigation: Nav }): React.ReactElem
           <Pressable accessibilityRole="button" onPress={() => void switchModule()} style={({ pressed }) => [styles.quick, { backgroundColor: c.surface, borderColor: c.border, opacity: pressed ? 0.9 : 1 }]}>
             <Icon name={active === 'food' ? 'utensils' : 'store'} size={17} color={c.primary} />
             <View style={{ flex: 1 }}>
-              <Text variant="caption" weight="bold">
+              <Text variant="caption" weight="semibold">
                 {active === 'food' ? 'Food mode' : 'Shop mode'}
               </Text>
               <Text variant="micro" tone="muted">
@@ -172,7 +172,7 @@ export function MenuScreen({ navigation }: { navigation: Nav }): React.ReactElem
           >
             <Icon name={resolved === 'dark' ? 'moon' : 'sun'} size={17} color={c.primary} />
             <View style={{ flex: 1 }}>
-              <Text variant="caption" weight="bold">
+              <Text variant="caption" weight="semibold">
                 {resolved === 'dark' ? 'Dark theme' : 'Light theme'}
               </Text>
               <Text variant="micro" tone="muted">

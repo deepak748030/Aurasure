@@ -156,7 +156,7 @@ export function ItemDetailScreen({ navigation, route }: { navigation: Nav; route
               >
                 <Icon name="sliders" size={17} color={c.primary} />
                 <View style={{ flex: 1 }}>
-                  <Text variant="subtitle" weight="bold">
+                  <Text variant="subtitle" weight="semibold">
                     {isFood ? 'Choose size and add-ons' : 'Choose size and colour'}
                   </Text>
                   <Text variant="micro" tone="muted">

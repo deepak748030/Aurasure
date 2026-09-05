@@ -121,7 +121,7 @@ export function EditProfileScreen({ navigation }: { navigation: Nav }): React.Re
 
         <View style={{ padding: spacing.md, borderRadius: radius.md, backgroundColor: c.surfaceHi, gap: 4 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Text variant="caption" weight="bold">
+            <Text variant="caption" weight="semibold">
               Mobile number
             </Text>
             <Tag label="LOCKED" tone="muted" />

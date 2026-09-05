@@ -39,12 +39,12 @@ export function CartBar({
         style={({ pressed }) => [styles.bar, { backgroundColor: c.primary, opacity: pressed ? 0.94 : 1 }]}
       >
         <View style={[styles.count, { backgroundColor: c.onPrimary }]}>
-          <Text variant="caption" weight="bold" color={c.primary}>
+          <Text variant="caption" weight="semibold" color={c.primary}>
             {count}
           </Text>
         </View>
         <View style={{ flex: 1 }}>
-          <Text variant="subtitle" weight="bold" color={c.onPrimary} numberOfLines={1}>
+          <Text variant="subtitle" weight="semibold" color={c.onPrimary} numberOfLines={1}>
             {label}
           </Text>
           <Text variant="micro" color={c.isDark ? 'rgba(34,3,15,0.72)' : 'rgba(255,255,255,0.8)'} numberOfLines={1}>

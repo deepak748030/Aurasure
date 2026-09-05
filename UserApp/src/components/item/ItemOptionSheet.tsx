@@ -121,7 +121,7 @@ export function ItemOptionSheet({
             <View style={{ flex: 1, gap: 4 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 {module === 'food' ? <VegMark veg={Boolean(item.isVeg)} /> : null}
-                <Text variant="title" weight="bold" numberOfLines={2} style={{ flex: 1 }}>
+                <Text variant="title" weight="semibold" numberOfLines={2} style={{ flex: 1 }}>
                   {item.name}
                 </Text>
               </View>
@@ -275,7 +275,7 @@ function OptionGroup({
         </Text>
         {required ? (
           <View style={{ paddingHorizontal: 5, paddingVertical: 1, borderRadius: radius.xs, backgroundColor: c.dangerBg }}>
-            <Text variant="micro" weight="bold" color={c.danger}>
+            <Text variant="micro" weight="semibold" color={c.danger}>
               REQUIRED
             </Text>
           </View>

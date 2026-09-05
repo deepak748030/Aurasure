@@ -107,7 +107,7 @@ export function PartnerScreen({ navigation }: { navigation: Nav }): React.ReactE
               <Icon name={perk.icon} size={16} color={c.success} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text variant="bodySm" weight="bold">
+              <Text variant="bodySm" weight="semibold">
                 {perk.title}
               </Text>
               <Text variant="micro" tone="muted">

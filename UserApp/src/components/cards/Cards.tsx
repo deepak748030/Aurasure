@@ -78,7 +78,7 @@ export function CartPill({
         }}
       >
         <Icon name="plus" size={13} color={c.onPrimary} />
-        <Text variant="micro" weight="bold" color={c.onPrimary}>
+        <Text variant="micro" weight="semibold" color={c.onPrimary}>
           ADD
         </Text>
       </Pressable>
@@ -102,7 +102,7 @@ export function CartPill({
       <Pressable accessibilityRole="button" accessibilityLabel="Decrease" onPress={onDec} hitSlop={4} style={styles.pillBtn}>
         <Icon name="minus" size={12} color={c.primary} />
       </Pressable>
-      <Text variant="caption" weight="bold" color={c.primary}>
+      <Text variant="caption" weight="semibold" color={c.primary}>
         {qty}
       </Text>
       <Pressable accessibilityRole="button" accessibilityLabel="Increase" onPress={onInc} hitSlop={4} style={styles.pillBtn}>
@@ -169,14 +169,14 @@ export function ItemCard({
         </View>
         {off > 0 ? (
           <View style={[styles.cornerTag, { backgroundColor: c.primary }]}>
-            <Text variant="micro" weight="bold" color={c.onPrimary}>
+            <Text variant="micro" weight="semibold" color={c.onPrimary}>
               {off}% OFF
             </Text>
           </View>
         ) : null}
         {soldOut ? (
           <View style={[StyleSheet.absoluteFill, styles.soldOut]}>
-            <Text variant="caption" weight="bold" color={c.white}>
+            <Text variant="caption" weight="semibold" color={c.white}>
               Out of stock
             </Text>
           </View>
@@ -189,9 +189,10 @@ export function ItemCard({
       </View>
 
       <View style={{ padding: spacing.sm, gap: 4 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-          {module === 'food' ? <VegMark veg={Boolean(item.isVeg)} /> : null}
-          <Text variant="title" weight="semibold" numberOfLines={2} style={{ flex: 1 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 5, minWidth: 0 }}>
+          {module === 'food' ? <View style={{ marginTop: 3 }}><VegMark veg={Boolean(item.isVeg)} /></View> : null}
+          {/* Fixed two-line block so every card in a rail stays the same height. */}
+          <Text variant="title" weight="semibold" numberOfLines={2} style={{ flex: 1, minHeight: 38 }}>
             {item.name}
           </Text>
         </View>
@@ -202,9 +203,11 @@ export function ItemCard({
         ) : null}
         <RatingPill value={item.rating} count={item.reviews} compact />
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
-          <Price price={item.price} mrp={item.mrp} size="sm" />
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Price price={item.price} mrp={item.mrp} size="sm" />
+          </View>
           {module === 'food' && item.prepTime ? (
-            <Text variant="micro" tone="faint">
+            <Text variant="micro" tone="faint" numberOfLines={1}>
               {fmtMinutes(item.prepTime)}
             </Text>
           ) : null}
@@ -260,15 +263,15 @@ export function StoreCard({
           <SmartImage source={(store as Restaurant).cover ?? null} name={name} style={{ width: 52, height: 52 }} radiusOverride={radius.md} />
           {closed ? (
             <View style={[styles.closedBadge, { backgroundColor: c.danger }]}>
-              <Text variant="micro" weight="bold" color={c.white}>
+              <Text variant="micro" weight="semibold" color={c.white}>
                 CLOSED
               </Text>
             </View>
           ) : null}
         </View>
-        <View style={{ flex: 1, gap: 3 }}>
+        <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Text variant="title" weight="bold" numberOfLines={1} style={{ flex: 1 }}>
+            <Text variant="title" weight="semibold" numberOfLines={1} style={{ flex: 1 }}>
               {name}
             </Text>
             {onFavorite ? <FavoriteButton active={Boolean(favorite)} onPress={onFavorite} /> : null}
@@ -280,7 +283,7 @@ export function StoreCard({
         </View>
       </View>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: spacing.sm, flexWrap: 'wrap' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, rowGap: 6, marginTop: spacing.sm, flexWrap: 'wrap' }}>
         {promo ? <Tag label={promo} icon="percent" /> : null}
         {isFood ? (
           <Tag label={`${(store as Restaurant).deliveryTime || 0} min`} icon="clock" tone="muted" />
@@ -330,14 +333,16 @@ export function SpecialOfferCard({ item, onPress }: { item: CatalogItem; onPress
             SPECIAL OFFER
           </Text>
         </View>
-        <Text variant="title" weight="bold" numberOfLines={2}>
+        <Text variant="title" weight="semibold" numberOfLines={2}>
           {item.name}
         </Text>
         <Text variant="caption" tone="muted" numberOfLines={2}>
           {item.description || 'Limited time price drop'}
         </Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 }}>
-          <Price price={item.price} mrp={item.mrp} size="sm" />
+          <View style={{ flexShrink: 1, minWidth: 0 }}>
+            <Price price={item.price} mrp={item.mrp} size="sm" />
+          </View>
           {off > 0 ? <Tag label={`${off}% OFF`} tone="danger" /> : null}
         </View>
       </View>
@@ -371,7 +376,7 @@ export function CategoryTile({
         <View style={{ width: 62, height: 62, borderRadius: radius.pill, borderWidth: 1, borderColor: c.border, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }}>
           <Icon name={glyph} size={24} color={c.primary} />
         </View>
-        <Text variant="micro" weight="semibold" center numberOfLines={2}>
+        <Text variant="micro" weight="medium" center numberOfLines={2}>
           {category.name}
         </Text>
       </Pressable>
@@ -396,7 +401,7 @@ export function CategoryTile({
     >
       <SmartImage source={(category as FoodCategory).image ?? null} name={category.name} style={StyleSheet.absoluteFill} />
       <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: spacing.sm, backgroundColor: `${c.primary}DD` }}>
-        <Text variant="title" weight="bold" color={c.white} numberOfLines={1}>
+        <Text variant="title" weight="semibold" color={c.white} numberOfLines={1}>
           {category.name}
         </Text>
         {'tagline' in category && category.tagline ? (
@@ -425,7 +430,7 @@ export function VibeCard({ vibe, onPress }: { vibe: FoodVibe; onPress: () => voi
         <SmartImage source={vibe.image} name={vibe.name} style={StyleSheet.absoluteFill} radiusOverride={radius.flush} />
       </View>
       <View style={{ padding: spacing.sm, gap: 2 }}>
-        <Text variant="title" weight="bold" numberOfLines={1}>
+        <Text variant="title" weight="semibold" numberOfLines={1}>
           {vibe.name}
         </Text>
         <Text variant="micro" tone="muted" numberOfLines={1}>
@@ -452,7 +457,7 @@ export function BannerCard({ banner, onPress }: { banner: Banner; onPress: () =>
       <View style={{ position: 'absolute', inset: 0 as never, padding: spacing.md, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.28)' }}>
         {banner.badge ? (
           <View style={{ alignSelf: 'flex-start', marginBottom: 6, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.xs, backgroundColor: c.secondary }}>
-            <Text variant="micro" weight="bold" color="#10241D">
+            <Text variant="micro" weight="semibold" color="#10241D">
               {banner.badge}
             </Text>
           </View>

@@ -41,21 +41,21 @@ export function CouponCard({
   const body = (
     <View style={[styles.card, { backgroundColor: bg, borderColor: applied ? c.primary : c.border }]}>
       <View style={[styles.stub, { backgroundColor: applied ? c.primary : tone }]}>
-        <Text variant="h3" weight="bold" color={applied || state === 'expired' || state === 'used' ? c.white : c.onPrimary}>
+        <Text variant="h3" weight="semibold" color={applied || state === 'expired' || state === 'used' ? c.white : c.onPrimary} numberOfLines={1} adjustsFontSizeToFit>
           {coupon.offType === 'percent' ? `${coupon.offValue}%` : money(coupon.offValue)}
         </Text>
         <Text variant="micro" color={applied || state === 'expired' || state === 'used' ? 'rgba(255,255,255,0.85)' : c.onPrimary}>
           {coupon.offType === 'percent' ? 'OFF' : 'OFF'}
         </Text>
       </View>
-      <View style={{ flex: 1, gap: 3, paddingVertical: 2 }}>
+      <View style={{ flex: 1, gap: 3, paddingVertical: 2, minWidth: 0 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Text variant="title" weight="bold" numberOfLines={1} style={{ flex: 1 }}>
+          <Text variant="title" weight="semibold" numberOfLines={1} style={{ flex: 1 }}>
             {coupon.title}
           </Text>
           {applied ? (
             <View style={{ paddingHorizontal: 6, paddingVertical: 2, borderRadius: radius.xs, backgroundColor: c.successBg }}>
-              <Text variant="micro" weight="bold" color={c.success}>
+              <Text variant="micro" weight="semibold" color={c.success}>
                 APPLIED
               </Text>
             </View>
@@ -64,19 +64,18 @@ export function CouponCard({
         <Text variant="caption" tone="muted" numberOfLines={compact ? 1 : 2}>
           {coupon.subtitle}
         </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, rowGap: 4, flexWrap: 'wrap' }}>
           <View style={styles.codeBox}>
-            <Text variant="micro" weight="bold" color={tone}>
+            <Text variant="micro" weight="semibold" color={tone}>
               {coupon.code}
             </Text>
           </View>
           {coupon.minOrder > 0 ? (
-            <Text variant="micro" tone={usable.ok && state === 'available' ? 'faint' : 'warning'}>
+            <Text variant="micro" tone={usable.ok && state === 'available' ? 'faint' : 'warning'} numberOfLines={1}>
               Min {money(coupon.minOrder)}
             </Text>
           ) : null}
-          <View style={{ flex: 1 }} />
-          <Text variant="micro" tone="faint">
+          <Text variant="micro" tone="faint" numberOfLines={1} style={{ marginLeft: 'auto' }}>
             {left}
           </Text>
         </View>
@@ -102,7 +101,7 @@ export function CouponCard({
               }}
               style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.pill, backgroundColor: c.primary }}
             >
-              <Text variant="micro" weight="bold" color={c.onPrimary}>
+              <Text variant="micro" weight="semibold" color={c.onPrimary}>
                 CLAIM
               </Text>
             </Pressable>

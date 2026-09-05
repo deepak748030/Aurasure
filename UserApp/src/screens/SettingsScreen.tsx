@@ -141,7 +141,7 @@ export function SettingsScreen({ navigation }: { navigation: Nav }): React.React
           ))}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 8 }}>
             <Icon name={BRAND.icon} size={15} color={c.primary} />
-            <Text variant="caption" weight="bold" style={{ flex: 1 }}>
+            <Text variant="caption" weight="semibold" style={{ flex: 1 }}>
               {BRAND.name} · {BRAND.tagline}
             </Text>
             <Tag label="v1.0.0" tone="muted" />

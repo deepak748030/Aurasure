@@ -89,7 +89,7 @@ export function FlashSaleScreen({ navigation, route }: ScreenProps<'FlashSale'>)
                     <SmartImage source={item.image} name={item.name} style={styles.thumb} radiusOverride={radius.md} />
                     {off > 0 ? (
                       <View style={[styles.offTag, { backgroundColor: c.primary }]}>
-                        <Text variant="micro" weight="bold" color={c.white}>
+                        <Text variant="micro" weight="semibold" color={c.white}>
                           {off}%
                         </Text>
                       </View>
@@ -116,9 +116,9 @@ export function FlashSaleScreen({ navigation, route }: ScreenProps<'FlashSale'>)
                 {stock !== null ? (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 }}>
                     <View style={{ flex: 1 }}>
-                      <Progress value={Math.max(0.04, Math.min(1, stock / Math.max(stock, 12)))} tone={stock <= 3 ? 'danger' : 'warning'} />
+                      <Progress value={Math.max(0.04, Math.min(1, stock / Math.max(stock, 12)))} tone={stock <= 3 ? c.danger : c.warning} />
                     </View>
-                    <Text variant="micro" weight="bold" color={stock <= 3 ? c.danger : c.textSecondary}>
+                    <Text variant="micro" weight="semibold" color={stock <= 3 ? c.danger : c.textSecondary}>
                       {stock} left
                     </Text>
                   </View>
@@ -130,20 +130,20 @@ export function FlashSaleScreen({ navigation, route }: ScreenProps<'FlashSale'>)
                     {module === 'food' ? `Ready in ${item.prepTime ?? 25} min` : `Delivered in ${item.deliveryMins ?? 45} min`}
                   </Text>
                   {soldOut ? (
-                    <Text variant="caption" weight="bold" color={c.danger}>
+                    <Text variant="caption" weight="semibold" color={c.danger}>
                       Unavailable
                     </Text>
                   ) : (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                       {qty > 0 ? (
-                        <Text variant="caption" weight="bold" color={c.primary}>
+                        <Text variant="caption" weight="semibold" color={c.primary}>
                           {qty} in cart
                         </Text>
                       ) : null}
                       <View style={{ backgroundColor: c.primary, borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 6 }}>
                         <Text
                           variant="micro"
-                          weight="bold"
+                          weight="semibold"
                           color={c.onPrimary}
                           onPress={() => {
                             void actions.quickAdd(module, item, {

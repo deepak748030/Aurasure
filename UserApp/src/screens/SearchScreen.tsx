@@ -98,7 +98,7 @@ export function SearchScreen({ navigation, route }: { navigation: Nav; route: { 
                   }}
                   hitSlop={8}
                 >
-                  <Text variant="caption" weight="bold" color={c.primary}>
+                  <Text variant="caption" weight="semibold" color={c.primary}>
                     Clear
                   </Text>
                 </Pressable>

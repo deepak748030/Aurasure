@@ -109,7 +109,7 @@ export function Screen({
         {headerLeft}
         <View style={{ flex: 1 }}>
           {title ? (
-            <Text variant="h3" weight="bold" numberOfLines={1}>
+            <Text variant="h3" weight="semibold" numberOfLines={1}>
               {title}
             </Text>
           ) : null}

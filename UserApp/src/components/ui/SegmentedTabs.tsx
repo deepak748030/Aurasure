@@ -37,7 +37,7 @@ export function SegmentedTabs<T extends string>({
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
           {tab.icon ? <Icon name={tab.icon} size={13} color={on ? c.onPrimary : c.textSecondary} /> : null}
-          <Text variant="caption" weight="bold" color={on ? c.onPrimary : c.textSecondary} numberOfLines={1}>
+          <Text variant="caption" weight="semibold" color={on ? c.onPrimary : c.textSecondary} numberOfLines={1}>
             {tab.count !== undefined ? `${tab.label} · ${tab.count}` : tab.label}
           </Text>
         </View>

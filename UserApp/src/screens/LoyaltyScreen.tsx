@@ -106,7 +106,7 @@ export function LoyaltyScreen({ navigation }: { navigation: Nav }): React.ReactE
               <Text variant="micro" tone="muted" style={{ flex: 1 }}>
                 {toNext > 0 ? `${toNext} points to ${nextTier}` : 'Top tier — you are all the way up'}
               </Text>
-              <Text variant="micro" weight="bold" color={c.primary}>
+              <Text variant="micro" weight="semibold" color={c.primary}>
                 {Math.round(tier.progress * 100)}%
               </Text>
             </View>
@@ -119,7 +119,7 @@ export function LoyaltyScreen({ navigation }: { navigation: Nav }): React.ReactE
             const need = name === 'Bronze' ? 0 : name === 'Silver' ? 1000 : name === 'Gold' ? 2500 : 5000;
             return (
               <Pressable key={name} accessibilityRole="button" onPress={() => sheet.info(`${name} tier`, `${money(need)} lifetime spend or more. Points never expire while your account is active.`)} style={({ pressed }) => [styles.tierChip, { borderColor: on ? c.primary : c.border, backgroundColor: on ? c.primaryFaint : c.surface, opacity: pressed ? 0.92 : 1 }]}>
-                <Text variant="micro" weight="bold" color={on ? c.primary : c.textSecondary}>
+                <Text variant="micro" weight="semibold" color={on ? c.primary : c.textSecondary}>
                   {name}
                 </Text>
                 <Text variant="micro" tone="faint">
@@ -161,7 +161,7 @@ export function LoyaltyScreen({ navigation }: { navigation: Nav }): React.ReactE
                   iconTone={row.type === 'earned' ? 'success' : row.type === 'redeemed' ? 'primary' : 'warning'}
                   trailing={
                     <View style={{ alignItems: 'flex-end', gap: 2 }}>
-                      <Text variant="subtitle" weight="bold" color={row.type === 'earned' ? c.success : row.type === 'redeemed' ? c.text : c.warning}>
+                      <Text variant="subtitle" weight="semibold" color={row.type === 'earned' ? c.success : row.type === 'redeemed' ? c.text : c.warning}>
                         {row.type === 'earned' ? '+' : '-'}
                         {Math.abs(row.points)} pts
                       </Text>

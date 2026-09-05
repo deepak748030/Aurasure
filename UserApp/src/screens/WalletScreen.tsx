@@ -111,7 +111,7 @@ export function WalletScreen({ navigation }: { navigation: Nav }): React.ReactEl
               }}
               style={({ pressed }) => [styles.preset, { borderColor: c.border, backgroundColor: pressed ? c.surfaceAlt : c.surface }]}
             >
-              <Text variant="subtitle" weight="bold">
+              <Text variant="subtitle" weight="semibold">
                 {money(amount)}
               </Text>
               <Text variant="micro" tone="muted">
@@ -143,7 +143,7 @@ export function WalletScreen({ navigation }: { navigation: Nav }): React.ReactEl
                   badge={tx.type === 'credit' ? 'IN' : 'OUT'}
                   trailing={
                     <View style={{ alignItems: 'flex-end', gap: 2 }}>
-                      <Text variant="subtitle" weight="bold" color={tx.type === 'credit' ? c.success : c.text}>
+                      <Text variant="subtitle" weight="semibold" color={tx.type === 'credit' ? c.success : c.text}>
                         {tx.type === 'credit' ? '+' : '-'}
                         {money(tx.amount)}
                       </Text>

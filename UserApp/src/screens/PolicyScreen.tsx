@@ -80,7 +80,7 @@ export function PolicyScreen({ route }: { navigation: Nav; route: Route<'Policy'
 
         {policy.sections.map((section, index) => (
           <View key={section.heading} style={{ paddingLeft: spacing.sm, borderLeftWidth: 3, borderLeftColor: index % 2 === 0 ? c.primary : c.secondary, gap: 4 }}>
-            <Text variant="subtitle" weight="bold">
+            <Text variant="subtitle" weight="semibold">
               {section.heading}
             </Text>
             <Text variant="bodySm" tone="muted">

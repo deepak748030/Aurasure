@@ -46,7 +46,7 @@ export function BrandItemsScreen({ navigation, route }: ScreenProps<'BrandItems'
             </Text>
           </View>
           <View style={{ flex: 1, gap: 2 }}>
-            <Text variant="subtitle" weight="bold">
+            <Text variant="subtitle" weight="semibold">
               {brand}
             </Text>
             <Text variant="micro" tone="muted">

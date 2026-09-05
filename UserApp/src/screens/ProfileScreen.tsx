@@ -67,7 +67,7 @@ export function ProfileScreen({ navigation }: { navigation: Nav }): React.ReactE
       <Text variant="micro" tone="muted">
         {label}
       </Text>
-      <Text variant="subtitle" weight="bold" numberOfLines={1}>
+      <Text variant="subtitle" weight="semibold" numberOfLines={1}>
         {value}
       </Text>
     </Pressable>
@@ -107,7 +107,7 @@ export function ProfileScreen({ navigation }: { navigation: Nav }): React.ReactE
                 style={({ pressed }) => [styles.editChip, { opacity: pressed ? 0.85 : 1 }]}
               >
                 <Icon name="edit" size={13} color={c.white} />
-                <Text variant="micro" weight="bold" color={c.white}>
+                <Text variant="micro" weight="semibold" color={c.white}>
                   Edit
                 </Text>
               </Pressable>
@@ -116,7 +116,7 @@ export function ProfileScreen({ navigation }: { navigation: Nav }): React.ReactE
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: spacing.md }}>
               <View style={styles.tierPill}>
                 <Icon name="loyalty" size={13} color={c.primary} />
-                <Text variant="micro" weight="bold" color={c.primary}>
+                <Text variant="micro" weight="semibold" color={c.primary}>
                   {tier.name} member
                 </Text>
               </View>
@@ -178,7 +178,7 @@ export function ProfileScreen({ navigation }: { navigation: Nav }): React.ReactE
                 RECENT ORDERS
               </Text>
               <Pressable accessibilityRole="button" onPress={() => navigation.navigate('Tabs')} hitSlop={8}>
-                <Text variant="caption" weight="bold" color={c.primary}>
+                <Text variant="caption" weight="semibold" color={c.primary}>
                   See all
                 </Text>
               </Pressable>

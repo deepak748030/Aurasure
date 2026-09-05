@@ -63,7 +63,7 @@ export function EmptyState({
             backgroundColor: c.primary,
           }}
         >
-          <Text variant="subtitle" weight="bold" color={c.onPrimary}>
+          <Text variant="subtitle" weight="semibold" color={c.onPrimary}>
             {actionLabel}
           </Text>
         </Pressable>

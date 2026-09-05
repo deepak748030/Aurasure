@@ -92,7 +92,7 @@ export function OnboardingScreen({ navigation }: { navigation: { navigate: (name
     <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }} edges={['top', 'bottom']}>
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: spacing.edge, paddingVertical: spacing.xs }}>
         <Pressable accessibilityRole="button" onPress={finish} hitSlop={10}>
-          <Text variant="bodySm" weight="bold" color={c.textSecondary}>
+          <Text variant="bodySm" weight="semibold" color={c.textSecondary}>
             Skip
           </Text>
         </Pressable>

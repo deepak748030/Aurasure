@@ -405,16 +405,9 @@ export function Avatar({
         borderColor: c.white,
       }}
     >
-      <View style={{
-        width: size * 0.58,
-        height: size * 0.58,
-        borderRadius: radius.pill,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: c.surface,
-      }}>
-        <Icon name="userRound" size={size * 0.34} color={c.primary} />
-      </View>
+      {/* The fallback avatar fills the circle instead of leaving a small
+          floating glyph or an empty inner ring. */}
+      <Icon name="userRound" size={size * 0.62} color={c.primary} />
     </View>
   );
 }

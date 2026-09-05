@@ -76,7 +76,7 @@ export function Sheet({
   footer,
   style,
   scrollable = true,
-}: SheetProps): React.ReactElement {
+}: SheetProps): React.ReactElement | null {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const translateY = useRef(new Animated.Value(1)).current;

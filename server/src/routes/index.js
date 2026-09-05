@@ -40,6 +40,7 @@ router.use('/vendor', requireDb, vendorRoutes);
 router.use('/rider', requireDb, riderRoutes);
 router.use('/flash-sales', requireDb, flashSaleRoutes);
 router.use('/app', requireDb, appRoutes);
+router.use('/payments', requireDb, paymentRoutes);
 
 // Dev stats
 router.get('/stats', requireDb, async (req, res, next) => {

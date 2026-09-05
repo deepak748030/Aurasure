@@ -29,6 +29,10 @@ for (const m of indexSrc.matchAll(/router\.use\('([^']+)'(?:,\s*requireDb)?,\s*(
 }
 
 const serverPaths = new Set();
+// Routes declared directly in index.js (e.g. /health, /stats) are mounted at /api/v1.
+for (const m of indexSrc.matchAll(/router\.(?:get|post|put|patch|delete)\(\s*'([^']+)'/g)) {
+  serverPaths.add(m[1]);
+}
 for (const f of fs.readdirSync(ROUTES)) {
   if (f === 'index.js') continue;
   const base = mounts[`${f.replace('.routes.js', '')}Routes`] ?? '';
@@ -39,23 +43,30 @@ for (const f of fs.readdirSync(ROUTES)) {
   }
 }
 
-// 3) Compare (app templates like `${id}` ↔ server `:id`)
-const norm = (p) => p.replace(/\$\{[^}]+\}|encodeURIComponent\([^)]*\)/g, ':x').replace(/\?.*$/, '');
+// 3) Compare app templates (`${id}` / `encodeURIComponent(id)`) against server
+// Express params (`:id`). A concrete app path like /app/content/faqs must match
+// a dynamic server route like /app/content/:key.
+const norm = (p) =>
+  p
+    .replace(/\$\{[^}]+\}|encodeURIComponent\([^)]*\)/g, ':x')
+    .replace(/:[A-Za-z0-9_]+/g, ':x')
+    .replace(/\?.*$/, '')
+    .replace(/\/$/, '') || '/';
+const toRegex = (p) =>
+  new RegExp(
+    `^${norm(p)
+      .split('/')
+      .map((seg) => (seg === ':x' ? '[^/]+' : seg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+      .join('/')}$`,
+  );
+
 const app = [...appPaths].map(norm);
 const srv = [...serverPaths].map(norm);
+const serverMatchers = srv.map(toRegex);
 
 let failed = 0;
 for (const p of app) {
-  const ok =
-    srv.includes(p) ||
-    srv.some((r) =>
-      new RegExp(
-        `^${p
-          .split('/')
-          .map((seg) => (seg === ':x' ? '[^/]+' : seg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
-          .join('/')}$`,
-      ).test(r),
-    );
+  const ok = srv.includes(p) || serverMatchers.some((re) => re.test(p));
   if (!ok) {
     failed += 1;
     console.error(`  ✘ MISSING SERVER ROUTE: ${p}`);

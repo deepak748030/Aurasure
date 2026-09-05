@@ -6,7 +6,7 @@ import { Icon, type IconName } from '@/lib/icons';
 import { useColors } from '@/theme/ThemeContext';
 import { radius, spacing } from '@/theme/tokens';
 import { haptic } from '@/lib/haptics';
-import { initials as toInitials, money as inr } from '@/lib/format';
+import { money as inr } from '@/lib/format';
 
 /* ------------------------------- Chip / tag ------------------------------ */
 
@@ -405,9 +405,16 @@ export function Avatar({
         borderColor: c.white,
       }}
     >
-      <Text variant={size > 50 ? 'h3' : 'title'} weight="bold" color={c.primary}>
-        {toInitials(name)}
-      </Text>
+      <View style={{
+        width: size * 0.58,
+        height: size * 0.58,
+        borderRadius: radius.pill,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: c.surface,
+      }}>
+        <Icon name="userRound" size={size * 0.34} color={c.primary} />
+      </View>
     </View>
   );
 }

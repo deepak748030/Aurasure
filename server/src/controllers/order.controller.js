@@ -12,6 +12,7 @@ const { ok, created, paginate, listMeta } = require('../utils/response');
 const { newId } = require('../utils/id');
 const { walletTx, loyaltyTx } = require('../utils/ledger');
 const { discountForCoupon, findUsableCoupon } = require('../utils/coupons');
+const { getAppSettings } = require('../utils/settings');
 
 const VISIBLE_APPROVAL = { approvalStatus: { $in: ['approved', null] } };
 
@@ -25,9 +26,10 @@ function computeTotals(itemTotal, deliveryFee = 0, discount = 0) {
   return { itemTotal, total };
 }
 
-/** Loyalty: 5 points per full ₹100 spent. */
-function pointsForOrder(total) {
-  return Math.floor(total / 100) * 5;
+/** Loyalty earn rule (default: 5 points per full ₹100 spent). */
+function pointsForOrder(total, earnPer100 = 5) {
+  const rate = Math.max(0, Number(earnPer100) || 0);
+  return Math.floor((Number(total) || 0) / 100) * rate;
 }
 
 /**
@@ -189,7 +191,8 @@ const createOrder = asyncHandler(async (req, res) => {
     );
   }
 
-  const loyaltyEarned = pointsForOrder(total);
+  const settings = await getAppSettings();
+  const loyaltyEarned = pointsForOrder(total, settings.loyalty.earnPer100);
   if (loyaltyEarned > 0) {
     const before = user.loyaltyPoints || 0;
     user.loyaltyPoints = before + loyaltyEarned;
@@ -243,7 +246,23 @@ const listOrders = asyncHandler(async (req, res) => {
 const getOrder = asyncHandler(async (req, res) => {
   const order = await Order.findOne({ id: req.params.id, user: req.user._id });
   if (!order) throw ApiError.notFound('Order not found', 'ORDER_NOT_FOUND');
-  return ok(res, { order });
+  // Outlet snapshot for the tracking map (name + coordinates + city).
+  let outlet = null;
+  if (order.outletId) {
+    const OutletModel = order.module === 'food' ? Restaurant : ShopStore;
+    const doc = await OutletModel.findOne({ id: order.outletId });
+    if (doc) {
+      outlet = {
+        id: doc.id,
+        name: doc.name,
+        city: doc.city || null,
+        lat: doc.lat ?? null,
+        lng: doc.lng ?? null,
+        etaMinutes: order.module === 'food' ? doc.deliveryTime || 30 : doc.deliveryMins || 40,
+      };
+    }
+  }
+  return ok(res, { order: order.toJSON(), outlet });
 });
 
 /** PATCH /api/v1/orders/:id/status (auth) - lets a user cancel a live order */

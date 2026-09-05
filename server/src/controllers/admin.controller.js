@@ -19,6 +19,7 @@ const ShopCategory = require('../models/ShopCategory');
 const ShopStore = require('../models/ShopStore');
 const Product = require('../models/Product');
 const Banner = require('../models/Banner');
+const SupportTicket = require('../models/SupportTicket');
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { ok, paginate, listMeta } = require('../utils/response');
@@ -90,6 +91,7 @@ const getStats = asyncHandler(async (req, res) => {
   ]);
 
   const pendingPartners = await User.countDocuments({ 'partnerApplication.status': 'submitted' });
+  const openTickets = await SupportTicket.countDocuments({ status: { $in: ['open', 'in_progress'] } });
   const pendingVendors = await Vendor.countDocuments({ status: { $in: ['submitted', 'under_review'] } });
   const pendingRiders = await DeliveryPartner.countDocuments({ status: { $in: ['submitted', 'under_review'] } });
   const partnerTally = await User.aggregate([
@@ -116,6 +118,7 @@ const getStats = asyncHandler(async (req, res) => {
     pendingPartners,
     pendingVendors,
     pendingRiders,
+    openTickets,
     deliveryPartners,
     ridersOnline,
     partnerKinds: byKind,

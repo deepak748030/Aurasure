@@ -31,15 +31,15 @@ const foodVibes = [
 ];
 
 const restaurants = [
-  { id: 'r_aurora', name: 'Aurora Bistro', cuisines: ['Continental', 'Italian', 'Grill'], rating: 4.7, reviews: 2840, deliveryTime: 24, deliveryFee: 19, minOrder: 149, distanceKm: 1.2, priceForTwo: 650, promo: '50% OFF up to ₹120', isVeg: false, isPopular: true, line: 'Shop 3, Shankar Nagar', offer: 'Free delivery', cover: img('aur-burger'), tags: ['Bestseller', 'Pure Veg Options'], categoryIds: ['cat_burgers', 'cat_pizza', 'cat_breakfast'] },
-  { id: 'r_tandoor', name: 'Tandoor Nights', cuisines: ['North Indian', 'Mughlai'], rating: 4.6, reviews: 5120, deliveryTime: 31, deliveryFee: 29, minOrder: 199, distanceKm: 2.4, priceForTwo: 720, promo: '₹125 OFF above ₹349', isVeg: false, isPopular: true, line: 'road 12, Tejgaon', offer: 'BOGO on Naan', cover: img('aur-biryani'), tags: ['Spicy', 'Family'], categoryIds: ['cat_biryani', 'cat_burgers'] },
-  { id: 'r_sushi', name: 'Sushi & Co.', cuisines: ['Japanese', 'Thai'], rating: 4.8, reviews: 1980, deliveryTime: 38, deliveryFee: 39, minOrder: 299, distanceKm: 3.1, priceForTwo: 1100, promo: '20% OFF', isVeg: false, isPopular: true, line: 'City Centre, Telibandha', offer: 'Complimentary Miso', cover: img('aur-chowmein'), tags: ['Premium', 'Healthy'], categoryIds: ['cat_chowmein', 'cat_breakfast'] },
-  { id: 'r_greenbowl', name: 'Green Bowl', cuisines: ['Salads', 'Smoothies'], rating: 4.5, reviews: 1340, deliveryTime: 21, deliveryFee: 15, minOrder: 129, distanceKm: 0.9, priceForTwo: 480, promo: 'Buy 1 Get 1', isVeg: true, isPopular: true, line: '5, Devendra Nagar', offer: 'Detox free', cover: img('aur-salad'), tags: ['Vegan', 'Low Cal'], categoryIds: ['cat_breakfast'] },
-  { id: 'r_pizzarep', name: 'Pizza Republic', cuisines: ['Italian', 'Wood-fired'], rating: 4.4, reviews: 3620, deliveryTime: 27, deliveryFee: 25, minOrder: 249, distanceKm: 1.8, priceForTwo: 690, promo: '40% OFF up to ₹80', isVeg: false, isPopular: true, line: '12, Pandri Main Road', offer: 'Garlic bread free', cover: img('aur-pizza'), tags: ['Cheesy', 'Crowd Favourite'], categoryIds: ['cat_pizza'] },
-  { id: 'r_crumbs', name: 'Sweet Crumbs', cuisines: ['Bakery', 'Desserts'], rating: 4.9, reviews: 2210, deliveryTime: 19, deliveryFee: 12, minOrder: 99, distanceKm: 0.6, priceForTwo: 320, promo: '15% OFF', isVeg: true, isPopular: true, line: '403, VIP Road', offer: 'Cookie free', cover: img('aur-dessert'), tags: ['Freshly Baked', 'Eggless'], categoryIds: ['cat_breakfast'] },
-  { id: 'r_spicy', name: 'Spicy Wok', cuisines: ['Chinese', 'Snacks'], rating: 4.5, reviews: 640, deliveryTime: 15, deliveryFee: 0, minOrder: 149, distanceKm: 100.2, priceForTwo: 450, promo: 'Flat 20% OFF', isVeg: false, isNew: true, isNewlyJoined: true, isPopular: false, line: 'road 8, Tejgaon', offer: 'Free delivery', cover: img('aur-chowmein'), tags: ['Noodles', 'Momos'], categoryIds: ['cat_chowmein'] },
-  { id: 'r_biryani', name: 'Royal Biryani House', cuisines: ['Biryani', 'Mughlai'], rating: 4.6, reviews: 410, deliveryTime: 20, deliveryFee: 0, minOrder: 199, distanceKm: 100.4, priceForTwo: 520, promo: '₹100 OFF first order', isVeg: false, isNew: true, isNewlyJoined: true, isPopular: false, line: 'Plot 14, GE Road', offer: 'Extra raita free', cover: img('aur-biryani'), tags: ['Dum', 'Family'], categoryIds: ['cat_biryani'] },
-  { id: 'r_foodhouse', name: 'Food House', cuisines: ['Snacks', 'Chinese'], rating: 4.4, reviews: 980, deliveryTime: 30, deliveryFee: 15, minOrder: 129, distanceKm: 100.1, priceForTwo: 380, promo: 'Buy 1 Get 1', isVeg: false, isNew: true, isNewlyJoined: false, isClosed: true, isPopular: false, line: 'road 12, Tejgaon', offer: '', cover: img('aur-kebab'), tags: ['Quick Bites'], categoryIds: ['cat_burgers', 'cat_chowmein'] },
+  { id: 'r_aurora', name: 'Aurora Bistro', cuisines: ['Continental', 'Italian', 'Grill'], rating: 4.7, reviews: 2840, deliveryTime: 24, deliveryFee: 19, minOrder: 149, distanceKm: 1.2, priceForTwo: 650, promo: '50% OFF up to ₹120', isVeg: false, isPopular: true, line: 'Shop 3, Shankar Nagar', city: 'Raipur', lat: 21.2521, lng: 81.631, offer: 'Free delivery', cover: img('aur-burger'), tags: ['Bestseller', 'Pure Veg Options'], categoryIds: ['cat_burgers', 'cat_pizza', 'cat_breakfast'] },
+  { id: 'r_tandoor', name: 'Tandoor Nights', cuisines: ['North Indian', 'Mughlai'], rating: 4.6, reviews: 5120, deliveryTime: 31, deliveryFee: 29, minOrder: 199, distanceKm: 2.4, priceForTwo: 720, promo: '₹125 OFF above ₹349', isVeg: false, isPopular: true, line: 'road 12, Tejgaon', city: 'Raipur', lat: 21.2432, lng: 81.6488, offer: 'BOGO on Naan', cover: img('aur-biryani'), tags: ['Spicy', 'Family'], categoryIds: ['cat_biryani', 'cat_burgers'] },
+  { id: 'r_sushi', name: 'Sushi & Co.', cuisines: ['Japanese', 'Thai'], rating: 4.8, reviews: 1980, deliveryTime: 38, deliveryFee: 39, minOrder: 299, distanceKm: 3.1, priceForTwo: 1100, promo: '20% OFF', isVeg: false, isPopular: true, line: 'City Centre, Telibandha', city: 'Raipur', lat: 21.22, lng: 81.659, offer: 'Complimentary Miso', cover: img('aur-chowmein'), tags: ['Premium', 'Healthy'], categoryIds: ['cat_chowmein', 'cat_breakfast'] },
+  { id: 'r_greenbowl', name: 'Green Bowl', cuisines: ['Salads', 'Smoothies'], rating: 4.5, reviews: 1340, deliveryTime: 21, deliveryFee: 15, minOrder: 129, distanceKm: 0.9, priceForTwo: 480, promo: 'Buy 1 Get 1', isVeg: true, isPopular: true, line: '5, Devendra Nagar', city: 'Raipur', lat: 21.2478, lng: 81.6215, offer: 'Detox free', cover: img('aur-salad'), tags: ['Vegan', 'Low Cal'], categoryIds: ['cat_breakfast'] },
+  { id: 'r_pizzarep', name: 'Pizza Republic', cuisines: ['Italian', 'Wood-fired'], rating: 4.4, reviews: 3620, deliveryTime: 27, deliveryFee: 25, minOrder: 249, distanceKm: 1.8, priceForTwo: 690, promo: '40% OFF up to ₹80', isVeg: false, isPopular: true, line: '12, Pandri Main Road', city: 'Raipur', lat: 21.236, lng: 81.6375, offer: 'Garlic bread free', cover: img('aur-pizza'), tags: ['Cheesy', 'Crowd Favourite'], categoryIds: ['cat_pizza'] },
+  { id: 'r_crumbs', name: 'Sweet Crumbs', cuisines: ['Bakery', 'Desserts'], rating: 4.9, reviews: 2210, deliveryTime: 19, deliveryFee: 12, minOrder: 99, distanceKm: 0.6, priceForTwo: 320, promo: '15% OFF', isVeg: true, isPopular: true, line: '403, VIP Road', city: 'Raipur', lat: 21.215, lng: 81.643, offer: 'Cookie free', cover: img('aur-dessert'), tags: ['Freshly Baked', 'Eggless'], categoryIds: ['cat_breakfast'] },
+  { id: 'r_spicy', name: 'Spicy Wok', cuisines: ['Chinese', 'Snacks'], rating: 4.5, reviews: 640, deliveryTime: 15, deliveryFee: 0, minOrder: 149, distanceKm: 100.2, priceForTwo: 450, promo: 'Flat 20% OFF', isVeg: false, isNew: true, isNewlyJoined: true, isPopular: false, line: 'road 8, Tejgaon', city: 'Bhilai', lat: 21.2099, lng: 81.4285, offer: 'Free delivery', cover: img('aur-chowmein'), tags: ['Noodles', 'Momos'], categoryIds: ['cat_chowmein'] },
+  { id: 'r_biryani', name: 'Royal Biryani House', cuisines: ['Biryani', 'Mughlai'], rating: 4.6, reviews: 410, deliveryTime: 20, deliveryFee: 0, minOrder: 199, distanceKm: 100.4, priceForTwo: 520, promo: '₹100 OFF first order', isVeg: false, isNew: true, isNewlyJoined: true, isPopular: false, line: 'Plot 14, GE Road', city: 'Raipur', lat: 21.261, lng: 81.61, offer: 'Extra raita free', cover: img('aur-biryani'), tags: ['Dum', 'Family'], categoryIds: ['cat_biryani'] },
+  { id: 'r_foodhouse', name: 'Food House', cuisines: ['Snacks', 'Chinese'], rating: 4.4, reviews: 980, deliveryTime: 30, deliveryFee: 15, minOrder: 129, distanceKm: 100.1, priceForTwo: 380, promo: 'Buy 1 Get 1', isVeg: false, isNew: true, isNewlyJoined: false, isClosed: true, isPopular: false, line: 'road 12, Tejgaon', city: 'Raipur', lat: 21.235, lng: 81.652, offer: '', cover: img('aur-kebab'), tags: ['Quick Bites'], categoryIds: ['cat_burgers', 'cat_chowmein'] },
 ];
 
 const foodItems = [
@@ -96,15 +96,15 @@ const shopCategories = [
 ];
 
 const shopStores = [
-  { id: 's_titanium', name: 'Titanium House', brand: 'Titanium', road: 'GE Road', house: 'Plot 14', city: 'Raipur', pin: '492001', rating: 4.7, reviews: 2840, deliveryMins: 35, deliveryFee: 19, minOrder: 499, promo: 'Flat ₹500 OFF above ₹2,999', isNiche: false, isPopular: true, tags: ['Watches', 'Authorised'], categoryIds: ['sc_watches', 'sc_sunglasses'], cover: img('aur-store-watch') },
-  { id: 's_sonce', name: 'Sonce Audio Hub', brand: 'Sonce', road: 'Telibandha Road', house: '2nd Floor, City Centre', city: 'Raipur', pin: '492001', rating: 4.6, reviews: 1980, deliveryMins: 30, deliveryFee: 0, minOrder: 299, promo: 'Up to 40% OFF audio week', isNiche: true, isPopular: true, tags: ['Headphones', 'Earbuds'], categoryIds: ['sc_audio', 'sc_laptops'], cover: img('aur-store-audio') },
-  { id: 's_nova', name: 'Nova Electronics', brand: 'Nova', road: 'Pandri Main Road', house: 'Shop 21', city: 'Raipur', pin: '492001', rating: 4.5, reviews: 3210, deliveryMins: 42, deliveryFee: 29, minOrder: 199, promo: 'No-cost EMI on phones', isNiche: false, isPopular: true, tags: ['Phones', 'Laptops'], categoryIds: ['sc_phones', 'sc_laptops'], cover: img('aur-store-electronics') },
-  { id: 's_pulse', name: 'Pulse Fitness Store', brand: 'Pulse', road: 'Shankar Nagar', house: 'Plot 7', city: 'Raipur', pin: '492007', rating: 4.4, reviews: 860, deliveryMins: 38, deliveryFee: 15, minOrder: 399, promo: 'Extra 10% OFF on combos', isNiche: true, isPopular: false, tags: ['Fitness', 'Smart gear'], categoryIds: ['sc_fitness', 'sc_footwear'], cover: img('aur-store-fitness') },
-  { id: 's_hearth', name: 'Hearth Living', brand: 'Hearth', road: 'Civil Lines', house: '402, Aurora Heights', city: 'Raipur', pin: '492001', rating: 4.8, reviews: 1240, deliveryMins: 50, deliveryFee: 0, minOrder: 599, promo: 'Free delivery + gift wrap', isNiche: false, isPopular: true, tags: ['Home', 'Furnishing'], categoryIds: ['sc_home'], cover: img('aur-store-home') },
-  { id: 's_lumen', name: 'Lumen Camera Studio', brand: 'Lumen', road: 'VIP Road', house: '12, Ram Nagar', city: 'Raipur', pin: '492001', rating: 4.6, reviews: 540, deliveryMins: 45, deliveryFee: 25, minOrder: 999, promo: 'Free SD card with cameras', isNiche: true, isPopular: false, tags: ['Cameras', 'Lenses'], categoryIds: ['sc_cameras', 'sc_laptops'], cover: img('aur-store-camera') },
-  { id: 's_northwind', name: 'Northwind Fashion House', brand: 'Northwind', road: 'Devendra Nagar', house: '5, First Floor', city: 'Raipur', pin: '492001', rating: 4.5, reviews: 1670, deliveryMins: 40, deliveryFee: 0, minOrder: 499, promo: 'NEW season · up to 50% OFF', isNiche: false, isPopular: true, tags: ['Clothing', 'Footwear'], categoryIds: ['sc_fashion', 'sc_footwear'], cover: img('aur-store-fashion') },
-  { id: 's_grip', name: 'Grip Gadget Store', brand: 'Grip', road: 'Amapali Square', house: 'Shop 9', city: 'Raipur', pin: '492004', rating: 4.3, reviews: 720, deliveryMins: 28, deliveryFee: 12, minOrder: 199, promo: 'Buy 2 cases, get 1 free', isNiche: true, isPopular: false, tags: ['Accessories', 'Cases'], categoryIds: ['sc_phones', 'sc_laptops'], cover: img('aur-store-gadget') },
-  { id: 's_solace', name: 'Solace Eyewear', brand: 'Solace', road: 'Sadar Bazar Road', house: '8, City Plaza', city: 'Raipur', pin: '492001', rating: 4.7, reviews: 920, deliveryMins: 32, deliveryFee: 0, minOrder: 499, promo: 'Sunglasses fest · up to 35% OFF', isNiche: true, isPopular: true, tags: ['Sunglasses', 'UV400'], categoryIds: ['sc_sunglasses'], cover: img('aur-store-eyewear') },
+  { id: 's_titanium', name: 'Titanium House', brand: 'Titanium', road: 'GE Road', house: 'Plot 14', city: 'Raipur', pin: '492001', lat: 21.2605, lng: 81.6112, rating: 4.7, reviews: 2840, deliveryMins: 35, deliveryFee: 19, minOrder: 499, promo: 'Flat ₹500 OFF above ₹2,999', isNiche: false, isPopular: true, tags: ['Watches', 'Authorised'], categoryIds: ['sc_watches', 'sc_sunglasses'], cover: img('aur-store-watch') },
+  { id: 's_sonce', name: 'Sonce Audio Hub', brand: 'Sonce', road: 'Telibandha Road', house: '2nd Floor, City Centre', city: 'Raipur', pin: '492001', lat: 21.2195, lng: 81.6585, rating: 4.6, reviews: 1980, deliveryMins: 30, deliveryFee: 0, minOrder: 299, promo: 'Up to 40% OFF audio week', isNiche: true, isPopular: true, tags: ['Headphones', 'Earbuds'], categoryIds: ['sc_audio', 'sc_laptops'], cover: img('aur-store-audio') },
+  { id: 's_nova', name: 'Nova Electronics', brand: 'Nova', road: 'Pandri Main Road', house: 'Shop 21', city: 'Raipur', pin: '492001', lat: 21.2365, lng: 81.638, rating: 4.5, reviews: 3210, deliveryMins: 42, deliveryFee: 29, minOrder: 199, promo: 'No-cost EMI on phones', isNiche: false, isPopular: true, tags: ['Phones', 'Laptops'], categoryIds: ['sc_phones', 'sc_laptops'], cover: img('aur-store-electronics') },
+  { id: 's_pulse', name: 'Pulse Fitness Store', brand: 'Pulse', road: 'Shankar Nagar', house: 'Plot 7', city: 'Raipur', pin: '492007', lat: 21.2525, lng: 81.6305, rating: 4.4, reviews: 860, deliveryMins: 38, deliveryFee: 15, minOrder: 399, promo: 'Extra 10% OFF on combos', isNiche: true, isPopular: false, tags: ['Fitness', 'Smart gear'], categoryIds: ['sc_fitness', 'sc_footwear'], cover: img('aur-store-fitness') },
+  { id: 's_hearth', name: 'Hearth Living', brand: 'Hearth', road: 'Civil Lines', house: '402, Aurora Heights', city: 'Raipur', pin: '492001', lat: 21.248, lng: 81.64, rating: 4.8, reviews: 1240, deliveryMins: 50, deliveryFee: 0, minOrder: 599, promo: 'Free delivery + gift wrap', isNiche: false, isPopular: true, tags: ['Home', 'Furnishing'], categoryIds: ['sc_home'], cover: img('aur-store-home') },
+  { id: 's_lumen', name: 'Lumen Camera Studio', brand: 'Lumen', road: 'VIP Road', house: '12, Ram Nagar', city: 'Raipur', pin: '492001', lat: 21.2145, lng: 81.6425, rating: 4.6, reviews: 540, deliveryMins: 45, deliveryFee: 25, minOrder: 999, promo: 'Free SD card with cameras', isNiche: true, isPopular: false, tags: ['Cameras', 'Lenses'], categoryIds: ['sc_cameras', 'sc_laptops'], cover: img('aur-store-camera') },
+  { id: 's_northwind', name: 'Northwind Fashion House', brand: 'Northwind', road: 'Devendra Nagar', house: '5, First Floor', city: 'Raipur', pin: '492001', lat: 21.2483, lng: 81.622, rating: 4.5, reviews: 1670, deliveryMins: 40, deliveryFee: 0, minOrder: 499, promo: 'NEW season · up to 50% OFF', isNiche: false, isPopular: true, tags: ['Clothing', 'Footwear'], categoryIds: ['sc_fashion', 'sc_footwear'], cover: img('aur-store-fashion') },
+  { id: 's_grip', name: 'Grip Gadget Store', brand: 'Grip', road: 'Amapali Square', house: 'Shop 9', city: 'Raipur', pin: '492004', lat: 21.229, lng: 81.635, rating: 4.3, reviews: 720, deliveryMins: 28, deliveryFee: 12, minOrder: 199, promo: 'Buy 2 cases, get 1 free', isNiche: true, isPopular: false, tags: ['Accessories', 'Cases'], categoryIds: ['sc_phones', 'sc_laptops'], cover: img('aur-store-gadget') },
+  { id: 's_solace', name: 'Solace Eyewear', brand: 'Solace', road: 'Sadar Bazar Road', house: '8, City Plaza', city: 'Raipur', pin: '492001', lat: 21.241, lng: 81.633, rating: 4.7, reviews: 920, deliveryMins: 32, deliveryFee: 0, minOrder: 499, promo: 'Sunglasses fest · up to 35% OFF', isNiche: true, isPopular: true, tags: ['Sunglasses', 'UV400'], categoryIds: ['sc_sunglasses'], cover: img('aur-store-eyewear') },
 ];
 
 const products = [
@@ -163,6 +163,173 @@ const promos = [
   { id: 'promo_freedel', code: 'FREEDEL', title: 'Free delivery on all orders', subtitle: 'No minimum order', description: 'Delivery fee waived at checkout.', module: 'all', offType: 'flat', offValue: 0, maxDiscount: 0, minOrder: 0, startsAt: null, expiresAt: in90Days(), usageLimit: 0, perUserLimit: 2, selfClaim: true, active: true },
 ];
 
+
+// Shop brands (Brands screen + home maker tiles). Products link by exact name.
+const brands = [
+  { id: 'brd_solace', name: 'Solace', tagline: 'Eyewear that loves the sun', image: sq('aur-brand-solace'), featured: true, sortOrder: 1, active: true },
+  { id: 'brd_northwind', name: 'Northwind', tagline: 'Everyday fashion, honest prices', image: sq('aur-brand-northwind'), featured: true, sortOrder: 2, active: true },
+  { id: 'brd_pulse', name: 'Pulse', tagline: 'Fitness gear that keeps up', image: sq('aur-brand-pulse'), featured: true, sortOrder: 3, active: true },
+  { id: 'brd_sonce', name: 'Sonce', tagline: 'Sound you can feel', image: sq('aur-brand-sonce'), featured: false, sortOrder: 4, active: true },
+  { id: 'brd_nova', name: 'Nova', tagline: 'Phones & laptops, latest first', image: sq('aur-brand-nova'), featured: false, sortOrder: 5, active: true },
+  { id: 'brd_lumen', name: 'Lumen', tagline: 'Cameras for every story', image: sq('aur-brand-lumen'), featured: false, sortOrder: 6, active: true },
+  { id: 'brd_hearth', name: 'Hearth', tagline: 'A warmer home', image: sq('aur-brand-hearth'), featured: false, sortOrder: 7, active: true },
+  { id: 'brd_grip', name: 'Grip', tagline: 'Cases & add-ons that last', image: sq('aur-brand-grip'), featured: false, sortOrder: 8, active: true },
+  { id: 'brd_aurum', name: 'Aurum', tagline: 'Time, beautifully kept', image: sq('aur-brand-aurum'), featured: false, sortOrder: 9, active: true },
+  { id: 'brd_aurora', name: 'Aurora', tagline: 'Minimal design classics', image: sq('aur-brand-aurora'), featured: false, sortOrder: 10, active: true },
+  { id: 'brd_titanium', name: 'Titanium', tagline: 'Authorised watch house', image: sq('aur-brand-titanium'), featured: false, sortOrder: 11, active: true },
+  { id: 'brd_link', name: 'Link', tagline: 'Small tech, big help', image: sq('aur-brand-link'), featured: false, sortOrder: 12, active: true },
+];
+
+// Flash sales — one live event per module. The window is rolling at seed time
+// so a fresh database always has an active sale to show.
+const hoursAgo = (h) => new Date(Date.now() - h * 60 * 60 * 1000);
+const hoursFromNow = (h) => new Date(Date.now() + h * 60 * 60 * 1000);
+
+const flashSales = [
+  {
+    id: 'fls_food_now', module: 'food', title: 'Flash cravings', subtitle: 'Up to 40% OFF · ends tonight',
+    badge: 'FLASH', startsAt: hoursAgo(1), endsAt: hoursFromNow(5),
+    itemIds: ['f1', 'f5', 'f17', 'f21', 'f27', 'f32', 'f25', 'f26'], active: true,
+  },
+  {
+    id: 'fls_shop_now', module: 'shop', title: 'Tech flash drop', subtitle: 'Extra markdowns · 6 hours only',
+    badge: 'FLASH', startsAt: hoursAgo(1), endsAt: hoursFromNow(5),
+    itemIds: ['p4', 'p10', 'p11', 'p17', 'fw1', 'p20', 'p21', 'p3'], active: true,
+  },
+];
+
+// Editorial content — Help FAQs, legal pages, partner perks (Admin → Content).
+const contents = [
+  {
+    id: 'content_faqs', key: 'faqs', title: 'Help centre FAQs',
+    data: {
+      items: [
+        { q: 'How do I place an order?', a: 'Open a store, tap ADD on what you want, then the cart and Place order. The store confirms it and you can watch every step in Track order.', match: ['order', 'place', 'buy'], icon: 'cart' },
+        { q: 'Can I cancel after ordering?', a: 'Yes — free until the store confirms, from the order screen. After that the store has to approve it. Wallet payments are refunded the moment a cancellation goes through.', match: ['cancel', 'refund', 'drop'], icon: 'circleX' },
+        { q: 'When is the wallet charged?', a: 'Only if you pick \u201CAurasure wallet\u201D as the payment method. Then it is debited when the order is created and credited back if the order is cancelled.', match: ['wallet', 'pay', 'charge', 'money'], icon: 'wallet' },
+        { q: 'How do coupons work?', a: 'Claim a code in Coupons, then apply it in the cart. One coupon per order, and it needs the minimum order value. The server re-checks it when you place the order.', match: ['coupon', 'promo', 'code', 'discount'], icon: 'coupon' },
+        { q: 'How are loyalty points counted?', a: '5 points for every \u20B9100 spent, rounded down. 100 points redeem as \u20B910 in your wallet, and a cancelled order takes its points back.', match: ['loyalty', 'point', 'tier'], icon: 'loyalty' },
+        { q: 'Can I pay with UPI or card?', a: 'Not in this build \u2014 it ships with cash on delivery and the in-app wallet. The payment method row tells you when a gateway is enabled.', match: ['upi', 'card', 'gateway', 'online'], icon: 'creditCard' },
+        { q: 'Why is my cart locked to one store?', a: 'Every order comes from a single kitchen or shop, so mixing stores would silently drop items. Adding from a new store asks whether to replace the cart.', match: ['cart', 'store', 'mix', 'two'], icon: 'store' },
+        { q: 'The item price changed at checkout', a: 'Prices come from the live catalogue. If a store updates a price while your cart is open, the invoice uses the new one \u2014 it is shown before you place the order.', match: ['price', 'changed', 'cost'], icon: 'tag' },
+        { q: 'The app says the server is offline', a: 'The API is reachable but its database is not up, or the base URL in your .env is wrong. Settings shows the exact address being used; the store operator starts MongoDB.', match: ['offline', 'server', 'db', 'error', 'health'], icon: 'wifiOff' },
+        { q: 'How do I change my delivery address?', a: 'Tap the address in the home header, pick a saved one or add a new one. The chosen address is used for distance and shown to the rider.', match: ['address', 'location', 'deliver'], icon: 'mapPin' },
+      ],
+    },
+  },
+  {
+    id: 'content_policy_cancellation', key: 'policy-cancellation', title: 'Cancellation policy',
+    data: {
+      title: 'Cancellation policy', icon: 'circleX', updated: 'Updated 1 Aug 2026',
+      intro: 'You can cancel an Aurasure order for free while it is still with us — after that the store may already have started making it.',
+      sections: [
+        { heading: 'Free until the store confirms', body: 'An order placed but not yet confirmed can be cancelled in one tap from the order screen. Your wallet payment is refunded instantly and the coupon goes back to you.' },
+        { heading: 'After confirmation', body: 'Once the kitchen or store confirms, cancellation needs their approval. Ask support from the order screen and they will call the outlet for you.' },
+        { heading: 'Prepared food', body: 'Food that has already been cooked cannot be brought back, so a confirmed order that was made is not refundable. We will always tell you what the store decided.' },
+        { heading: 'Loyalty points', body: 'Points earned by a cancelled order are removed. If you had already redeemed them, your balance may go down to zero — never below it.' },
+      ],
+    },
+  },
+  {
+    id: 'content_policy_refund', key: 'policy-refund', title: 'Refund policy',
+    data: {
+      title: 'Refund policy', icon: 'bank', updated: 'Updated 1 Aug 2026',
+      intro: 'Refunds go back the way they came: wallet to wallet, and cash orders are settled by the store or rider on the spot.',
+      sections: [
+        { heading: 'Wallet payments', body: 'Refunded to your Aurasure wallet within minutes of the cancellation being accepted. You can see the credit in the wallet history.' },
+        { heading: 'Cash on delivery', body: 'Nothing was taken, so nothing is returned. If the rider already collected money, the outlet refunds you directly.' },
+        { heading: 'Missing or wrong items', body: 'Report it from the order screen the same day. We re-check the items against the store invoice and credit the difference to your wallet.' },
+        { heading: 'Timing', body: 'Wallet credits are instant. Anything routed to a bank — which this build does not do yet — takes 5-7 working days.' },
+      ],
+    },
+  },
+  {
+    id: 'content_policy_privacy', key: 'policy-privacy', title: 'Privacy policy',
+    data: {
+      title: 'Privacy policy', icon: 'shieldLock', updated: 'Updated 5 Sep 2026',
+      intro: 'Aurasure keeps only what an order needs. Here is exactly what is stored and who can see it.',
+      sections: [
+        { heading: 'What we store', body: 'Your name, mobile number, optional email, delivery addresses, orders, wallet and loyalty ledger. Nothing else.' },
+        { heading: 'Location', body: 'The app asks for location only when you tap \u201CUse current location\u201D. If you save that pin with an address, the coordinates are stored with it so the rider can find you; otherwise the fix is only used to sort nearby stores and is never written to your account.' },
+        { heading: 'On your phone', body: 'Your sign-in token, cart and recent searches live in this device\u2019s storage. Clearing the app data or using Settings \u2192 Clear local data removes them.' },
+        { heading: 'Who sees what', body: 'The store you order from sees the items, the address and your phone number so it can deliver. Nobody else gets your details, and we do not sell them.' },
+      ],
+    },
+  },
+  {
+    id: 'content_policy_terms', key: 'policy-terms', title: 'Terms of use',
+    data: {
+      title: 'Terms of use', icon: 'terms', updated: 'Updated 5 Sep 2026',
+      intro: 'The short version of the agreement you accept when you create an Aurasure account.',
+      sections: [
+        { heading: 'Orders', body: 'Prices, availability and delivery fees come from the store and are confirmed when the order is created. If something changes between your cart and the invoice, the store\u2019s price is what you pay.' },
+        { heading: 'Your account', body: 'Keep your phone number and password to yourself. One account per customer, and orders are tied to the account that placed them.' },
+        { heading: 'Coupons & rewards', body: 'One coupon per order. Codes have a minimum order value and an expiry; the server checks both when you pay. Points: 5 per \u20B9100 spent, redeemed 100 points = \u20B910.' },
+        { heading: 'This build', body: 'This app talks to the Aurasure demo API. It has no payment gateway and no push notifications yet; checkout, wallet, loyalty, support tickets and order tracking are fully built in.' },
+      ],
+    },
+  },
+  {
+    id: 'content_partner_perks', key: 'partner-perks', title: 'Delivery partner perks',
+    data: {
+      hero: { title: 'Become a delivery partner', subtitle: 'Earn with Aurasure in your city' },
+      perks: [
+        { icon: 'wallet', title: 'Paid weekly', body: 'Settlements every Monday for the trips you finished.' },
+        { icon: 'navigation', title: 'Your own hours', body: 'Go online when you want; the app never books you in.' },
+        { icon: 'shieldCheck', title: 'Verified outlets', body: 'Pick-ups happen from Aurasure-approved stores only.' },
+      ],
+    },
+  },
+];
+
+// Customer-app configuration — everything the app used to hard-code as rules.
+const appSettings = [
+  {
+    id: 'appsettings_app', key: 'app',
+    referral: {
+      walletReward: 50, pointsReward: 250, referrerWallet: 100,
+      terms: ['\u20B950 for your friend on their first order', '\u20B9100 in your wallet after their first order', '250 bonus points for both of you', 'No limit on invites'],
+    },
+    loyalty: {
+      earnPer100: 5, redeemPoints: 100, redeemValue: 10,
+      tiers: [
+        { name: 'Bronze', min: 0, color: '#C2703D' },
+        { name: 'Silver', min: 1000, color: '#94A3B8' },
+        { name: 'Gold', min: 2500, color: '#E5A710' },
+        { name: 'Platinum', min: 5000, color: '#64748B' },
+      ],
+    },
+    wallet: { topupPresets: [100, 250, 500, 1000], minTopup: 10, maxTopup: 25000 },
+    support: { phone: '+919000000000', displayPhone: '+91 90000 00000', email: 'support@aurasure.app', hours: 'Mon\u2013Sat \u00B7 9:00\u201321:00', slaMinutes: 15 },
+    payments: [
+      { key: 'cod', label: 'Cash on delivery', sub: 'Pay the rider when it arrives', icon: 'cash', enabled: true },
+      { key: 'wallet', label: 'Aurasure wallet', sub: 'Deducted instantly, refunded on cancellation', icon: 'wallet', enabled: true },
+      { key: 'upi', label: 'UPI / card', sub: 'Not enabled on this server build', icon: 'upi', enabled: false },
+    ],
+    checkout: { tips: [0, 10, 20, 30, 50] },
+    search: {
+      food: ['Biryani', 'Pizza', 'Dosa', 'Burger', 'Cake', 'Coffee', 'Thali', 'Rolls'],
+      shop: ['Milk', 'Bread', 'Eggs', 'Shampoo', 'T-shirt', 'Earphones', 'Vitamins', 'Detergent'],
+    },
+    delivery: { defaultEta: 20, minEta: 10, maxEta: 90 },
+    cityCenters: {
+      Raipur: { lat: 21.2514, lng: 81.6296 },
+      Bhilai: { lat: 21.2099, lng: 81.4285 },
+      Durg: { lat: 21.19, lng: 81.2849 },
+    },
+  },
+];
+
+// A welcome broadcast so a fresh inbox is never empty.
+const notifications = [
+  {
+    id: 'ntf_welcome', broadcast: true, module: 'all',
+    title: 'Welcome to Aurasure \uD83C\uDF89',
+    body: 'Food and shopping from your neighbourhood, delivered fast. Start with 50% OFF your first order.',
+    icon: 'megaphone', tone: 'primary', kind: 'promo', readBy: [],
+  },
+];
+
 module.exports = {
   foodCategories,
   foodVibes,
@@ -173,4 +340,9 @@ module.exports = {
   products,
   banners,
   promos,
+  brands,
+  flashSales,
+  contents,
+  appSettings,
+  notifications,
 };

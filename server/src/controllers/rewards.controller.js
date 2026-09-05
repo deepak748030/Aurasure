@@ -21,6 +21,7 @@ const {
   MIN_REDEEM_POINTS,
   loyaltyTier,
 } = require('../utils/ledger');
+const { getAppSettings } = require('../utils/settings');
 
 /** GET /api/v1/users/me/wallet -> { balance, transactions } */
 const getWallet = asyncHandler(async (req, res) => {
@@ -35,9 +36,12 @@ const getWallet = asyncHandler(async (req, res) => {
 /** POST /api/v1/users/me/wallet/add { amount } */
 const addWalletMoney = asyncHandler(async (req, res) => {
   ensureLedger(req.user);
+  const settings = await getAppSettings();
+  const min = settings.wallet.minTopup;
+  const max = settings.wallet.maxTopup;
   const amount = Math.round(Number(req.body.amount));
-  if (!Number.isFinite(amount) || amount < 10 || amount > 25000) {
-    throw ApiError.badRequest('Amount must be between ₹10 and ₹25,000', 'INVALID_AMOUNT');
+  if (!Number.isFinite(amount) || amount < min || amount > max) {
+    throw ApiError.badRequest(`Amount must be between ₹${min.toLocaleString('en-IN')} and ₹${max.toLocaleString('en-IN')}`, 'INVALID_AMOUNT');
   }
 
   const before = req.user.wallet;
@@ -56,15 +60,24 @@ const addWalletMoney = asyncHandler(async (req, res) => {
   return ok(res, { balance: req.user.wallet, transaction: transactions[0], transactions });
 });
 
-/** GET /api/v1/users/me/loyalty -> { points, tier, nextTierAt, activity } */
+/** GET /api/v1/users/me/loyalty -> { points, tier, tierDetail, rules, activity } */
 const getLoyalty = asyncHandler(async (req, res) => {
   ensureLedger(req.user);
   const user = req.user;
-  const tier = loyaltyTier(user.loyaltyPoints);
+  const settings = await getAppSettings();
+  const rules = {
+    earnPer100: settings.loyalty.earnPer100,
+    redeemPoints: settings.loyalty.redeemPoints,
+    redeemValue: settings.loyalty.redeemValue,
+    tiers: settings.loyalty.tiers,
+  };
+  const tier = loyaltyTier(user.loyaltyPoints, rules.tiers);
   return ok(res, {
     points: user.loyaltyPoints,
     tier: tier.name,
-    nextTierAt: tier.progress >= 1 ? null : tier.progress < 0.0001 ? 0 : null,
+    tierDetail: tier,
+    rules,
+    nextTierAt: tier.nextAt,
     activity: [...user.loyaltyTxs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
   });
 });
@@ -75,15 +88,17 @@ const getLoyalty = asyncHandler(async (req, res) => {
  */
 const redeemLoyalty = asyncHandler(async (req, res) => {
   ensureLedger(req.user);
+  const settings = await getAppSettings();
+  const step = settings.loyalty.redeemPoints;
   const points = Math.round(Number(req.body.points));
-  if (!Number.isFinite(points) || points < MIN_REDEEM_POINTS || points % MIN_REDEEM_POINTS !== 0) {
-    throw ApiError.badRequest(`Redeem in multiples of ${MIN_REDEEM_POINTS} points`, 'INVALID_POINTS');
+  if (!Number.isFinite(points) || points < step || points % step !== 0) {
+    throw ApiError.badRequest(`Redeem in multiples of ${step} points`, 'INVALID_POINTS');
   }
   if (req.user.loyaltyPoints < points) {
     throw ApiError.badRequest('Not enough loyalty points', 'INSUFFICIENT_POINTS');
   }
 
-  const rupees = pointsToRupees(points);
+  const rupees = pointsToRupees(points, settings.loyalty.redeemPoints, settings.loyalty.redeemValue);
   const beforePts = req.user.loyaltyPoints;
   const beforeRs = req.user.wallet;
 
@@ -115,7 +130,7 @@ const getCoupons = asyncHandler(async (req, res) => {
   return ok(res, { coupons });
 });
 
-/** GET /api/v1/users/me/referral -> { code, earnings, friends } */
+/** GET /api/v1/users/me/referral -> { code, earnings, friends, reward, terms } */
 const getReferral = asyncHandler(async (req, res) => {
   ensureLedger(req.user);
   const user = req.user;
@@ -123,15 +138,27 @@ const getReferral = asyncHandler(async (req, res) => {
     user.referralCode = referralCodeFor(user.name, user.phone);
     await user.save();
   }
+  const settings = await getAppSettings();
   const earnings = user.walletTxs.filter((t) => t.title === 'Referral bonus').reduce((sum, t) => sum + t.amount, 0);
   const friends = user.walletTxs.filter((t) => t.title === 'Referral bonus').length;
-  return ok(res, { code: user.referralCode, earnings, friends, referredBy: user.referredBy || null });
+  return ok(res, {
+    code: user.referralCode,
+    earnings,
+    friends,
+    referredBy: user.referredBy || null,
+    reward: {
+      wallet: settings.referral.walletReward,
+      points: settings.referral.pointsReward,
+      referrerWallet: settings.referral.referrerWallet ?? settings.referral.walletReward * 2,
+    },
+    terms: settings.referral.terms || [],
+  });
 });
 
 /**
  * POST /api/v1/users/me/referral/apply { code }
- * Friend applies the referrer's code once: friend gets ₹50 wallet + 250 pts,
- * referrer gets ₹100 wallet.
+ * Friend applies the referrer's code once. Both sides are credited from the
+ * live referral settings (Admin → App configuration).
  */
 const applyReferral = asyncHandler(async (req, res) => {
   ensureLedger(req.user);
@@ -143,42 +170,47 @@ const applyReferral = asyncHandler(async (req, res) => {
   const owner = await User.findOne({ referralCode: code });
   if (!owner) throw ApiError.notFound('Invalid referral code', 'INVALID_CODE');
 
+  const settings = await getAppSettings();
+  const friendWallet = settings.referral.walletReward;
+  const friendPoints = settings.referral.pointsReward;
+  const referrerWallet = settings.referral.referrerWallet ?? friendWallet * 2;
+
   // Referrer reward.
   const ownerBefore = owner.wallet;
-  owner.wallet = ownerBefore + 100;
+  owner.wallet = ownerBefore + referrerWallet;
   owner.walletTxs.push(
     walletTx('credit', {
       title: 'Referral bonus',
       note: `${req.user.name} joined with your code`,
-      amount: 100,
+      amount: referrerWallet,
       balanceAfter: owner.wallet,
     }),
   );
-  owner.loyaltyPoints += 250;
+  owner.loyaltyPoints += friendPoints;
   owner.loyaltyTxs.push(
-    loyaltyTx('earned', { title: 'Referral bonus', note: `Friend ${req.user.phone} joined`, points: 250, balanceAfter: owner.loyaltyPoints }),
+    loyaltyTx('earned', { title: 'Referral bonus', note: `Friend ${req.user.phone} joined`, points: friendPoints, balanceAfter: owner.loyaltyPoints }),
   );
   await owner.save();
 
   // Friend reward.
   req.user.referredBy = code;
   const friendBefore = req.user.wallet;
-  req.user.wallet = friendBefore + 50;
+  req.user.wallet = friendBefore + friendWallet;
   req.user.walletTxs.push(
     walletTx('credit', {
       title: 'Referral bonus',
       note: `Welcome gift with code ${code}`,
-      amount: 50,
+      amount: friendWallet,
       balanceAfter: req.user.wallet,
     }),
   );
-  req.user.loyaltyPoints += 250;
+  req.user.loyaltyPoints += friendPoints;
   req.user.loyaltyTxs.push(
-    loyaltyTx('earned', { title: 'Welcome bonus', note: `Referred by ${owner.name}`, points: 250, balanceAfter: req.user.loyaltyPoints }),
+    loyaltyTx('earned', { title: 'Welcome bonus', note: `Referred by ${owner.name}`, points: friendPoints, balanceAfter: req.user.loyaltyPoints }),
   );
   await req.user.save();
 
-  return ok(res, { wallet: req.user.wallet, points: req.user.loyaltyPoints, reward: 50 });
+  return ok(res, { wallet: req.user.wallet, points: req.user.loyaltyPoints, reward: friendWallet });
 });
 
 /** Add the welcome perks when a brand-new user registers. */

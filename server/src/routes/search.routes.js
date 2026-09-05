@@ -6,5 +6,6 @@ const controller = require('../controllers/search.controller');
 const router = Router();
 
 router.get('/', controller.search);
+router.get('/trending', controller.trending);
 
 module.exports = router;

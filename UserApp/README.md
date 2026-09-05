@@ -6,7 +6,9 @@ the repo's own Node.js/Express/MongoDB API in [`../server`](../server).
 
 The interface follows the `Aurasure-V3.7-Mart-UI-UX` reference (Flutter) screen
 for screen — same order, same components, same micro-interactions — rebuilt as
-RN primitives.
+RN primitives. The reference archive itself (`Aurasure-V3.7-Mart-UI-UX-master.zip`,
+23 MB of Flutter sources) is deliberately **not** committed — it is git-ignored at
+the repo root, so the app ships without the design dump.
 
 ```bash
 npm install

@@ -1,6 +1,8 @@
 # Reference Flutter apps (not part of the Expo workspace)
 driver_ref/
 vendor_reference/
+# Reference design archive: kept on disk for the UI copy work, never committed
+Aurasure-V3.7-Mart-UI-UX-master.zip
 
 # Node / Expo
 node_modules/

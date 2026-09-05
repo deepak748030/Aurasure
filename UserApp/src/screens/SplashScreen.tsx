@@ -46,7 +46,7 @@ export function SplashScreen({ navigation }: { navigation: { replace: (name: str
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
-      <View style={[styles.fill, { backgroundColor: c.isDark ? c.bg : c.primaryDeep }]>
+      <View style={[styles.fill, { backgroundColor: c.isDark ? c.bg : c.primaryDeep }]}>
         <View style={styles.center}>
           <Animated.View
             style={[

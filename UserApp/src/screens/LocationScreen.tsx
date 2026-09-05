@@ -23,7 +23,7 @@ import { hasCoords, project } from '@/lib/geo';
 export function LocationScreen({ navigation }: { navigation: { navigate: (name: string) => void; goBack: () => void; canGoBack: () => boolean } }): React.ReactElement {
   const c = useColors();
   const sheet = useSheet();
-  const { addresses, selectedAddress, setSelectedAddressId, loadAddresses, useCurrentLocationAsAddress, isLoggedIn, locationStatus } = useSession();
+  const { addresses, selectedAddress, setSelectedAddressId, loadAddresses, useCurrentLocationAsAddress, isLoggedIn, locationStatus, coords } = useSession();
   const [locating, setLocating] = useState(false);
   const alive = useRef(true);
   useEffect(() => {
@@ -120,8 +120,8 @@ export function LocationScreen({ navigation }: { navigation: { navigate: (name: 
           <MapSurface
             height={190}
             markers={markers}
-            showUserDot={false}
-            userLabel={list.length > 0 ? `${list.length} cities served` : 'Loading cities…'}
+            showUserDot={Boolean(coords)}
+            userLabel={coords ? 'Current location' : list.length > 0 ? `${list.length} cities served` : 'Loading cities…'}
             onMarkerPress={(marker) => {
               const city = list.find((row) => row.name === marker.id);
               if (city) cityInfo(city);

@@ -63,7 +63,9 @@ export function MapSurface({
   const panResponder = useMemo(
     () =>
       PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
+        // Do not capture a plain tap: markers and the recenter chip must remain
+        // pressable. Take ownership only after the finger has actually moved.
+        onStartShouldSetPanResponder: () => false,
         onMoveShouldSetPanResponder: (_evt, gesture) => Math.abs(gesture.dx) > 4 || Math.abs(gesture.dy) > 4,
         onPanResponderGrant: () => pan.setOffset({ x: offsetRef.current.x, y: offsetRef.current.y }),
         onPanResponderMove: (_evt, gesture) => {

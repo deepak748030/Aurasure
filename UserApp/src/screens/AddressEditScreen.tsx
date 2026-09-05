@@ -151,7 +151,7 @@ export function AddressEditScreen({ navigation, route }: { navigation: Nav; rout
             height={140}
             showControls={false}
             userLabel={coords ? 'Current location' : hasCoords(existing) ? 'Saved pin' : 'Not pinned'}
-            showUserDot={false}
+            showUserDot={Boolean(coords || hasCoords(existing))}
             markers={
               coords || hasCoords(existing)
                 ? [{ id: 'me', label: 'Pin', x: 0.5, y: 0.5, icon: 'mapPin', tone: 'primary', active: true }]

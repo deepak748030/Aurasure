@@ -167,7 +167,5 @@ function createStyles(c: Palette) {
       borderColor: c.isDark ? 'rgba(0,0,0,0.24)' : 'rgba(255,255,255,0.24)',
     },
     searchGlyph: { width: 28, height: 28, borderRadius: radius.pill, backgroundColor: c.isDark ? 'rgba(0,0,0,0.22)' : c.white, alignItems: 'center', justifyContent: 'center' },
-    cartStrip: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: spacing.sm, borderRadius: radius.md, backgroundColor: c.isDark ? 'rgba(0,0,0,0.20)' : c.white },
-    cartDot: { width: 22, height: 22, borderRadius: radius.pill, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center' },
   });
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Linking, View } from 'react-native';
 import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
 import { Icon, BRAND } from '@/lib/icons';
@@ -64,6 +64,17 @@ export function SettingsScreen({ navigation }: { navigation: Nav }): React.React
     clearAll();
     haptic.warning();
     sheet.success('Local data cleared', 'Reload the app to fetch everything again.');
+  };
+
+  const openPlayStore = async (): Promise<void> => {
+    const packageName = 'com.aurasure.order';
+    const market = `market://details?id=${packageName}`;
+    const web = `https://play.google.com/store/apps/details?id=${packageName}`;
+    try {
+      await Linking.openURL(market);
+    } catch {
+      await Linking.openURL(web);
+    }
   };
 
   const rows: { label: string; value: string; hint?: string }[] = [
@@ -134,6 +145,7 @@ export function SettingsScreen({ navigation }: { navigation: Nav }): React.React
 
         <ListSection title="DATA">
           <ListRow title="Clear local data" subtitle={`${totalCartCount} item${totalCartCount === 1 ? '' : 's'} in carts · searches · cached profile`} icon="broom" iconTone="danger" onPress={() => void clearCaches()} />
+          <ListRow title="Check for app update" subtitle="Open Aurasure on Google Play to install the latest version" icon="refresh" onPress={() => void openPlayStore()} />
           <ListRow title="Re-check the server" subtitle="Hits GET /health and updates the offline banner" icon="refresh" onPress={() => void checkHealth()} last />
         </ListSection>
 

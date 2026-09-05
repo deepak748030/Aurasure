@@ -179,7 +179,7 @@ export function MenuScreen(): React.ReactElement {
             </Text>
             <Pressable onPress={isLoggedIn ? doLogout : goAuth} style={styles.loginBtn}>
               <Text variant="caption" weight="bold" color="#8B0057">
-                {isLoggedIn ? 'Log out' : 'Log in/ Sign up'}
+                {isLoggedIn ? 'Log out' : 'Log in'}
               </Text>
               <Icon name={isLoggedIn ? 'logout' : 'arrowRight'} size={14} color="#8B0057" style={{ marginLeft: 4 }} />
             </Pressable>

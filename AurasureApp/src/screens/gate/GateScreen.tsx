@@ -633,22 +633,6 @@ function LoginStep(): React.ReactElement {
             />
           </View>
 
-          <View style={styles.orRow}>
-            <View style={styles.orLine} />
-            <Text variant="caption" color={colors.textTertiary} style={styles.orText}>
-              Or
-            </Text>
-            <View style={styles.orLine} />
-          </View>
-
-          <Pressable onPress={() => setError('Sign up flow will be added later.')} style={{ marginTop: 12, alignItems: 'center' }}>
-            <Text variant="subtitle" color={colors.textSecondary}>
-              Don't have account?{' '}
-              <Text variant="subtitle" color={colors.brand[700]} weight="bold">
-                Sign Up
-              </Text>
-            </Text>
-          </Pressable>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -932,9 +916,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   checkboxActive: { borderColor: colors.brand[600], backgroundColor: colors.brand[600] },
-  orRow: { flexDirection: 'row', alignItems: 'center', marginTop: 20 },
-  orLine: { flex: 1, height: 1, backgroundColor: colors.border },
-  orText: { marginHorizontal: 12 },
 
   // -- module picker --
   moduleRoot: { flex: 1, backgroundColor: colors.background },

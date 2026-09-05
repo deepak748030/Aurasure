@@ -241,13 +241,16 @@ function EditProfileBody(): React.ReactElement {
             {display || 'Your name'}
           </Text>
           <Text variant="caption" color={colors.textSecondary} style={{ marginTop: 2 }}>
-            {profile?.phone ?? 'Member'}
+            {profile?.phone ?? phone ?? 'Member'}
           </Text>
         </View>
       </Card>
       <Card style={{ marginTop: 14 }}>
         <Field label="Full name" value={display} onChangeText={setDisplay} icon="user" />
-        <Field label="Phone" value={profile?.phone ?? ''} onChangeText={() => undefined} icon="phone" disabled />
+        {/* Mobile number is fixed to the signed-in account — always prefilled
+            (from the server profile, else the logged-in phone) and never
+            editable, since it is the account identity used for auth. */}
+        <Field label="Phone" value={profile?.phone ?? phone ?? ''} onChangeText={() => undefined} icon="phone" disabled />
         <Field label="Email" value={email} onChangeText={setEmail} icon="mail" />
       </Card>
       {error ? (
@@ -1290,8 +1293,11 @@ function Field({ label, value, onChangeText, icon, disabled }: { label: string; 
           editable={!disabled}
           placeholder={`Enter ${label.toLowerCase()}`}
           placeholderTextColor={colors.textTertiary}
-          style={styles.input}
+          style={[styles.input, disabled ? styles.inputDisabled : null]}
         />
+        {disabled ? (
+          <Icon name="lock" size={14} color={colors.textTertiary} style={styles.fieldLock} />
+        ) : null}
       </View>
     </View>
   );
@@ -1423,8 +1429,10 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   fieldIcon: { marginRight: 10 },
+  fieldLock: { marginLeft: 8 },
   overline: { letterSpacing: 0.4 },
   input: { flex: 1, fontSize: 16, color: colors.text, paddingVertical: 2 },
+  inputDisabled: { color: colors.textSecondary },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -115,7 +115,9 @@ function CartFab({ onPress, badge }: { onPress: () => void; badge: number }): Re
 export const CART_TAB_HIDDEN = true;
 
 const styles = StyleSheet.create({
-  wrap: { paddingHorizontal: spacing.lg, paddingTop: 6 },
+  // Keep the bar close to the screen edges; the content itself still has
+  // enough breathing room from the pill's inner padding.
+  wrap: { paddingHorizontal: spacing.xs, paddingTop: 6 },
   pill: {
     height: 64,
     borderRadius: radius.pill,
@@ -124,10 +126,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 10,
-    shadowOpacity: 0.08,
-    shadowRadius: 22,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 12,
+    // Flat tab bar: no drop shadow on iOS or Android.
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 0,
   },
   row: { flexDirection: 'row', flex: 1, justifyContent: 'space-around' },
   cell: { alignItems: 'center', justifyContent: 'center', gap: 2, minWidth: 46 },
@@ -146,10 +149,10 @@ const styles = StyleSheet.create({
     borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowOpacity: 0.35,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 10,
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 0,
   },
   badge: {
     position: 'absolute',

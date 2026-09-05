@@ -100,7 +100,7 @@ export function OrdersScreen({ navigation }: Props): React.ReactElement {
           ))}
         </View>
       ) : list.length === 0 ? (
-        <EmptyState icon="receipt" title="No orders yet" subtitle="Your orders will appear here once you place one." actionLabel="Browse food" onAction={() => switchTab('Home')} />
+        <EmptyState icon="receipt" title="No orders yet" subtitle="Your orders will appear here once you place one." actionLabel={module === 'food' ? 'Browse food' : 'Browse store'} onAction={() => switchTab('Home')} />
       ) : (
         <View style={styles.listCard}>
           {list.map((o, i) => (

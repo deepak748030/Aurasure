@@ -1,6 +1,7 @@
 'use strict';
 
 const Order = require('../models/Order');
+const Payment = require('../models/Payment');
 const User = require('../models/User');
 const FoodItem = require('../models/FoodItem');
 const Product = require('../models/Product');
@@ -89,16 +90,17 @@ async function applyOrderCancellation(order) {
   const user = await User.findById(order.user);
   if (!user) throw ApiError.notFound('Order owner not found', 'USER_NOT_FOUND');
 
-  // Wallet refund.
-  if (order.walletPaid > 0) {
+  // Wallet / online refund — online Razorpay captures credit back to wallet.
+  const refund = Number(order.walletPaid || 0) + Number(order.onlinePaid || 0);
+  if (refund > 0) {
     const before = user.wallet;
-    user.wallet = Math.round((before + order.walletPaid) * 100) / 100;
+    user.wallet = Math.round((before + refund) * 100) / 100;
     user.walletTxs = user.walletTxs || [];
     user.walletTxs.push(
       walletTx('credit', {
         title: `Refund ${order.code}`,
-        note: 'Order cancelled',
-        amount: order.walletPaid,
+        note: order.onlinePaid > 0 ? 'Online payment refunded to wallet' : 'Order cancelled',
+        amount: refund,
         balanceAfter: user.wallet,
       }),
     );
@@ -137,7 +139,7 @@ async function applyOrderCancellation(order) {
  * - Every order earns loyalty points (5 per ₹100) with a ledger entry.
  */
 const createOrder = asyncHandler(async (req, res) => {
-  const { module, items, deliveryFee = 0, address, payBy = 'cod', couponCode, etaMinutes, instructions } = req.body;
+  const { module, items, deliveryFee = 0, address, payBy = 'cod', couponCode, etaMinutes, instructions, paymentId } = req.body;
 
   if (!items || items.length === 0) throw ApiError.badRequest('Order must contain at least one item', 'EMPTY_ORDER');
   if (!address || !address.trim()) throw ApiError.badRequest('Delivery address is required', 'ADDRESS_REQUIRED');
@@ -180,6 +182,31 @@ const createOrder = asyncHandler(async (req, res) => {
 
   const orderCode = makeOrderCode(module);
   let walletPaid = 0;
+  let onlinePaid = 0;
+  let razorpayOrderId = null;
+  let razorpayPaymentId = null;
+  let consumedPayment = null;
+
+  const ONLINE = ['upi', 'card', 'netbanking'];
+  if (ONLINE.includes(payBy)) {
+    if (!paymentId) throw ApiError.badRequest('Complete Razorpay payment first', 'PAYMENT_REQUIRED');
+    const payment = await Payment.findOne({
+      id: String(paymentId),
+      user: user._id,
+      purpose: 'order',
+      status: 'paid',
+      consumed: false,
+    });
+    if (!payment) throw ApiError.badRequest('Payment not found or already used', 'PAYMENT_INVALID');
+    if (Math.round(Number(payment.amount) * 100) !== Math.round(Number(total) * 100)) {
+      throw ApiError.badRequest('Paid amount does not match this order', 'PAYMENT_MISMATCH');
+    }
+    onlinePaid = payment.amount;
+    razorpayOrderId = payment.razorpayOrderId;
+    razorpayPaymentId = payment.razorpayPaymentId;
+    payment.consumed = true;
+    consumedPayment = payment;
+  }
 
   if (payBy === 'wallet') {
     if (user.wallet < total) {
@@ -207,6 +234,7 @@ const createOrder = asyncHandler(async (req, res) => {
   }
   if (coupon) coupon.usedAt = new Date();
   if (walletPaid > 0 || loyaltyEarned > 0 || coupon) await user.save();
+  if (consumedPayment) await consumedPayment.save();
 
   const order = await Order.create({
     id: newId('ord'),
@@ -222,6 +250,10 @@ const createOrder = asyncHandler(async (req, res) => {
     total,
     payBy,
     walletPaid,
+    onlinePaid,
+    razorpayOrderId,
+    razorpayPaymentId,
+    paymentId: consumedPayment ? consumedPayment.id : null,
     loyaltyEarned,
     couponId: coupon ? coupon.id : null,
     couponCode: coupon ? coupon.code : null,

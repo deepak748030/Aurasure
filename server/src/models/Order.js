@@ -37,9 +37,13 @@ const orderSchema = new mongoose.Schema(
     discount: { type: Number, default: 0, min: 0 },
     total: { type: Number, required: true, min: 0 },
     // How the order was paid. `wallet` = deducted from the user's balance.
-    payBy: { type: String, enum: ['wallet', 'cod', 'upi', 'card'], default: 'cod' },
+    payBy: { type: String, enum: ['wallet', 'cod', 'upi', 'card', 'netbanking'], default: 'cod' },
     // Wallet money actually charged for this order (0 when not wallet-paid).
     walletPaid: { type: Number, default: 0, min: 0 },
+    onlinePaid: { type: Number, default: 0, min: 0 },
+    razorpayOrderId: { type: String, default: null },
+    razorpayPaymentId: { type: String, default: null },
+    paymentId: { type: String, default: null },
     // Loyalty points earned by placing this order.
     loyaltyEarned: { type: Number, default: 0, min: 0 },
     etaMinutes: { type: Number, default: 0, min: 0 },

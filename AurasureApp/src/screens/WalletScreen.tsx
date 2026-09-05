@@ -9,8 +9,8 @@ import { Tag } from '@/components/ui/Primitives';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useQuery } from '@/hooks/useQuery';
 import { useAppSettings } from '@/hooks/useAppSettings';
-import { fetchWallet, topUpWallet, type WalletState } from '@/api/rewards';
-import { ApiError } from '@/api/client';
+import { fetchWallet, type WalletState } from '@/api/rewards';
+import { PaymentSheet } from '@/components/payments/PaymentSheet';
 import { useSession } from '@/context/SessionContext';
 import { useColors } from '@/theme/ThemeContext';
 import { useSheet } from '@/components/sheet/SheetProvider';
@@ -20,15 +20,13 @@ import { haptic } from '@/lib/haptics';
 import type { Nav } from '@/navigation/types';
 
 /**
- * Wallet: balance card, add-money sheet (the server just credits the ledger —
- * there is no gateway on this build, which the UI states honestly), and the
- * full credit/debit history from `GET /users/me/wallet`.
+ * Wallet: balance card, Razorpay add-money sheet, and ledger history.
  */
 export function WalletScreen({ navigation }: { navigation: Nav }): React.ReactElement {
   const c = useColors();
   const sheet = useSheet();
   const { user, isLoggedIn, refreshUser } = useSession();
-  const [busy, setBusy] = useState(false);
+  const [payAmount, setPayAmount] = useState<number | null>(null);
 
   const query = useQuery<WalletState>(useCallback(() => fetchWallet(), [user?.wallet]), { enabled: isLoggedIn });
   const settings = useAppSettings();
@@ -44,22 +42,11 @@ export function WalletScreen({ navigation }: { navigation: Nav }): React.ReactEl
     }
     const value = await sheet.pick({
       title: 'Add money to wallet',
-      subtitle: 'This demo build credits the wallet directly — no payment gateway is charged',
-      options: presets.map((amount) => ({ label: `Add ${money(amount)}`, value: String(amount), description: 'Credited instantly', icon: 'wallet' as IconName })),
+      subtitle: 'Pay with UPI, Paytm, PhonePe, card or net banking',
+      options: presets.map((amount) => ({ label: `Add ${money(amount)}`, value: String(amount), description: 'Razorpay checkout', icon: 'wallet' as IconName })),
     });
     if (!value) return;
-    setBusy(true);
-    try {
-      const result = await topUpWallet(Number(value));
-      await refreshUser();
-      query.setData(result);
-      haptic.success();
-      sheet.success(`${money(Number(value))} added`, `Wallet balance is ${money(result.balance)}.`);
-    } catch (error) {
-      sheet.error('Could not add money', error instanceof ApiError ? error.message : 'Check your connection and try again.');
-    } finally {
-      setBusy(false);
-    }
+    setPayAmount(Number(value));
   };
 
   const spend = (title: string, amount: number): React.ReactElement => (
@@ -75,7 +62,7 @@ export function WalletScreen({ navigation }: { navigation: Nav }): React.ReactEl
       refreshing={query.refreshing}
       stickyFooter={
         <View style={{ paddingHorizontal: spacing.edge, paddingBottom: spacing.sm }}>
-          <Button title={busy ? 'Adding…' : 'Add money'} size="lg" icon="plus" loading={busy} onPress={() => void addMoney()} style={{ alignSelf: 'stretch' }} />
+          <Button title="Add money" size="lg" icon="plus" onPress={() => void addMoney()} style={{ alignSelf: 'stretch' }} />
         </View>
       }
     >
@@ -107,7 +94,7 @@ export function WalletScreen({ navigation }: { navigation: Nav }): React.ReactEl
               onPress={() => {
                 void (async () => {
                   navigation.setOptions({ title: 'Wallet' });
-                  await addMoneyFor(amount);
+                  setPayAmount(amount);
                 })().catch(() => undefined);
               }}
               style={({ pressed }) => [styles.preset, { borderColor: c.border, backgroundColor: pressed ? c.surfaceAlt : c.surface }]}
@@ -172,27 +159,21 @@ export function WalletScreen({ navigation }: { navigation: Nav }): React.ReactEl
           </View>
         ) : null}
       </View>
+      <PaymentSheet
+        visible={payAmount != null}
+        amount={payAmount ?? 0}
+        purpose="wallet"
+        onClose={() => setPayAmount(null)}
+        onPaid={(result) => {
+          setPayAmount(null);
+          void refreshUser();
+          query.refresh();
+          haptic.success();
+          sheet.success(`${money(result.amount)} added`, `Wallet balance is ${money(result.wallet)}.`);
+        }}
+      />
     </Screen>
   );
-
-  async function addMoneyFor(amount: number): Promise<void> {
-    if (!isLoggedIn) {
-      sheet.info('Sign in first', 'The wallet belongs to your Aurasure account.');
-      return;
-    }
-    setBusy(true);
-    try {
-      const result = await topUpWallet(amount);
-      await refreshUser();
-      query.setData(result);
-      haptic.success();
-      sheet.success(`${money(amount)} added`, `Wallet balance is ${money(result.balance)}.`);
-    } catch (error) {
-      sheet.error('Could not add money', error instanceof ApiError ? error.message : 'Try again.');
-    } finally {
-      setBusy(false);
-    }
-  }
 }
 
 const styles = StyleSheet.create({

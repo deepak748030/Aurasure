@@ -10,7 +10,6 @@ import { radius, spacing } from '@/theme/tokens';
 import { useSession } from '@/context/SessionContext';
 import { useSheet } from '@/components/sheet/SheetProvider';
 import { ApiError } from '@/api/client';
-import { DEMO_CREDENTIALS } from '@/config';
 import { haptic } from '@/lib/haptics';
 
 /**

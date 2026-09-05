@@ -154,6 +154,7 @@ export function HomeFoodScreen({ navigation }: { navigation: Nav }): React.React
         void checkHealth();
       }}
       refreshing={home.refreshing}
+      headerBackground={c.primary}
       header={
         <HomeHeader
           module={module}
@@ -175,7 +176,7 @@ export function HomeFoodScreen({ navigation }: { navigation: Nav }): React.React
         </Pressable>
       ) : null}
 
-      <View style={{ marginTop: spacing.sm }}>
+      <View>
         {loading ? (
           <SkeletonHero height={168} />
         ) : home.error && !data ? (

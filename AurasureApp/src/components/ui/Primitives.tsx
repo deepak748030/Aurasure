@@ -389,34 +389,38 @@ export function Avatar({
   ring?: boolean;
 }): React.ReactElement {
   const c = useColors();
-  if (uri) {
+  const photo = typeof uri === 'string' && uri.trim().length > 0 ? uri.trim() : null;
+  // On a plum header (`ring`) a plum glyph is invisible — paint a white plate
+  // and drop the empty outline so the default user icon actually shows.
+  const frame = {
+    width: size,
+    height: size,
+    borderRadius: size / 2,
+    overflow: 'hidden' as const,
+    backgroundColor: ring ? c.white : c.primarySoft,
+    alignItems: 'center' as const,
+    justifyContent: 'flex-end' as const,
+  };
+
+  if (photo) {
     return (
-      <SmartImage
-        source={{ kind: 'uri', uri }}
-        name={name}
-        icon="userRound"
-        rounded
-        style={{ width: size, height: size }}
-        radiusOverride={radius.pill}
-      />
+      <View style={frame}>
+        <SmartImage
+          source={{ kind: 'uri', uri: photo }}
+          name={name}
+          icon="user"
+          rounded
+          contentFit="cover"
+          style={{ width: size, height: size }}
+          radiusOverride={size / 2}
+        />
+      </View>
     );
   }
+
   return (
-    <View
-      style={{
-        width: size,
-        height: size,
-        borderRadius: radius.pill,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: c.primarySoft,
-        borderWidth: ring ? 2 : 0,
-        borderColor: c.white,
-      }}
-    >
-      {/* The fallback avatar fills the circle instead of leaving a small
-          floating glyph or an empty inner ring. */}
-      <Icon name="userRound" size={size * 0.62} color={c.primary} />
+    <View style={frame} accessibilityLabel={`${name} avatar`}>
+      <Icon name="user" size={size * 0.92} color={c.primary} />
     </View>
   );
 }

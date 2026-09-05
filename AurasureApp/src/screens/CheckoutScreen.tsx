@@ -18,6 +18,7 @@ import { useAppSettings } from '@/hooks/useAppSettings';
 import { fetchDeliveryEstimate } from '@/api/app';
 import { useQuery } from '@/hooks/useQuery';
 import { createOrder } from '@/api/orders';
+import { PaymentSheet } from '@/components/payments/PaymentSheet';
 import { ApiError } from '@/api/client';
 import { isCouponUsable } from '@/api/rewards';
 import { haptic } from '@/lib/haptics';
@@ -28,7 +29,9 @@ import type { ModuleKey, PayBy } from '@/types';
 const FALLBACK_PAYMENTS: { key: PayBy; label: string; sub: string; icon: IconName; enabled: boolean }[] = [
   { key: 'cod', label: 'Cash on delivery', sub: 'Pay the rider when it arrives', icon: 'cash', enabled: true },
   { key: 'wallet', label: 'Aurasure wallet', sub: 'Deducted instantly, refunded on cancellation', icon: 'wallet', enabled: true },
-  { key: 'upi', label: 'UPI / card', sub: 'Not enabled on this server build', icon: 'upi', enabled: false },
+  { key: 'upi', label: 'UPI / Paytm / PhonePe', sub: 'Pay online with Razorpay', icon: 'upi', enabled: true },
+  { key: 'card', label: 'Debit / credit card', sub: 'Visa, Mastercard, RuPay', icon: 'creditCard', enabled: true },
+  { key: 'netbanking', label: 'Net banking', sub: 'All major Indian banks', icon: 'bank', enabled: true },
 ];
 
 const FALLBACK_TIPS = [0, 10, 20, 30, 50];
@@ -47,6 +50,7 @@ export function CheckoutScreen({ navigation }: { navigation: Nav }): React.React
   const { user, isLoggedIn, addresses, selectedAddress, selectedAddressId, setSelectedAddressId, module: browsing } = useSession();
   const [placing, setPlacing] = useState(false);
   const [noteDraft, setNoteDraft] = useState<string | null>(null);
+  const [payOpen, setPayOpen] = useState(false);
 
   // Whichever cart actually has lines wins; ties fall back to what the user is
   // browsing. (Hardcoding 'food' sent shop-only carts to an empty checkout.)
@@ -131,6 +135,16 @@ export function CheckoutScreen({ navigation }: { navigation: Nav }): React.React
       cart.setPayBy('cod');
     }
 
+    const online = cart.payBy === 'upi' || cart.payBy === 'card' || cart.payBy === 'netbanking';
+    if (online) {
+      setPayOpen(true);
+      return;
+    }
+
+    await submitOrder();
+  };
+
+  const submitOrder = async (paymentId?: string): Promise<void> => {
     setPlacing(true);
     try {
       const result = await createOrder({
@@ -139,6 +153,7 @@ export function CheckoutScreen({ navigation }: { navigation: Nav }): React.React
         address: addressText,
         deliveryFee,
         payBy: cart.payBy,
+        ...(paymentId ? { paymentId } : {}),
         ...(coupon?.code ? { couponCode: coupon.code } : {}),
         ...(activeSlot.etaMinutes ? { etaMinutes: activeSlot.etaMinutes } : {}),
         instructions: cart.buildInstructions(module) || undefined,
@@ -228,7 +243,6 @@ export function CheckoutScreen({ navigation }: { navigation: Nav }): React.React
       });
       return;
     }
-    if (next.key !== 'cod' && next.key !== 'wallet' && next.key !== 'upi') return;
     cart.setPayBy(next.key as PayBy);
   };
 
@@ -264,7 +278,7 @@ export function CheckoutScreen({ navigation }: { navigation: Nav }): React.React
         <View style={[styles.payBar, { backgroundColor: c.surface, borderTopColor: c.divider }]}>
           <View style={{ flex: 1 }}>
             <Text variant="micro" tone="faint">
-              {cart.payBy === 'wallet' ? 'Pay from wallet' : 'Pay on delivery'}
+              {cart.payBy === 'wallet' ? 'Pay from wallet' : cart.payBy === 'cod' ? 'Pay on delivery' : 'Pay online'}
             </Text>
             <Text variant="h2" weight="bold">
               {money(toPay)}
@@ -469,6 +483,16 @@ export function CheckoutScreen({ navigation }: { navigation: Nav }): React.React
           </View>
         ) : null}
       </KeyboardAvoidingView>
+      <PaymentSheet
+        visible={payOpen}
+        amount={toPay}
+        purpose="order"
+        onClose={() => setPayOpen(false)}
+        onPaid={(result) => {
+          setPayOpen(false);
+          void submitOrder(result.paymentId);
+        }}
+      />
     </Screen>
   );
 }

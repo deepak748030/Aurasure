@@ -57,6 +57,11 @@ const config = Object.freeze({
   }),
 
   morganFormat: process.env.MORGAN_FORMAT || 'dev',
+
+  razorpay: Object.freeze({
+    keyId: (process.env.RAZORPAY_KEY_ID || '').trim(),
+    keySecret: (process.env.RAZORPAY_KEY_SECRET || '').trim(),
+  }),
 });
 
 module.exports = config;

@@ -28,7 +28,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }): Reac
   const [systemDark, setSystemDark] = useState(() => Appearance.getColorScheme() === 'dark');
 
   useEffect(() => {
-    void readJson<ThemeMode>(StorageKey.theme, 'light').then(setModeState);
+    void readJson<ThemeMode>(StorageKey.theme, 'light').then((stored) => {
+      setModeState((prev) => (stored === prev ? prev : stored));
+    });
   }, []);
 
   useEffect(() => {

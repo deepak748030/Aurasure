@@ -113,6 +113,7 @@ export function MenuScreen({ navigation }: { navigation: Nav }): React.ReactElem
         wallet.refresh();
       }}
       refreshing={wallet.refreshing}
+      headerBackground={c.primary}
       header={
         <FlushSurface style={{ backgroundColor: c.primary }}>
           <View style={{ padding: spacing.edge, paddingTop: spacing.sm, gap: spacing.md }}>
@@ -121,7 +122,7 @@ export function MenuScreen({ navigation }: { navigation: Nav }): React.ReactElem
               onPress={() => navigation.navigate(isLoggedIn ? 'Profile' : 'Auth', isLoggedIn ? undefined : { mode: 'login' })}
               style={({ pressed }) => [styles.identity, { opacity: pressed ? 0.9 : 1 }]}
             >
-              <Avatar name={user?.name ?? 'Guest'} uri={user?.avatar?.uri ?? null} size={52} ring />
+              <Avatar name={user?.name ?? 'Guest'} uri={null} size={52} ring />
               <View style={{ flex: 1 }}>
                 <Text variant="h3" weight="bold" color={c.white} numberOfLines={1}>
                   {user?.name ?? 'Welcome to Aurasure'}
@@ -243,6 +244,9 @@ export function MenuScreen({ navigation }: { navigation: Nav }): React.ReactElem
                 const ok = await sheet.confirm({ title: 'Log out?', message: 'Your cart and favourites stay on this device.', confirmLabel: 'Log out', destructive: true, icon: 'logout' });
                 if (!ok) return;
                 await logout();
+                // Wait a frame so the confirm Modal fully unmounts before the
+                // "signed out" sheet opens — otherwise a leftover handle shows.
+                await new Promise((r) => setTimeout(r, 80));
                 sheet.info('Signed out', 'You can keep browsing as a guest.');
               })();
             }}

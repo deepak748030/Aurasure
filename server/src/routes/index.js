@@ -18,6 +18,7 @@ const vendorRoutes = require('./vendor.routes');
 const riderRoutes = require('./rider.routes');
 const flashSaleRoutes = require('./flashSale.routes');
 const appRoutes = require('./app.routes');
+const paymentRoutes = require('./payment.routes');
 
 const router = Router();
 

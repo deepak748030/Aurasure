@@ -41,7 +41,9 @@ const DEFAULTS = {
   payments: [
     { key: 'cod', label: 'Cash on delivery', sub: 'Pay the rider when it arrives', icon: 'cash', enabled: true },
     { key: 'wallet', label: 'Aurasure wallet', sub: 'Deducted instantly, refunded on cancellation', icon: 'wallet', enabled: true },
-    { key: 'upi', label: 'UPI / card', sub: 'Not enabled on this server build', icon: 'upi', enabled: false },
+    { key: 'upi', label: 'UPI / Paytm / PhonePe', sub: 'Pay online with Razorpay', icon: 'upi', enabled: true },
+    { key: 'card', label: 'Debit / credit card', sub: 'Visa, Mastercard, RuPay', icon: 'creditCard', enabled: true },
+    { key: 'netbanking', label: 'Net banking', sub: 'All major Indian banks', icon: 'bank', enabled: true },
   ],
   checkout: {
     tips: [0, 10, 20, 30, 50],

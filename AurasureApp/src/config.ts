@@ -21,12 +21,6 @@ export const API_PREFIX = '/api/v1';
 
 export const CURRENCY = (process.env.EXPO_PUBLIC_CURRENCY ?? '₹').trim() || '₹';
 
-/** Seeded demo customer so a fresh install can be explored in one tap. */
-export const DEMO_CREDENTIALS = {
-  phone: (process.env.EXPO_PUBLIC_DEMO_PHONE ?? '9876543210').trim(),
-  password: (process.env.EXPO_PUBLIC_DEMO_PASSWORD ?? 'aurasure123').trim(),
-};
-
 export const isApiConfigured = API_BASE_URL.length > 0;
 
 export const APP = {

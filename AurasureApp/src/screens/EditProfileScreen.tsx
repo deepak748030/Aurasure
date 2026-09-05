@@ -69,7 +69,7 @@ export function EditProfileScreen({ navigation }: { navigation: Nav }): React.Re
     >
       <View style={{ paddingHorizontal: spacing.edge, gap: spacing.md, paddingBottom: spacing.xxl }}>
         <View style={[styles.hero, { backgroundColor: c.surface, borderColor: c.border }]}>
-          <Avatar name={name || user?.name || 'Guest'} uri={null} size={76} ring />
+          <Avatar name={name || user?.name || 'Guest'} uri={user?.avatar?.uri ?? null} size={76} />
           <View style={{ flex: 1, gap: 3 }}>
             <Text variant="h3" weight="bold" numberOfLines={1}>
               {name || 'Your name'}

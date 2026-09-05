@@ -30,6 +30,10 @@
         "monochromeImage": "./assets/images/adaptive-icon-monochrome.png",
         "backgroundColor": "#67014B"
       },
+      "notification": {
+        "icon": "./assets/images/notification-icon.png",
+        "color": "#67014B"
+      },
       "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
     },
     "web": {

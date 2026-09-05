@@ -11,7 +11,7 @@ export type OrderStatus =
   | 'out_for_delivery'
   | 'delivered'
   | 'cancelled';
-export type PayBy = 'wallet' | 'cod' | 'upi' | 'card';
+export type PayBy = 'wallet' | 'cod' | 'upi' | 'card' | 'netbanking';
 
 /** Server-side image reference: `{ kind: 'uri', uri }` or `null`. */
 export interface ImageRef {

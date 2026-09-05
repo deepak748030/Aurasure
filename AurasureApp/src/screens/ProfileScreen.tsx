@@ -91,7 +91,7 @@ export function ProfileScreen({ navigation }: { navigation: Nav }): React.ReactE
         <FlushSurface style={{ backgroundColor: c.primary }}>
           <View style={styles.hero}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-              <Avatar name={user.name} uri={user.avatar?.uri ?? null} size={70} ring />
+              <Avatar name={user.name} uri={null} size={70} ring />
               <View style={{ flex: 1, gap: 2 }}>
                 <Text variant="h3" weight="bold" color={c.white} numberOfLines={1}>
                   {user.name}
@@ -224,6 +224,7 @@ export function ProfileScreen({ navigation }: { navigation: Nav }): React.ReactE
                 const ok = await sheet.confirm({ title: 'Log out?', message: 'You can still browse as a guest. Placing orders needs a sign-in.', confirmLabel: 'Log out', destructive: true, icon: 'logout' });
                 if (!ok) return;
                 await logout();
+                await new Promise((r) => setTimeout(r, 80));
                 sheet.info('Signed out', 'Browse as a guest, or sign back in any time.');
               })();
             }}

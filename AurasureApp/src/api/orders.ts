@@ -15,6 +15,7 @@ export interface CreateOrderInput {
   address: string;
   deliveryFee: number;
   payBy: PayBy;
+  paymentId?: string;
   couponCode?: string;
   etaMinutes?: number;
   instructions?: string;
@@ -34,6 +35,7 @@ export function createOrder(input: CreateOrderInput): Promise<CreateOrderResult>
       address: input.address,
       deliveryFee: input.deliveryFee,
       payBy: input.payBy,
+      ...(input.paymentId ? { paymentId: input.paymentId } : {}),
       ...(input.couponCode ? { couponCode: input.couponCode } : {}),
       ...(typeof input.etaMinutes === 'number' ? { etaMinutes: input.etaMinutes } : {}),
       ...(input.instructions ? { instructions: input.instructions } : {}),

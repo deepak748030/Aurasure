@@ -178,7 +178,7 @@ export function HomeShopScreen({ navigation }: { navigation: Nav }): React.React
         </Pressable>
       ) : null}
 
-      <View style={{ marginTop: spacing.sm }}>
+      <View>
         {loading ? (
           <SkeletonHero height={168} />
         ) : home.error && !data ? (

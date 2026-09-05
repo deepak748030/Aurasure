@@ -149,7 +149,7 @@ function shorten(value: string): string {
 
 function createStyles(c: Palette) {
   return StyleSheet.create({
-    hero: { paddingHorizontal: spacing.edge, paddingTop: spacing.sm, paddingBottom: spacing.md, gap: spacing.sm, borderBottomLeftRadius: 15, borderBottomRightRadius: 15 },
+    hero: { paddingHorizontal: spacing.edge, paddingTop: spacing.sm, paddingBottom: spacing.md, gap: spacing.sm },
     row: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
     greetCard: { flex: 1, gap: 1, minHeight: 54 },
     actions: { flexDirection: 'row', alignItems: 'center' },

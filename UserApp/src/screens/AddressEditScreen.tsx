@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
@@ -41,10 +41,17 @@ export function AddressEditScreen({ navigation, route }: { navigation: Nav; rout
   const [isDefault, setIsDefault] = useState(existing?.isDefault ?? addresses.length === 0);
   const [saveCoords, setSaveCoords] = useState(() => hasCoords(existing));
   const [busy, setBusy] = useState(false);
+  const [pinning, setPinning] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Only when the book is empty *and* we have not already tried — depending on
+  // `addresses.length` re-ran this fetch every time the list changed, and a
+  // user with zero addresses re-fetched on every render pass.
+  const triedLoad = useRef(false);
   useEffect(() => {
-    if (addresses.length === 0) void loadAddresses();
+    if (triedLoad.current || addresses.length > 0) return;
+    triedLoad.current = true;
+    void loadAddresses().catch(() => undefined);
   }, [addresses.length, loadAddresses]);
 
   const activeLabel = LABELS.find((row) => row.key === label) ?? LABELS[0]!;
@@ -88,7 +95,12 @@ export function AddressEditScreen({ navigation, route }: { navigation: Nav; rout
   };
 
   const useCurrentLocation = async (): Promise<void> => {
-    const next = await requestLocation();
+    if (pinning) return;
+    setPinning(true);
+    // `force` because this button means "read the GPS again" — everywhere else
+    // the cached fix is the right answer.
+    const next = await requestLocation({ force: true }).catch(() => null);
+    setPinning(false);
     if (!next) {
       sheet.info('Location unavailable', locationStatus === 'denied' ? 'Allow location for Aurasure in system settings, then try again.' : 'This device or browser did not return a location — type the address instead.', 'mapPinOff');
       return;
@@ -167,9 +179,11 @@ export function AddressEditScreen({ navigation, route }: { navigation: Nav; rout
 
         <View style={{ gap: 8 }}>
           <Button
-            title={coords && saveCoords ? 'Recenter on my location' : 'Pin current location'}
+            title={pinning ? 'Getting your location…' : coords && saveCoords ? 'Recenter on my location' : 'Pin current location'}
             variant="secondary"
             icon="navigation"
+            loading={pinning}
+            disabled={pinning}
             onPress={() => void useCurrentLocation()}
             style={{ alignSelf: 'stretch' }}
           />

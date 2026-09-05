@@ -11,8 +11,13 @@ import { isRunning, statusLabel } from '@/api/orders';
 import { statusIcon } from './TrackingStepper';
 import type { Order } from '@/types';
 
-/** Order row used by the Orders tab and profile "recent orders". */
-export function OrderCard({ order, onPress, onReorder }: { order: Order; onPress: () => void; onReorder?: () => void }): React.ReactElement {
+/** Order row used by the Orders tab and profile "recent orders".
+ *
+ *  `variant="row"` renders the same content with zero gap between rows: no
+ *  outer margin, no card radius/outline, just a hairline rule underneath so a
+ *  list reads as one continuous block instead of floating cards. The Orders
+ *  list uses it; the profile "recent orders" strip keeps the card look. */
+export function OrderCard({ order, onPress, onReorder, variant = 'card', last = false }: { order: Order; onPress: () => void; onReorder?: () => void; variant?: 'card' | 'row'; last?: boolean }): React.ReactElement {
   const c = useColors();
   const running = isRunning(order);
   const tone = order.status === 'cancelled' ? c.danger : order.status === 'delivered' ? c.success : c.primary;
@@ -24,7 +29,11 @@ export function OrderCard({ order, onPress, onReorder }: { order: Order; onPress
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      style={({ pressed }) => [styles.card, { backgroundColor: c.surface, borderColor: c.border, opacity: pressed ? 0.96 : 1 }]}
+      style={({ pressed }) =>
+        variant === 'row'
+          ? [styles.row, { backgroundColor: c.surface, borderBottomColor: c.border, borderBottomWidth: last ? 0 : StyleSheet.hairlineWidth, opacity: pressed ? 0.96 : 1 }]
+          : [styles.card, { backgroundColor: c.surface, borderColor: c.border, opacity: pressed ? 0.96 : 1 }]
+      }
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
         <View style={[styles.plate, { backgroundColor: order.status === 'cancelled' ? c.dangerBg : order.status === 'delivered' ? c.successBg : c.primarySoft }]}>
@@ -97,6 +106,8 @@ export function OrderCard({ order, onPress, onReorder }: { order: Order; onPress
 
 const styles = StyleSheet.create({
   card: { marginHorizontal: spacing.edge, marginTop: spacing.sm, padding: spacing.sm, borderRadius: radius.lg, borderWidth: 1, gap: 2 },
+  // Flush list row: no margin, no radius — separation comes from the hairline.
+  row: { paddingHorizontal: spacing.edge, paddingVertical: spacing.sm, gap: 2 },
   plate: { width: 32, height: 32, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   progressTrack: { flex: 1, height: 4, borderRadius: radius.pill, overflow: 'hidden' },
   progressFill: { height: 4, borderRadius: radius.pill },

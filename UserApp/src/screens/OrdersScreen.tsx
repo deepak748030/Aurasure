@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Screen } from '@/components/ui/Screen';
 import { SegmentedTabs } from '@/components/ui/SegmentedTabs';
 import { OrderCard } from '@/components/orders/OrderCard';
@@ -143,9 +143,17 @@ export function OrdersScreen({ navigation }: { navigation: Nav }): React.ReactEl
           onAction={tab === 'running' ? () => navigation.navigate('Tabs') : undefined}
         />
       ) : (
-        <View style={{ paddingBottom: spacing.lg }}>
-          {rows.map((order) => (
-            <OrderCard key={order.id} order={order} onPress={() => navigation.navigate('OrderDetail', { id: order.id })} onReorder={() => void reorder(order)} />
+        /* gap: 0 — rows sit flush; separation is the hairline each row draws. */
+        <View style={{ gap: 0, paddingBottom: spacing.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border }}>
+          {rows.map((order, index) => (
+            <OrderCard
+              key={order.id}
+              order={order}
+              variant="row"
+              last={index === rows.length - 1}
+              onPress={() => navigation.navigate('OrderDetail', { id: order.id })}
+              onReorder={() => void reorder(order)}
+            />
           ))}
         </View>
       )}

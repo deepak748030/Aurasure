@@ -24,9 +24,9 @@ const PAGES: { title: string; subtitle: string; body: string; image: number }[] 
     image: require('../../assets/images/onboarding-order.png'),
   },
   {
-    title: 'Track it to your door',
-    subtitle: 'Live status on every order',
-    body: 'Order placed → confirmed → preparing → on the way → delivered. Pay by cash or Aurasure wallet.',
+    title: 'Every order, right on time',
+    subtitle: 'Follow your delivery from kitchen to doorstep',
+    body: 'See every update in one place, from preparation to arrival, with clear delivery status at every step.'
     image: require('../../assets/images/onboarding-track.png'),
   },
 ];
@@ -56,8 +56,8 @@ export function OnboardingScreen({ navigation }: { navigation: { navigate: (name
       <View style={{ alignItems: 'center', marginBottom: spacing.md }}>
         <View
           style={{
-            width: 176,
-            height: 176,
+            width: 204,
+            height: 204,
             borderRadius: radius.pill,
             backgroundColor: c.primarySoft,
             borderWidth: 1,
@@ -70,7 +70,7 @@ export function OnboardingScreen({ navigation }: { navigation: { navigate: (name
             source={item.image}
             contentFit="contain"
             transition={180}
-            style={{ width: 164, height: 164, borderRadius: radius.pill }}
+            style={{ width: 192, height: 192, borderRadius: radius.pill }}
             accessibilityLabel={item.title}
           />
         </View>

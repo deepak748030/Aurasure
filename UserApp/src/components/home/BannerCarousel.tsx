@@ -63,7 +63,7 @@ export function BannerCarousel({ banners, onPress }: { banners: Banner[]; onPres
           <Pressable accessibilityRole="button" onPress={() => { haptic.light(); onPress(item); }} style={{ width, height }}>
             <View style={{ width, height }}>
               <SmartImage source={item.image} name={item.title} style={{ width, height }} radiusOverride={radius.flush} />
-              <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, top: 0, justifyContent: 'flex-end', padding: spacing.md, backgroundColor: 'rgba(20,6,20,0.30)' }}>
+              <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, top: 0, justifyContent: 'flex-end', padding: spacing.md, backgroundColor: c.isDark ? 'rgba(8,10,18,0.12)' : 'rgba(20,6,20,0.30)' }}>
                 {item.badge ? (
                   <View style={{ alignSelf: 'flex-start', marginBottom: 6, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.xs, backgroundColor: c.secondary }}>
                     <Text variant="micro" weight="semibold" color="#10241D">

@@ -47,6 +47,8 @@ const orderSchema = new mongoose.Schema(
     // Coupon that was redeemed on this order (kept for cancellation restores).
     couponId: { type: String, default: null },
     couponCode: { type: String, default: null },
+    // Reason the customer gave when cancelling (empty for live/active orders).
+    cancelReason: { type: String, default: '' },
     // Customer instruction, e.g. the cart's "if any product is not
     // available → …" preference. Shown to fulfilment in the admin console.
     instructions: { type: String, default: '' },

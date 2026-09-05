@@ -47,12 +47,6 @@ const SECTIONS: MenuSection[] = [
     ],
   },
   {
-    title: 'Manage',
-    rows: [
-      { label: 'Admin Console', icon: 'gauge', tint: '#EDE9FE', color: '#5B4BC4', route: 'admin' },
-    ],
-  },
-  {
     title: 'Promotional Activity',
     rows: [
       { label: 'Coupon', icon: 'ticket', tint: '#FFF3D6', color: '#DD9A0B', route: 'coupon' },

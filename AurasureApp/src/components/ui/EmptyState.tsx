@@ -1,34 +1,73 @@
 import React from 'react';
-import { View } from 'react-native';
-import { IconBox } from './IconBox';
+import { Pressable, View } from 'react-native';
 import { Text } from './Text';
-import { Button } from './Button';
-import { colors } from '@/theme/colors';
-import { radius } from '@/theme/tokens';
-import type { IconName } from '@/types';
+import { Icon, type IconName } from '@/lib/icons';
+import { useColors } from '@/theme/ThemeContext';
+import { radius, spacing } from '@/theme/tokens';
+import { haptic } from '@/lib/haptics';
 
-interface EmptyStateProps {
+/**
+ * Leaf component (no imports from Primitives/ErrorState) so both of those
+ * modules can depend on it without creating a require cycle.
+ */
+export function EmptyState({
+  icon = 'package',
+  title,
+  subtitle,
+  actionLabel,
+  onAction,
+  compact,
+}: {
   icon?: IconName;
   title: string;
   subtitle?: string;
   actionLabel?: string;
   onAction?: () => void;
-  tint?: string;
-}
-
-export function EmptyState({ icon = 'package', title, subtitle, actionLabel, onAction, tint }: EmptyStateProps): React.ReactElement {
+  compact?: boolean;
+}): React.ReactElement {
+  const c = useColors();
   return (
-    <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 56, paddingHorizontal: 32 }}>
-      <IconBox icon={icon} size={76} radiusSize={radius.lg} tint={tint ?? colors.brand[50]} iconColor={colors.brand[500]} iconSize={34} />
-      <Text variant="h3" weight="bold" color={colors.text} style={{ marginTop: 20, textAlign: 'center' }}>
+    <View style={{ alignItems: 'center', paddingVertical: compact ? 24 : 44, paddingHorizontal: 24, gap: spacing.sm }}>
+      <View
+        style={{
+          width: compact ? 54 : 72,
+          height: compact ? 54 : 72,
+          borderRadius: radius.xxl,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: c.primarySoft,
+        }}
+      >
+        <Icon name={icon} size={compact ? 24 : 32} color={c.primary} />
+      </View>
+      <Text variant="h3" weight="bold" center>
         {title}
       </Text>
       {subtitle ? (
-        <Text variant="body" color={colors.textSecondary} style={{ marginTop: 6, textAlign: 'center', maxWidth: 260 }}>
+        <Text variant="bodySm" tone="muted" center>
           {subtitle}
         </Text>
       ) : null}
-      {actionLabel ? <Button title={actionLabel} onPress={onAction} leftIcon="arrowRight" style={{ marginTop: 20 }} /> : null}
+      {actionLabel ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            haptic.medium();
+            onAction?.();
+          }}
+          style={{
+            marginTop: 4,
+            paddingHorizontal: 18,
+            paddingVertical: 10,
+            borderRadius: radius.pill,
+            backgroundColor: c.primary,
+          }}
+        >
+          <Text variant="subtitle" weight="semibold" color={c.onPrimary}>
+            {actionLabel}
+          </Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }

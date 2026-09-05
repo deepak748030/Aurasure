@@ -5,46 +5,43 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "aurasure",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "entryPoint": "index.js",
     "icon": "./assets/images/icon.png",
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#FFFFFF"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.aurasure.app",
-      "softwareKeyboardLayoutMode": "pan"
+      "bundleIdentifier": "com.aurasure.order",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Aurasure uses your location to show nearby kitchens, stores and honest delivery times."
+      }
     },
     "android": {
-      "package": "com.aurasure.app",
+      "package": "com.aurasure.order",
+      "edgeToEdgeEnabled": true,
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "monochromeImage": "./assets/images/adaptive-icon-monochrome.png",
-        "backgroundColor": "#5B46E5"
+        "backgroundColor": "#67014B"
       },
-      "navigationBarColor": "#F5EAF3"
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
     },
     "web": {
       "bundler": "metro",
       "favicon": "./assets/images/favicon.png"
-    },
-    "experiments": {
-      "tsconfigPaths": true
     },
     "plugins": [
       [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 240,
+          "imageWidth": 220,
           "resizeMode": "contain",
           "backgroundColor": "#FFFFFF"
         }
@@ -52,10 +49,13 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Aurasure uses your location only to show nearby restaurants, delivery times and serviceable products."
+          "locationWhenInUsePermission": "Aurasure uses your location only to show nearby kitchens, stores and delivery times."
         }
       ]
     ],
-    "backgroundColor": "#F5EAF3"
+    "experiments": {
+      "tsconfigPaths": true
+    },
+    "backgroundColor": "#FCFCFC"
   }
 }

@@ -1,42 +1,45 @@
-import React, { useEffect } from 'react';
-import { View } from 'react-native';
+import React from 'react';
+import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import * as SplashScreen from 'expo-splash-screen';
-import { AppNavigator } from './navigation/AppNavigator';
-import { CartProvider } from './context/CartContext';
-import { AppProvider } from './context/AppContext';
-import { SystemBarHost } from './components/ui/SystemBarHost';
-import { loadAppFonts } from './lib/fonts';
-import { colors } from './theme/colors';
-// Side-effect import: registers the API token provider (setTokenProvider) so
-// authenticated requests (profile, orders, checkout) attach the Bearer token.
-// Without this, the server rejects them with "Authentication token missing".
-import './api/session';
+import { ThemeProvider, useTheme } from '@/theme/ThemeContext';
+import { SheetProvider } from '@/components/sheet/SheetProvider';
+import { SessionProvider } from '@/context/SessionContext';
+import { CartProvider } from '@/context/CartContext';
+import { RootNavigator } from '@/navigation/RootNavigator';
 
-SplashScreen.preventAutoHideAsync().catch(() => undefined);
+/**
+ * Provider order matters:
+ *   ThemeProvider   → every surface reads colours from here
+ *   SheetProvider   → replaces alert()/confirm() app-wide (bottom sheet)
+ *   SessionProvider → token, user, module, address, favourites
+ *   CartProvider    → per-module carts (needs the session for the user key)
+ *   RootNavigator   → NavigationContainer + native stack + tabs
+ */
+function Shell(): React.ReactElement {
+  const { resolved } = useTheme();
+  return (
+    <>
+      {/* Status bar follows the resolved palette so the notch area never flashes white in dark mode. */}
+      <StatusBar style={resolved === 'dark' ? 'light' : 'dark'} />
+      <RootNavigator />
+    </>
+  );
+}
 
 export default function App(): React.ReactElement {
-  useEffect(() => {
-    loadAppFonts();
-    // Status bar / navigation bar look lives in SystemBarHost: edge-to-edge
-    // (always on in Expo SDK 54 / Android 16) makes setBackground*Async a
-    // no-op, so the app paints the strips itself and only asks the host for
-    // icon contrast.
-    SplashScreen.hideAsync().catch(() => undefined);
-  }, []);
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <AppProvider>
-          <CartProvider>
-            <View style={{ flex: 1, backgroundColor: colors.background }}>
-              <SystemBarHost />
-              <AppNavigator />
-            </View>
-          </CartProvider>
-        </AppProvider>
+        <ThemeProvider>
+          <SheetProvider>
+            <SessionProvider>
+              <CartProvider>
+                <Shell />
+              </CartProvider>
+            </SessionProvider>
+          </SheetProvider>
+        </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

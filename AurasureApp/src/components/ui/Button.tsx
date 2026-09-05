@@ -1,139 +1,130 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { Text } from './Text';
-import { Icon } from '@/lib/icons';
-import { colors } from '@/theme/colors';
-import { radius } from '@/theme/tokens';
+import { Icon, type IconName } from '@/lib/icons';
+import { useColors } from '@/theme/ThemeContext';
+import { radius, spacing } from '@/theme/tokens';
 import { haptic } from '@/lib/haptics';
-import type { IconName } from '@/types';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'login';
-type Size = 'sm' | 'md' | 'lg';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'dark' | 'light';
+export type ButtonSize = 'sm' | 'md' | 'lg';
 
-// Pill shapes at every size (borderRadius 999 + generous vertical padding).
-const SIZE: Record<Size, { height: number; pad: number; variant: 'button' | 'title' | 'subtitle'; icon: number }> = {
-  sm: { height: 42, pad: 0, variant: 'subtitle', icon: 16 },
-  md: { height: 50, pad: 0, variant: 'button', icon: 18 },
-  lg: { height: 62, pad: 0, variant: 'button', icon: 20 },
-};
-
-const GRADIENT: Record<Variant, [string, string]> = {
-  primary: colors.brandGradient,
-  login: ['#A4006B', '#72003F'],
-  success: ['#16A34A', '#0E9F88'],
-  danger: ['#EF4444', '#DC2626'],
-  secondary: [colors.surfaceAlt, colors.surfaceAlt],
-  ghost: [colors.brand[50], colors.brand[50]],
-};
-
-const TEXT_COLOR: Record<Variant, string> = {
-  primary: colors.white,
-  login: colors.white,
-  success: colors.white,
-  danger: colors.white,
-  secondary: '#8B0057',
-  ghost: colors.textSecondary,
-};
-
-// Flat (non-gradient) variants borrow the Sign In button's skin from the More
-// screen: soft plum fill, thin plum outline, fully rounded.
-const FLAT: Record<'secondary' | 'ghost', { bg: string; border: string }> = {
-  secondary: { bg: '#FAF0F9', border: '#E4BBD8' },
-  ghost: { bg: colors.surface, border: colors.border },
+const SIZES: Record<ButtonSize, { height: number; pad: number; icon: number; variant: 'button' | 'title' | 'subtitle' }> = {
+  sm: { height: 38, pad: spacing.sm, icon: 15, variant: 'subtitle' },
+  md: { height: 48, pad: spacing.md, icon: 18, variant: 'button' },
+  lg: { height: 56, pad: spacing.lg, icon: 20, variant: 'button' },
 };
 
 export interface ButtonProps {
-  title: string;
+  /** Either `title` or `label` may be used; both render the same text. */
+  title?: string;
+  label?: string;
   onPress?: () => void;
-  variant?: Variant;
-  size?: Size;
-  leftIcon?: IconName;
-  rightIcon?: IconName;
+  onLongPress?: () => void;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  icon?: IconName;
+  iconRight?: IconName;
   loading?: boolean;
   disabled?: boolean;
-  /** Stretches across the row. On by default - CTAs are full width app-wide. */
   fullWidth?: boolean;
+  /** Squared buttons for compact rows; pills (default) for CTAs. */
+  squared?: boolean;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
+  accessibilityLabel?: string;
 }
 
+/** Every tappable action in the app. No native alerts, no system menus. */
 export function Button({
   title,
+  label,
   onPress,
+  onLongPress,
   variant = 'primary',
   size = 'md',
-  leftIcon,
-  rightIcon,
-  loading = false,
-  disabled = false,
-  fullWidth = true,
+  icon,
+  iconRight,
+  loading,
+  disabled,
+  fullWidth,
+  squared,
   style,
+  testID,
+  accessibilityLabel,
 }: ButtonProps): React.ReactElement {
-  const s = SIZE[size];
-  const textColor = TEXT_COLOR[variant];
-  const isFlat = variant === 'secondary' || variant === 'ghost';
-  const flat = isFlat ? FLAT[variant as 'secondary' | 'ghost'] : undefined;
+  const c = useColors();
+  const s = SIZES[size];
+
+  const bg =
+    variant === 'primary'
+      ? c.primary
+      : variant === 'secondary'
+        ? c.primarySoft
+        : variant === 'danger'
+          ? c.danger
+          : variant === 'success'
+            ? c.success
+            : variant === 'dark'
+              ? c.primaryDeep
+              : variant === 'light'
+                ? c.white
+                : 'transparent';
+  const fg =
+    variant === 'primary' || variant === 'danger' || variant === 'success' || variant === 'dark'
+      ? c.onPrimary
+      : variant === 'light'
+        ? c.primary
+        : variant === 'secondary'
+          ? c.primary
+          : c.textSecondary;
+  const border = variant === 'ghost' ? c.border : variant === 'light' ? c.border : 'transparent';
+
+  const isDisabled = Boolean(disabled) || Boolean(loading);
 
   return (
     <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityState={{ disabled: isDisabled, busy: Boolean(loading) }}
       onPress={() => {
-        if (disabled || loading) return;
+        if (isDisabled) return;
         haptic.light();
         onPress?.();
       }}
-      disabled={disabled || loading}
+      onLongPress={onLongPress}
       style={({ pressed }) => [
         styles.base,
-        // A single width source: when fullWidth, the button occupies 100% of its
-        // parent's width. This is the only thing that decides width, so any two
-        // fullWidth buttons in the same container always match exactly — even
-        // when their label/icon lengths or fills (border vs no border) differ.
         {
-          width: fullWidth ? '100%' : undefined,
-          alignSelf: fullWidth ? 'stretch' : 'flex-start',
           height: s.height,
           paddingHorizontal: s.pad,
-          borderRadius: radius.pill,
-          opacity: disabled || loading ? 0.5 : pressed ? 0.94 : 1,
-          // Gradient variants fall back to their first stop when disabled,
-          // since the gradient layer is skipped for the dimmed state.
-          backgroundColor: flat ? flat.bg : disabled ? GRADIENT[variant][0] : 'transparent',
-          borderWidth: flat ? 1 : 0,
-          borderColor: flat ? flat.border : 'transparent',
-          // Keep a full-width button from ever being clipped by long content.
-          minWidth: fullWidth ? 0 : 120,
+          borderRadius: squared ? radius.md : radius.pill,
+          backgroundColor: bg,
+          borderColor: border,
+          borderWidth: variant === 'ghost' || variant === 'light' ? 1 : 0,
+          opacity: isDisabled ? 0.55 : pressed ? 0.88 : 1,
+          alignSelf: fullWidth ? 'stretch' : 'flex-start',
         },
         style,
       ]}
     >
-      {({ pressed }) => (
-        <View style={styles.inner}>
-          {!isFlat && !disabled && (
-            <LinearGradient
-              colors={GRADIENT[variant]}
-              style={[StyleSheet.absoluteFill, { borderRadius: radius.pill }]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            />
-          )}
-          <View style={styles.row} pointerEvents="none">
-            {loading ? (
-              <View style={styles.row}>
-                <ActivityIndicator color={textColor} style={styles.leftIcon} />
-                <Text variant={s.variant} color={textColor} weight="bold" numberOfLines={1} style={styles.label}>
-                  {title}
-                </Text>
-              </View>
-            ) : (
-              <>
-                {leftIcon ? <Icon name={leftIcon} size={s.icon} color={textColor} style={styles.leftIcon} /> : null}
-                <Text variant={s.variant} color={textColor} weight="bold" numberOfLines={1} style={styles.label}>
-                  {title}
-                </Text>
-                {rightIcon ? <Icon name={rightIcon} size={s.icon} color={textColor} style={styles.rightIcon} /> : null}
-              </>
-            )}
-          </View>
+      {loading ? (
+        <ActivityIndicator size="small" color={fg} />
+      ) : (
+        <View style={styles.row}>
+          {icon ? <Icon name={icon} size={s.icon} color={fg} /> : null}
+          <Text variant={s.variant} weight="bold" color={fg} numberOfLines={1} style={{ marginHorizontal: icon || iconRight ? 4 : 0 }}>
+            {title ?? label}
+          </Text>
+          {iconRight ? <Icon name={iconRight} size={s.icon} color={fg} /> : null}
         </View>
       )}
     </Pressable>
@@ -141,24 +132,90 @@ export function Button({
 }
 
 const styles = StyleSheet.create({
-  base: {
-    position: 'relative',
-    overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  inner: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  leftIcon: { marginRight: 8 },
-  rightIcon: { marginLeft: 8 },
-  label: { textAlign: 'center', letterSpacing: 0.2, maxWidth: '100%' },
+  base: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
 });
+
+/** Round icon-only control (header actions, qty steppers, close buttons). */
+export function IconButton({
+  name,
+  onPress,
+  size = 38,
+  iconSize = 18,
+  tone = 'surface',
+  badge,
+  filled,
+  disabled,
+  accessibilityLabel,
+  style,
+}: {
+  name: IconName;
+  onPress?: () => void;
+  size?: number;
+  iconSize?: number;
+  tone?: 'surface' | 'primary' | 'ghost' | 'danger' | 'translucent';
+  badge?: number;
+  filled?: boolean;
+  disabled?: boolean;
+  accessibilityLabel?: string;
+  style?: StyleProp<ViewStyle>;
+}): React.ReactElement {
+  const c = useColors();
+  const bg =
+    tone === 'primary' ? c.primary : tone === 'danger' ? c.dangerBg : tone === 'surface' ? c.surface : tone === 'translucent' ? `${c.white}CC` : 'transparent';
+  const fg = tone === 'primary' || tone === 'danger'
+    ? (tone === 'danger' ? c.danger : c.onPrimary)
+    : tone === 'translucent' && c.isDark
+      ? c.primaryDeep
+      : c.text;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? name}
+      disabled={disabled}
+      onPress={() => {
+        haptic.light();
+        onPress?.();
+      }}
+      style={({ pressed }) => [
+        {
+          width: size,
+          height: size,
+          borderRadius: radius.pill,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: bg,
+          borderWidth: tone === 'ghost' || tone === 'surface' || tone === 'translucent' ? 1 : 0,
+          borderColor: tone === 'translucent' ? `${c.white}55` : c.border,
+          opacity: disabled ? 0.5 : pressed ? 0.7 : 1,
+        },
+        style,
+      ]}
+    >
+      <Icon name={name} size={iconSize} color={fg} filled={filled} />
+      {typeof badge === 'number' && badge > 0 ? (
+        <View
+          style={{
+            position: 'absolute',
+            top: -2,
+            right: -2,
+            minWidth: 17,
+            height: 17,
+            paddingHorizontal: 4,
+            borderRadius: radius.pill,
+            backgroundColor: c.danger,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 2,
+            borderColor: c.surface,
+          }}
+        >
+          <Text variant="micro" weight="semibold" color={c.white}>
+            {badge > 9 ? '9+' : badge}
+          </Text>
+        </View>
+      ) : null}
+    </Pressable>
+  );
+}

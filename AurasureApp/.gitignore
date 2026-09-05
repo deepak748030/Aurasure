@@ -1,4 +1,5 @@
 node_modules/
+bun.lock
 .expo/
 dist/
 web-build/
@@ -8,12 +9,7 @@ npm-debug.*
 *.p12
 *.key
 *.mobileprovision
-*.orig.*
-web-build/
 .DS_Store
-coverage/
-
-# Local environment (kept out of git; .env.example documents the vars)
 .env
 .env.local
 .env.*.local

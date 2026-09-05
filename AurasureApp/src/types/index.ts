@@ -1,48 +1,112 @@
-import type { ImageSourcePropType } from 'react-native';
-import type { IconName } from '@/lib/icons';
+/**
+ * Types for every payload the Aurasure Node.js API (`server/`) returns.
+ * Field names match the Mongoose models 1:1 so no mapping layer is needed.
+ */
 
 export type ModuleKey = 'food' | 'shop';
+export type OrderStatus =
+  | 'placed'
+  | 'confirmed'
+  | 'preparing'
+  | 'out_for_delivery'
+  | 'delivered'
+  | 'cancelled';
+export type PayBy = 'wallet' | 'cod' | 'upi' | 'card';
 
-export type ImageRef =
-  | { kind: 'asset'; source: ImageSourcePropType }
-  | { kind: 'uri'; uri: string }
-  | null;
+/** Server-side image reference: `{ kind: 'uri', uri }` or `null`. */
+export interface ImageRef {
+  kind: 'uri';
+  uri: string;
+}
+
+export interface UserAddress {
+  id: string;
+  label: string;
+  line: string;
+  city: string;
+  pin: string;
+  isDefault: boolean;
+  lat: number | null;
+  lng: number | null;
+}
+
+export interface FavoriteRef {
+  module: ModuleKey;
+  refId: string;
+}
+
+export interface LedgerTx {
+  id: string;
+  type: 'credit' | 'debit';
+  title: string;
+  note: string;
+  amount: number;
+  balanceAfter: number;
+  createdAt: string;
+}
+
+export interface LoyaltyTx {
+  id: string;
+  type: 'earned' | 'redeemed' | 'reversed';
+  title: string;
+  note: string;
+  points: number;
+  balanceAfter: number;
+  createdAt: string;
+}
+
+export interface UserCoupon {
+  id: string;
+  code: string;
+  title: string;
+  subtitle: string;
+  minOrder: number;
+  offType: 'flat' | 'percent';
+  offValue: number;
+  expiresAt: string | null;
+  usedAt: string | null;
+}
+
+export interface UserProfile {
+  id: string;
+  role: 'customer' | 'admin' | 'vendor' | 'delivery';
+  name: string;
+  email?: string;
+  phone: string;
+  avatar: ImageRef | null;
+  wallet: number;
+  loyaltyPoints: number;
+  coupons?: UserCoupon[];
+  referralCode?: string;
+  referredBy?: string | null;
+  partnerApplication?: {
+    kind: 'delivery' | 'vendor';
+    name: string;
+    city: string;
+    appliedAt: string;
+    status: string;
+  } | null;
+  addresses: UserAddress[];
+  favorites: FavoriteRef[];
+  createdAt: string;
+}
 
 export interface FoodCategory {
   id: string;
   name: string;
-  icon: IconName;
-  image?: ImageRef;
+  icon: string;
+  image: ImageRef | null;
+  sortOrder: number;
 }
 
-/** Curated "Just for You" collection tile (Litti Chokha, Veg Biryani...). */
 export interface FoodVibe {
   id: string;
   name: string;
   tagline: string;
-  image: ImageRef;
+  image: ImageRef | null;
   from: string;
   to: string;
-}
-
-export interface FoodItem {
-  id: string;
-  restaurantId: string;
-  name: string;
-  description: string;
-  price: number;
-  mrp?: number;
-  rating: number;
-  reviews: number;
-  prepTime: number;
-  isVeg: boolean;
-  isBestseller?: boolean;
-  isPopular?: boolean;
-  isSpecial?: boolean;
-  vibeId?: string;
-  tags: string[];
-  image: ImageRef;
-  categoryIds: string[];
+  sortOrder: number;
 }
 
 export interface Restaurant {
@@ -64,27 +128,85 @@ export interface Restaurant {
   isPopular?: boolean;
   offer?: string;
   line?: string;
-  cover: ImageRef;
+  city?: string;
+  lat?: number | null;
+  lng?: number | null;
+  cover: ImageRef | null;
   tags: string[];
   categoryIds: string[];
+}
+
+/** `variants` / `addonGroups` are free-form on the server - read defensively. */
+export interface VariantOption {
+  label?: string;
+  name?: string;
+  title?: string;
+  price?: number;
+  optionPrice?: number;
+  isDefault?: boolean;
+}
+
+export interface AddonGroup {
+  title?: string;
+  name?: string;
+  required?: boolean;
+  min?: number;
+  max?: number;
+  options?: VariantOption[];
+}
+
+export interface CatalogItem {
+  id: string;
+  restaurantId?: string;
+  storeId?: string;
+  name: string;
+  brand?: string;
+  description: string;
+  price: number;
+  mrp?: number;
+  rating: number;
+  reviews: number;
+  prepTime?: number;
+  deliveryMins?: number;
+  isVeg?: boolean;
+  inStock?: boolean;
+  isAvailable?: boolean;
+  isBestseller?: boolean;
+  isPopular?: boolean;
+  isSpecial?: boolean;
+  isTrending?: boolean;
+  isSpecialOffer?: boolean;
+  isNew?: boolean;
+  vibeId?: string;
+  categoryId?: string;
+  categoryIds?: string[];
+  tags: string[];
+  colors?: string[];
+  sizes?: string[];
+  image: ImageRef | null;
+  variants?: VariantOption[];
+  addonGroups?: AddonGroup[];
+  stockQty?: number | null;
+  approvalStatus?: string;
 }
 
 export interface ShopCategory {
   id: string;
   name: string;
-  icon: IconName;
+  icon: string;
   tagline?: string;
-  image?: ImageRef;
+  image: ImageRef | null;
+  sortOrder: number;
 }
 
 export interface ShopStore {
   id: string;
   name: string;
-  brand: string;
-  road: string;
-  house: string;
+  brand?: string;
+  road?: string;
+  house?: string;
   city: string;
-  pin: string;
+  pin?: string;
   rating: number;
   reviews: number;
   deliveryMins: number;
@@ -93,40 +215,15 @@ export interface ShopStore {
   promo?: string;
   isNiche?: boolean;
   isPopular?: boolean;
+  isClosed?: boolean;
   tags: string[];
   categoryIds: string[];
-  cover: ImageRef;
+  lat?: number | null;
+  lng?: number | null;
+  cover: ImageRef | null;
 }
 
-export interface Product {
-  id: string;
-  storeId: string;
-  name: string;
-  brand: string;
-  description: string;
-  price: number;
-  mrp: number;
-  rating: number;
-  reviews: number;
-  inStock: boolean;
-  isNew?: boolean;
-  isTrending?: boolean;
-  isBestseller?: boolean;
-  isSpecialOffer?: boolean;
-  deliveryMins: number;
-  tags: string[];
-  colors: string[];
-  sizes?: string[];
-  image: ImageRef;
-  categoryId: string;
-}
-
-/** Where a banner should land when tapped. */
-export type BannerTarget =
-  | { kind: 'search' }
-  | { kind: 'product'; productId: string }
-  | { kind: 'category'; categoryId: string }
-  | { kind: 'store'; storeId: string };
+export type AnyOutlet = Restaurant & Partial<ShopStore>;
 
 export interface Banner {
   id: string;
@@ -134,176 +231,80 @@ export interface Banner {
   title: string;
   subtitle: string;
   badge?: string;
-  image: ImageRef;
-  target?: BannerTarget;
+  image: ImageRef | null;
+  target?: { kind: 'search' } | { kind: 'product'; productId: string } | { kind: 'category'; categoryId: string } | { kind: 'store'; storeId: string };
+  sortOrder: number;
+  active: boolean;
 }
 
-export type CartKind = 'food' | 'shop';
-
-export interface CartItem {
+export interface CartLine {
+  /** Stable cart key: refId + variant + addons + color + size. */
   id: string;
   refId: string;
-  kind: CartKind;
+  kind: ModuleKey;
+  name: string;
+  image: ImageRef | null;
+  /** Base catalogue price (server repricing ignores this). */
+  unitPrice: number;
+  /** Unit price incl. variant + add-on surcharge (what the user sees). */
+  linePrice: number;
+  qty: number;
+  variant?: string;
+  addons?: string[];
+  color?: string;
+  size?: string;
+  outletId: string;
+  outletName: string;
+  meta?: string;
+}
+
+export interface OrderLine {
+  id: string;
+  refId: string;
+  kind: ModuleKey;
   name: string;
   meta?: string;
   unitPrice: number;
   qty: number;
-  image: ImageRef;
+  image: ImageRef | null;
 }
-
-export type OrderStatus =
-  | 'placed'
-  | 'confirmed'
-  | 'preparing'
-  | 'out_for_delivery'
-  | 'delivered'
-  | 'cancelled';
 
 export interface Order {
   id: string;
   code: string;
   module: ModuleKey;
+  vendorId: string | null;
+  outletId: string | null;
   placedAt: string;
   status: OrderStatus;
-  items: CartItem[];
+  items: OrderLine[];
   itemTotal: number;
   deliveryFee: number;
   discount: number;
   total: number;
+  payBy: PayBy;
+  walletPaid: number;
+  loyaltyEarned: number;
   etaMinutes: number;
   address: string;
-  /** Payment channel - wallet orders were deducted from the user balance. */
-  payBy?: 'wallet' | 'cod' | 'upi' | 'card';
-  walletPaid?: number;
-  loyaltyEarned?: number;
-  /** Coupon redeemed on this order (server stores it for cancel restores). */
-  couponId?: string | null;
-  couponCode?: string | null;
-  /** Reason the customer gave when cancelling (empty for active orders). */
-  cancelReason?: string;
-  /** Customer instruction (e.g. "if any product is not available → call me"). */
-  instructions?: string;
-  /** Delivery partner / rider task info - filled once an order is on the way. */
-  delivery?: {
-    taskId?: string;
-    state?: string;
-    pickupOtp?: string;
-    riderName?: string;
-    riderPhone?: string;
-  } | null;
+  instructions: string;
+  couponCode: string | null;
+  cancelReason: string;
+  deliveredAt: string | null;
+  deliveryTaskId?: string | null;
+  deliveryPartnerId?: string | null;
   deliveryPartnerName?: string;
   deliveryPartnerPhone?: string;
-  deliveredAt?: string;
 }
 
-export interface Address {
-  id: string;
-  label: string;
-  line: string;
-  city: string;
-  pin: string;
-  isDefault: boolean;
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
 }
 
-export interface UserProfile {
-  name: string;
-  email: string;
-  phone: string;
-  avatar: ImageRef;
-  wallet: number;
-  addresses: Address[];
+export interface ApiList<T> {
+  items: T[];
+  meta?: PaginationMeta;
 }
-
-/* ---------------------------- Rewards ---------------------------- */
-
-export interface WalletTx {
-  id: string;
-  type: 'credit' | 'debit';
-  title: string;
-  note?: string;
-  amount: number;
-  balanceAfter: number;
-  createdAt: string;
-}
-
-export interface WalletData {
-  balance: number;
-  transactions: WalletTx[];
-}
-
-export interface LoyaltyTx {
-  id: string;
-  type: 'earned' | 'redeemed' | 'reversed';
-  title: string;
-  note?: string;
-  points: number;
-  balanceAfter: number;
-  createdAt: string;
-}
-
-export interface LoyaltyData {
-  points: number;
-  tier: string;
-  activity: LoyaltyTx[];
-}
-
-export interface Coupon {
-  id: string;
-  code: string;
-  title: string;
-  subtitle?: string;
-  minOrder: number;
-  offType: 'flat' | 'percent';
-  offValue: number;
-  expiresAt: string | null;
-  usedAt: string | null;
-}
-
-export interface ReferralInfo {
-  code: string;
-  earnings: number;
-  friends: number;
-  referredBy: string | null;
-}
-
-export interface PartnerApplication {
-  kind: 'delivery' | 'vendor';
-  name: string;
-  city: string;
-  appliedAt: string;
-  status: string;
-}
-
-/* ---------------------------- Admin console ---------------------------- */
-
-/** Order as seen by the admin console - includes who placed it. */
-export interface AdminOrder extends Order {
-  user?: { name: string; phone: string } | null;
-}
-
-export interface AdminPartnerApplication {
-  userId: string;
-  name: string;
-  phone: string;
-  kind: 'delivery' | 'vendor';
-  city: string;
-  appliedAt: string | null;
-  status: 'submitted' | 'approved' | 'rejected';
-  note?: string;
-}
-
-export interface AdminStats {
-  users: number;
-  restaurants: number;
-  foodItems: number;
-  shops: number;
-  products: number;
-  orders: number;
-  revenue: number;
-  liveOrders: number;
-  cancelledOrders: number;
-  walletCollected: number;
-  pendingPartners: number;
-}
-
-export type { IconName } from '@/lib/icons';

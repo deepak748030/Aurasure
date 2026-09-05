@@ -1,39 +1,61 @@
-'use strict';
+/**
+ * Session store: the JWT lives in AsyncStorage, the in-memory copy keeps the
+ * synchronous `getToken` contract the API client needs.
+ */
 
-import { API_PASSWORD, API_PHONE, isApiEnabled } from './config';
-import { apiPost, setTokenProvider } from './client';
+import type { UserProfile } from '@/types';
+import { StorageKey, readJson, removeKey, writeJson } from '@/lib/storage';
 
 let token: string | null = null;
-let pending: Promise<string | null> | null = null;
+let cache: UserProfile | null = null;
+const listeners = new Set<() => void>();
 
-async function acquire(): Promise<string | null> {
-  try {
-    const data = await apiPost<{ token: string }>('/auth/login', {
-      phone: API_PHONE,
-      password: API_PASSWORD,
-    });
-    token = data.token;
-    return token;
-  } catch {
-    // Server down / 503 / bad credentials → callers fall back to mock data.
-    return null;
-  }
+export function subscribeSession(fn: () => void): () => void {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
 }
 
-/**
- * Returns the demo session token, logging in silently on first use.
- * Returns `null` when the API is off or the server is unavailable.
- */
-export function getToken(): Promise<string | null> {
-  if (!isApiEnabled) return Promise.resolve(null);
-  if (token) return Promise.resolve(token);
-  if (!pending) pending = acquire().finally(() => { pending = null; });
-  return pending;
+function emit(): void {
+  listeners.forEach((fn) => fn());
 }
 
-/** True when a live session is available (used by account endpoints). */
-export async function hasSession(): Promise<boolean> {
-  return (await getToken()) !== null;
+/** Used by `api/client` - never throws, returns null when signed out. */
+export async function getToken(): Promise<string | null> {
+  if (token) return token;
+  const stored = await readJson<string | null>(StorageKey.token, null);
+  token = typeof stored === 'string' && stored.length > 0 ? stored : null;
+  return token;
 }
 
-setTokenProvider(getToken);
+export function getCachedUser(): UserProfile | null {
+  return cache;
+}
+
+export async function restoreSession(): Promise<UserProfile | null> {
+  await getToken();
+  cache = await readJson<UserProfile | null>(StorageKey.user, null);
+  emit();
+  return cache;
+}
+
+export async function persistSession(next: { token: string; user: UserProfile }): Promise<void> {
+  token = next.token;
+  cache = next.user;
+  await writeJson(StorageKey.token, next.token);
+  await writeJson(StorageKey.user, next.user);
+  emit();
+}
+
+export async function patchUser(next: Partial<UserProfile>): Promise<void> {
+  cache = cache ? { ...cache, ...next } : null;
+  if (cache) await writeJson(StorageKey.user, cache);
+  emit();
+}
+
+export async function clearSession(): Promise<void> {
+  token = null;
+  cache = null;
+  await removeKey(StorageKey.token);
+  await removeKey(StorageKey.user);
+  emit();
+}

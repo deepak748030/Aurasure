@@ -9,152 +9,232 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { Text } from './Text';
-import { colors } from '@/theme/colors';
-import { layout } from '@/theme/tokens';
-import { useContentBottomInset, useIsInsideTabs } from '@/hooks/useBottomInset';
-import { useScreenBars, type SystemBarStyle } from '@/lib/systemBars';
+import { IconButton } from './Button';
+import { Icon, type IconName } from '@/lib/icons';
+import { useColors } from '@/theme/ThemeContext';
+import { layout, radius, spacing } from '@/theme/tokens';
+import { haptic } from '@/lib/haptics';
 
-interface ScreenProps {
+/**
+ * One screen shell for the whole app so the layout rules stay enforced:
+ *   • left/right gutter is exactly `layout.contentHorizontalPadding` (4)
+ *   • vertical padding is 0 at the top - rows own their own rhythm
+ *   • `padded={false}` + `gap 0` is used by map / flat-list surfaces
+ */
+
+export interface ScreenProps {
   children: React.ReactNode;
   title?: string;
   subtitle?: string;
-  headerRight?: React.ReactNode;
   headerLeft?: React.ReactNode;
+  headerRight?: React.ReactNode;
+  /** Custom header replaces title/subtitle entirely (home hero, store banner). */
   header?: React.ReactNode;
-  refreshing?: boolean;
+  /** Renders a back chevron (auto-pops the navigator). */
+  back?: boolean;
   onRefresh?: () => void;
-  keyboardAvoiding?: boolean;
-  contentStyle?: StyleProp<ViewStyle>;
-  padded?: boolean;
+  refreshing?: boolean;
   scroll?: boolean;
+  /** Horizontal 4px gutter - turned off for full-bleed map / list surfaces. */
+  padded?: boolean;
+  keyboardAvoiding?: boolean;
   backgroundColor?: string;
-  /**
-   * Color of the app-bar strip, i.e. the surface painted behind the status bar
-   * (the Android notification bar) plus the header. Defaults to the soft plum
-   * the tab bar uses; pass a screen's own hero color (e.g. `colors.appBarHero`)
-   * to make the notification bar bleed into that hero. Pass `null` to skip the
-   * band entirely and let `backgroundColor` show through.
-   */
-  appBarColor?: string | null;
-  /** Force the status bar icon color; auto (white on dark, ink on light) by default. */
-  statusBarStyle?: SystemBarStyle;
-  /**
-   * Which safe-area edges the wrapper should respect. Top and the landscape
-   * cutouts are handled here once, so children never add `insets.top`
-   * themselves. Screens that draw their own edge-to-edge hero pass `['top']`
-   * only, or `[]` when they manage it internally.
-   */
-  edges?: ('top' | 'right' | 'bottom' | 'left')[];
+  contentContainerStyle?: StyleProp<ViewStyle>;
+  style?: StyleProp<ViewStyle>;
+  /** Safe edges the shell should respect (top/left/right by default). */
+  edges?: ('top' | 'left' | 'right' | 'bottom')[];
+  scrollRef?: React.RefObject<ScrollView | null>;
+  onScroll?: (event: { nativeEvent: { contentOffset: { y: number } } }) => void;
+  /** Pinned above the safe area (pay bars, "view cart" strips). */
+  stickyFooter?: React.ReactNode;
+  /** Tints the status bar area with the header colour instead of the page bg. */
+  headerBackground?: string;
 }
 
 export function Screen({
   children,
   title,
   subtitle,
-  headerRight,
   headerLeft,
+  headerRight,
   header,
-  refreshing,
+  back,
   onRefresh,
-  keyboardAvoiding = false,
-  contentStyle,
-  padded = true,
+  refreshing,
   scroll = true,
-  backgroundColor = colors.background,
-  appBarColor = colors.appBar,
-  statusBarStyle,
+  padded = true,
+  keyboardAvoiding,
+  backgroundColor,
+  contentContainerStyle,
+  style,
   edges = ['top', 'left', 'right'],
+  scrollRef,
+  onScroll,
+  stickyFooter,
+  headerBackground,
 }: ScreenProps): React.ReactElement {
+  const c = useColors();
   const insets = useSafeAreaInsets();
-  const insideTabs = useIsInsideTabs();
-  const contentBottom = useContentBottomInset(24);
-  const hasHeader = Boolean(header || title || subtitle || headerRight || headerLeft);
-  const respectTop = edges.includes('top');
-  const barColor = appBarColor ?? backgroundColor;
+  const navigation = useNavigation();
+  const bg = backgroundColor ?? c.bg;
+  const showHeader = Boolean(header || title || subtitle || headerRight || back || headerLeft);
 
-  // Notification bar takes this screen's app-bar color (SystemBarHost derives
-  // the icon contrast from it); the bottom strip is always the light tab bar, so
-  // the gesture pill / back buttons stay dark there.
-  useScreenBars(barColor, { style: statusBarStyle, navigationBar: colors.appBar });
-
-  const headerEl = (): React.ReactNode => {
-    if (header) return header;
-    if (!hasHeader) return null;
-    return (
+  const headerNode = showHeader ? (
+    header ?? (
       <View
         style={{
-          // The band above already reserves the status bar area, so the
-          // header only needs its own breathing room.
-          paddingTop: 10,
-          paddingHorizontal: layout.contentHorizontalPadding,
-          paddingBottom: 12,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: spacing.sm,
+          minHeight: layout.headerHeight - 12,
+          paddingHorizontal: spacing.edge,
+          paddingTop: 4,
+          paddingBottom: 6,
         }}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 40 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-            {headerLeft}
-            <View style={{ flex: 1 }}>
-              {title ? <Text variant="h2" weight="bold" color={colors.text}>{title}</Text> : null}
-              {subtitle ? <Text variant="caption" color={colors.textSecondary}>{subtitle}</Text> : null}
-            </View>
-          </View>
-          {headerRight ? <View>{headerRight}</View> : null}
-        </View>
-      </View>
-    );
-  };
-
-  const body = scroll ? (
-    <ScrollView
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-      contentContainerStyle={[
-        padded ? { paddingHorizontal: layout.contentHorizontalPadding } : null,
-        { paddingTop: hasHeader ? 8 : 4, paddingBottom: contentBottom },
-        contentStyle,
-      ]}
-      refreshControl={
-        onRefresh ? (
-          <RefreshControl
-            refreshing={Boolean(refreshing)}
-            onRefresh={onRefresh}
-            tintColor={colors.brand[500]}
-            colors={[colors.brand[500]]}
-            progressBackgroundColor={colors.surface}
+        {back ? (
+          <IconButton
+            name="chevronLeft"
+            accessibilityLabel="Go back"
+            onPress={() => {
+              haptic.light();
+              if (navigation.canGoBack()) navigation.goBack();
+            }}
+            size={34}
+            iconSize={18}
           />
-        ) : undefined
-      }
-    >
-      {children}
-    </ScrollView>
-  ) : (
-    <View style={[{ flex: 1, paddingBottom: contentBottom }, contentStyle]}>{children}</View>
+        ) : null}
+        {headerLeft}
+        <View style={{ flex: 1 }}>
+          {title ? (
+            <Text variant="h3" weight="semibold" numberOfLines={1}>
+              {title}
+            </Text>
+          ) : null}
+          {subtitle ? (
+            <Text variant="caption" tone="muted" numberOfLines={1}>
+              {subtitle}
+            </Text>
+          ) : null}
+        </View>
+        {headerRight}
+      </View>
+    )
+  ) : null;
+
+  const content = (
+    <>
+      {headerNode ? <View style={{ backgroundColor: headerBackground ?? bg }}>{headerNode}</View> : null}
+      {scroll ? (
+        <ScrollView
+          ref={scrollRef}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={[
+            padded ? { paddingHorizontal: layout.contentHorizontalPadding } : null,
+            { paddingTop: 0, paddingBottom: insets.bottom + spacing.xxl },
+            contentContainerStyle,
+          ]}
+          refreshControl={
+            onRefresh ? (
+              <RefreshControl
+                refreshing={Boolean(refreshing)}
+                onRefresh={onRefresh}
+                tintColor={c.primary}
+                colors={[c.primary]}
+                progressBackgroundColor={c.surface}
+              />
+            ) : undefined
+          }
+        >
+          {children}
+        </ScrollView>
+      ) : (
+        <View style={{ flex: 1, paddingHorizontal: padded ? layout.contentHorizontalPadding : 0 }}>{children}</View>
+      )}
+    </>
   );
 
-  const headerNode = headerEl();
-
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor }} edges={edges.filter((edge) => edge !== 'top')}>
-      {/* App-bar strip: paints the area the transparent status bar sits over,
-          so the notification bar always carries the app color. */}
-      <View style={{ backgroundColor: barColor, paddingTop: respectTop ? insets.top : 0 }}>
-        {headerNode}
+    <SafeAreaView
+      edges={edges.filter((edge) => edge !== 'bottom' || Boolean(stickyFooter))}
+      style={{ flex: 1, backgroundColor: bg }}
+    >
+      <View style={{ flex: 1, backgroundColor: bg }}>
+        {stickyFooter ? (
+          <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 20, backgroundColor: 'transparent' }}>
+            {stickyFooter}
+          </View>
+        ) : null}
+        {keyboardAvoiding ? (
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
+          >
+            {content}
+          </KeyboardAvoidingView>
+        ) : (
+          content
+        )}
       </View>
-      {keyboardAvoiding ? (
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          // Inside the tabs the screen already sits above the bar, so nothing
-          // has to be compensated; outside them only the nav bar inset does.
-          keyboardVerticalOffset={insideTabs ? 0 : insets.bottom}
-          enabled
-        >
-          {body}
-        </KeyboardAvoidingView>
-      ) : (
-        body
-      )}
     </SafeAreaView>
+  );
+}
+
+/** Full-bleed surface: no 4px gutter, no radius, no vertical gaps (map/lists). */
+export function FlushSurface({
+  children,
+  height,
+  style,
+}: {
+  children: React.ReactNode;
+  height?: number;
+  style?: StyleProp<ViewStyle>;
+}): React.ReactElement {
+  const c = useColors();
+  return (
+    <View style={[{ backgroundColor: c.mapBase, height, borderRadius: radius.flush, overflow: 'hidden' }, style]}>
+      {children}
+    </View>
+  );
+}
+
+/** Simple 3-line page title block used by menu-ish screens. */
+export function PageTitle({
+  title,
+  subtitle,
+  icon,
+  right,
+}: {
+  title: string;
+  subtitle?: string;
+  icon?: IconName;
+  right?: React.ReactNode;
+}): React.ReactElement {
+  const c = useColors();
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.edge }}>
+      {icon ? (
+        <View style={{ width: 36, height: 36, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: c.primarySoft }}>
+          <Icon name={icon} size={18} color={c.primary} />
+        </View>
+      ) : null}
+      <View style={{ flex: 1 }}>
+        <Text variant="h2" weight="bold">
+          {title}
+        </Text>
+        {subtitle ? (
+          <Text variant="caption" tone="muted">
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
+      {right}
+    </View>
   );
 }

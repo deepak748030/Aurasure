@@ -1,91 +1,59 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 
-/**
- * The five tabs are identical in both modules (Home, Likes, Cart, Orders,
- * Menu); only the screens behind them change with the selected module.
- */
-export type MainTabsParamList = {
-  Home: NavigatorScreenParams<HomeStackParamList>;
-  Likes: NavigatorScreenParams<LikesStackParamList>;
-  Cart: NavigatorScreenParams<CartStackParamList>;
-  Orders: NavigatorScreenParams<OrdersStackParamList>;
-  Menu: NavigatorScreenParams<MenuStackParamList>;
-};
+export type TabName = 'Home' | 'Favorites' | 'Cart' | 'Orders' | 'Menu';
 
-/**
- * Home holds the module-specific landing screen plus everything reachable from
- * it, so detail navigation stays local to the tab instead of jumping between
- * nested navigators. FoodHome/ShopHome are swapped by the selected module.
- */
-export type HomeStackParamList = {
-  FoodHome: undefined;
-  ShopHome: undefined;
-  Restaurant: { restaurantId: string };
-  Product: { productId: string };
-  Search: undefined;
-  /** E-commerce category landing (e.g. all sunglasses). */
-  ShopCategory: { categoryId: string };
-  /** E-commerce store landing - shows only that store's items. */
-  Store: { storeId: string };
-  /** "See all" grid reached from the round arrows: products, stores or food. */
-  SeeAll: {
-    mode:
-      | 'popular'
-      | 'special'
-      | 'recommended'
-      | 'stores'
-      | 'foodPopular'
-      | 'foodOffers'
-      | 'foodVibes'
-      | 'foodNew'
-      | 'foodNearby';
-    title: string;
-    vibeId?: string;
-  };
-};
-
-export type LikesStackParamList = {
-  Likes: undefined;
-};
-
-export type CartStackParamList = {
+export type RootStackParamList = {
+  Splash: undefined;
+  Onboarding: undefined;
+  ModulePick: undefined;
+  Location: { from?: 'gate' | 'home' } | undefined;
+  Auth: { mode?: 'login' | 'register' } | undefined;
+  Tabs: NavigatorScreenParams<Record<TabName, undefined>>;
+  Outlet: { module: 'food' | 'shop'; id: string; name?: string };
+  Item: { module: 'food' | 'shop'; id: string };
+  Category: { module: 'food' | 'shop'; id: string; name: string };
+  Vibe: { id: string; name: string; tagline?: string };
+  FlashSale: undefined;
+  Brands: undefined;
+  BrandItems: { id: string; name: string };
+  SeeAll: { kind: 'restaurants' | 'items' | 'products' | 'stores' | 'offers' | 'popular' | 'new'; title: string; categoryId?: string };
+  Search: { initial?: string } | undefined;
   Cart: undefined;
   Checkout: undefined;
+  OrderSuccess: { id: string };
+  OrderDetail: { id: string };
+  TrackOrder: { id: string };
+  Addresses: undefined;
+  AddressEdit: { id?: string } | undefined;
+  Favorites: undefined;
+  Wallet: undefined;
+  Loyalty: undefined;
+  Coupons: undefined;
+  ReferEarn: undefined;
+  Profile: undefined;
+  EditProfile: undefined;
+  Settings: undefined;
+  Notifications: undefined;
+  Help: undefined;
+  Policy: { kind: 'cancellation' | 'refund' | 'privacy' | 'terms' };
+  Partner: undefined;
 };
 
-export type OrdersStackParamList = {
-  Orders: undefined;
-  OrderDetail: { orderId: string };
+/** Typed `navigate` for screens that only push onto the root stack. */
+export type Nav = {
+  navigate: <T extends keyof RootStackParamList>(screen: T, params?: RootStackParamList[T]) => void;
+  goBack: () => void;
+  canGoBack: () => boolean;
+  replace: <T extends keyof RootStackParamList>(screen: T, params?: RootStackParamList[T]) => void;
+  setOptions: (options: Record<string, unknown>) => void;
+  popToTop: () => void;
+  isFocused: () => boolean;
+  addListener: (type: string, listener: (event: { payload: unknown }) => void) => () => void;
 };
 
-export type MenuStackParamList = {
-  // Named "More" (not "Menu") so it never collides with the "Menu" tab above
-  // it - duplicate names in nested navigators confuse navigation state.
-  More: undefined;
-  MenuDetail: { key: MenuDetailKey };
-  Login: undefined;
-};
+export type Route<T extends keyof RootStackParamList> = { params: RootStackParamList[T] };
 
-/** Every sub-row on the More (Menu) screen, used to render its detail screen. */
-export type MenuDetailKey =
-  | 'editProfile'
-  | 'myAddress'
-  | 'settings'
-  | 'coupon'
-  | 'loyalty'
-  | 'wallet'
-  | 'refer'
-  | 'delivery'
-  | 'vendor'
-  | 'admin'
-  | 'liveChat'
-  | 'help'
-  | 'terms'
-  | 'privacy'
-  | 'refund';
-
-/** `Gate` is the onboarding flow (location -> module -> login). */
-export type RootStackParamList = {
-  Gate: undefined;
-  MainTabs: NavigatorScreenParams<MainTabsParamList> | undefined;
+export type ScreenProps<T extends keyof RootStackParamList> = {
+  navigation: Nav;
+  route: Route<T>;
 };

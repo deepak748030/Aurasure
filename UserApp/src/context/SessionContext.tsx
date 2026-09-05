@@ -90,6 +90,29 @@ function sameAddresses(a: UserAddress[], b: UserAddress[]): boolean {
   });
 }
 
+/** Favourite lists are small; compare them so an unchanged fetch is a no-op. */
+function sameFavorites(a: FavoriteRef[], b: FavoriteRef[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((row, index) => row.module === b[index]?.module && row.refId === b[index]?.refId);
+}
+
+/** Value-compare the profile so a rebuilt cache object is not a new identity. */
+function sameUser(a: UserProfile | null, b: UserProfile | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    a.id === b.id &&
+    a.name === b.name &&
+    a.phone === b.phone &&
+    a.email === b.email &&
+    a.wallet === b.wallet &&
+    a.loyaltyPoints === b.loyaltyPoints &&
+    (a.avatar?.uri ?? null) === (b.avatar?.uri ?? null) &&
+    sameAddresses(a.addresses ?? [], b.addresses ?? []) &&
+    sameFavorites(a.favorites ?? [], b.favorites ?? [])
+  );
+}
+
 /** ~11 m — below this two fixes are the same place as far as the UI cares. */
 function samePoint(
   a: { latitude: number; longitude: number } | null,
@@ -152,7 +175,19 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
     };
   }, []);
 
-  useEffect(() => subscribeSession(() => setUser(getCachedUser())), []);
+  // `patchUser` rebuilds the cached profile object on every write, so a naive
+  // `setUser(getCachedUser())` handed out a brand-new `user` identity even when
+  // nothing changed — which re-ran every effect keyed on `user` (favourites,
+  // addresses) and re-rendered the whole tree. Keep the previous object when
+  // the profile is value-identical.
+  useEffect(
+    () =>
+      subscribeSession(() => {
+        const next = getCachedUser();
+        setUser((prev) => (sameUser(prev, next) ? prev : next));
+      }),
+    [],
+  );
 
   /* --------------------------------- health -------------------------------- */
 
@@ -213,9 +248,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
     try {
       const fresh = await fetchMe();
       await patchUser(fresh);
-      setUser(fresh);
-      setFavorites(fresh.favorites ?? []);
-      setAddresses(fresh.addresses ?? []);
+      setUser((prev) => (sameUser(prev, fresh) ? prev : fresh));
+      const nextFavorites = fresh.favorites ?? [];
+      setFavorites((prev) => (sameFavorites(prev, nextFavorites) ? prev : nextFavorites));
+      const nextAddresses = fresh.addresses ?? [];
+      setAddresses((prev) => (sameAddresses(prev, nextAddresses) ? prev : nextAddresses));
     } catch {
       /* offline - keep the cached profile */
     }
@@ -300,15 +337,17 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
 
   /* -------------------------------- favourites ------------------------------ */
 
+  // Keyed on the user *id*, not the object: `refreshUser()` (home focus,
+  // wallet top-up, profile edit) used to re-fetch the favourites on every call.
   useEffect(() => {
-    if (!user) {
-      setFavorites([]);
+    if (!userId) {
+      setFavorites((prev) => (prev.length === 0 ? prev : []));
       return;
     }
     fetchFavorites()
-      .then(setFavorites)
+      .then((list) => setFavorites((prev) => (sameFavorites(prev, list) ? prev : list)))
       .catch(() => undefined);
-  }, [user]);
+  }, [userId]);
 
   const isFavorite = useCallback(
     (mod: ModuleKey, refId: string) => favorites.some((f) => f.module === mod && f.refId === refId),

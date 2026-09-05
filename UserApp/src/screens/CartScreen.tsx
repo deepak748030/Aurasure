@@ -105,8 +105,11 @@ export function CartScreen({ navigation }: { navigation: Nav }): React.ReactElem
       sheet.show({ title: 'Coupon removed', message: 'Your order total is back to the full price.', icon: 'info', tone: 'neutral', dismissLabel: 'OK' });
       return;
     }
+    // The picker already confirms the selection. Do not immediately open a
+    // second sheet here: on Android that close/open race can leave a blank
+    // rounded surface above the cart tab bar.
     cart.setCoupon(module, chosen);
-    sheet.success('Coupon applied', `${chosen} will be checked against the minimum order when you place the order.`);
+    haptic.success();
   };
 
   const pickUnavailablePref = async (): Promise<void> => {

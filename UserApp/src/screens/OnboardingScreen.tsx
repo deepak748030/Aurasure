@@ -1,36 +1,33 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Dimensions, FlatList, Pressable, View, type ListRenderItemInfo } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Text';
-import { Icon, type IconName } from '@/lib/icons';
 import { useColors } from '@/theme/ThemeContext';
 import { radius, spacing } from '@/theme/tokens';
 import { useSession } from '@/context/SessionContext';
 import { haptic } from '@/lib/haptics';
 
 /** Three-page intro, same copy structure as `features/splash/onboard_view.dart`. */
-const PAGES: { title: string; subtitle: string; body: string; icon: IconName; art: string }[] = [
+const PAGES: { title: string; subtitle: string; body: string; image: number }[] = [
   {
     title: 'Discover local favourites',
     subtitle: 'Hand-picked stores near you',
     body: 'Restaurants, cloud kitchens and neighbourhood shops — verified outlets, live menus and honest ratings.',
-    icon: 'search',
-    art: '🍔',
+    image: require('../../assets/images/onboarding-discover.png'),
   },
   {
     title: 'Order anywhere, anytime',
     subtitle: 'Food and daily needs in one app',
     body: 'Switch between Food and Shop without losing your cart. Schedule a slot or get it delivered as soon as possible.',
-    icon: 'cart',
-    art: '🛒',
+    image: require('../../assets/images/onboarding-order.png'),
   },
   {
     title: 'Track it to your door',
     subtitle: 'Live status on every order',
     body: 'Order placed → confirmed → preparing → on the way → delivered. Pay by cash or Aurasure wallet.',
-    icon: 'package',
-    art: '🛵',
+    image: require('../../assets/images/onboarding-track.png'),
   },
 ];
 
@@ -39,7 +36,7 @@ export function OnboardingScreen({ navigation }: { navigation: { navigate: (name
   const { setOnboarded } = useSession();
   const [index, setIndex] = useState(0);
   const [width, setWidth] = useState(Dimensions.get('window').width);
-  const listRef = useRef<FlatList<{ icon: IconName }> | null>(null);
+  const listRef = useRef<FlatList<(typeof PAGES)[number]> | null>(null);
 
   useEffect(() => {
     const sub = Dimensions.addEventListener('change', ({ window }) => setWidth(window.width));
@@ -69,9 +66,13 @@ export function OnboardingScreen({ navigation }: { navigation: { navigate: (name
             justifyContent: 'center',
           }}
         >
-          <Text variant="display" tone="plain">
-            {item.art}
-          </Text>
+          <Image
+            source={item.image}
+            contentFit="contain"
+            transition={180}
+            style={{ width: 164, height: 164, borderRadius: radius.pill }}
+            accessibilityLabel={item.title}
+          />
         </View>
       </View>
       <View style={{ alignItems: 'center', gap: 6, paddingHorizontal: spacing.lg }}>

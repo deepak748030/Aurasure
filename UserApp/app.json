@@ -7,7 +7,6 @@
     "scheme": "aurasure",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "entryPoint": "index.js",
     "icon": "./assets/images/icon.png",
     "splash": {
       "image": "./assets/images/splash-icon.png",
@@ -18,7 +17,6 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.aurasure.order",
-      "softwareKeyboardLayoutMode": "pan",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Aurasure uses your location to show nearby kitchens, stores and honest delivery times."
       }
@@ -32,7 +30,6 @@
         "monochromeImage": "./assets/images/adaptive-icon-monochrome.png",
         "backgroundColor": "#67014B"
       },
-      "navigationBarColor": "#FCFCFC",
       "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
     },
     "web": {

@@ -58,7 +58,10 @@ export function SheetProvider({ children }: { children: React.ReactNode }): Reac
   const resolver = useRef<((value: string | boolean | null) => void) | null>(null);
 
   const close = useCallback(() => {
+    // Remove the native sheet immediately; keeping an empty request during
+    // the close animation creates a ghost white surface on Android.
     setVisible(false);
+    setRequest(null);
     const done = resolver.current;
     resolver.current = null;
     if (done) done(false);
@@ -104,6 +107,7 @@ export function SheetProvider({ children }: { children: React.ReactNode }): Reac
                   const done = resolver.current;
                   resolver.current = null;
                   setVisible(false);
+                  setRequest(null);
                   setTimeout(() => setRequest(null), 320);
                   done?.(true);
                 },
@@ -123,6 +127,7 @@ export function SheetProvider({ children }: { children: React.ReactNode }): Reac
               const done = resolver.current;
               resolver.current = null;
               setVisible(false);
+              setRequest(null);
               setTimeout(() => setRequest(null), 320);
               done?.(value);
             },

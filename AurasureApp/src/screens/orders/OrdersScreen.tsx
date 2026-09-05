@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Screen } from '../../components/ui/Screen';
 import { Text } from '../../components/ui/Text';
 import { Icon } from '@/lib/icons';
 import { Badge } from '../../components/ui/Badge';
-import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { useAppQuery } from '../../hooks/useAppQuery';
@@ -88,45 +87,56 @@ export function OrdersScreen({ navigation }: Props): React.ReactElement {
   return (
     <Screen title="Your Orders" subtitle={`${list.length} orders`} refreshing={refreshing} onRefresh={refresh}>
       {loading ? (
-        [1, 2, 3].map((k) => (
-          <View key={k} style={{ marginBottom: 12 }}>
-            <View style={[styles.card, { padding: 14 }]}>
-              <Skeleton width="40%" height={14} />
-              <Skeleton width="70%" height={11} style={{ marginTop: 10 }} />
-              <Skeleton width="50%" height={13} style={{ marginTop: 10 }} />
+        <View style={styles.listCard}>
+          {[1, 2, 3].map((k, i) => (
+            <View key={k} style={[styles.row, i > 0 ? styles.rowDivider : null]}>
+              <View style={[styles.modIcon, { backgroundColor: colors.surfaceAlt }]} />
+              <View style={{ flex: 1 }}>
+                <Skeleton width="45%" height={14} />
+                <Skeleton width="30%" height={11} style={{ marginTop: 8 }} />
+                <Skeleton width="55%" height={11} style={{ marginTop: 8 }} />
+              </View>
             </View>
-          </View>
-        ))
+          ))}
+        </View>
       ) : list.length === 0 ? (
         <EmptyState icon="receipt" title="No orders yet" subtitle="Your orders will appear here once you place one." actionLabel="Browse food" onAction={() => switchTab('Home')} />
       ) : (
-        list.map((o) => (
-          <Pressable key={o.id} onPress={() => open(o)} style={({ pressed }) => [styles.card, { opacity: pressed ? 0.96 : 1 }]}>
-            <View style={styles.cardTop}>
+        <View style={styles.listCard}>
+          {list.map((o, i) => (
+            <Pressable
+              key={o.id}
+              onPress={() => open(o)}
+              style={({ pressed }) => [
+                styles.row,
+                i > 0 ? styles.rowDivider : null,
+                { backgroundColor: pressed ? '#FBF5FA' : 'transparent' },
+              ]}
+            >
               <View style={[styles.modIcon, { backgroundColor: o.module === 'food' ? colors.food[50] : colors.brand[50] }]}>
                 <Icon name={o.module === 'food' ? 'utensils' : 'bag'} size={18} color={o.module === 'food' ? colors.food[600] : colors.brand[600]} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text variant="subtitle" weight="bold" color={colors.text}>
-                  {o.code}
-                </Text>
-                <Text variant="caption" color={colors.textSecondary}>
+                <View style={styles.rowHeadline}>
+                  <Text variant="subtitle" weight="bold" color={colors.text} style={{ flex: 1, marginRight: 8 }} numberOfLines={1}>
+                    {o.code}
+                  </Text>
+                  <Badge label={STATUS_LABEL[o.status]} tone={STATUS_TONE[o.status]} />
+                </View>
+                <Text variant="caption" color={colors.textSecondary} style={{ marginTop: 3 }}>
                   {o.items.length} item(s) · {formatINR(o.total)}
                 </Text>
+                <View style={styles.rowFoot}>
+                  <Icon name="clock" size={13} color={colors.textTertiary} />
+                  <Text variant="caption" color={colors.textTertiary} style={{ marginLeft: 6, flex: 1 }} numberOfLines={1}>
+                    {progressCaption(o)}
+                  </Text>
+                  <Icon name="chevronRight" size={18} color={colors.textTertiary} />
+                </View>
               </View>
-              <Badge label={STATUS_LABEL[o.status]} tone={STATUS_TONE[o.status]} />
-            </View>
-            <View style={styles.cardFoot}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Icon name="clock" size={14} color={colors.textTertiary} />
-                <Text variant="caption" color={colors.textTertiary} style={{ marginLeft: 6 }}>
-                  {progressCaption(o)}
-                </Text>
-              </View>
-              <Icon name="chevronRight" size={18} color={colors.textTertiary} />
-            </View>
-          </Pressable>
-        ))
+            </Pressable>
+          ))}
+        </View>
       )}
       <View style={{ height: 8 }} />
     </Screen>
@@ -134,13 +144,24 @@ export function OrdersScreen({ navigation }: Props): React.ReactElement {
 }
 
 const styles = StyleSheet.create({
-  card: {
+  // All orders live inside one grouped card: no gaps between orders, each one
+  // divided from the next by a single hairline rule (like a settings list).
+  listCard: {
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: 14,
-    marginBottom: 12,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
   },
-  cardTop: { flexDirection: 'row', alignItems: 'center' },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+  },
+  rowDivider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  rowHeadline: { flexDirection: 'row', alignItems: 'center' },
+  rowFoot: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
   modIcon: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  cardFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, borderTopWidth: 1, borderColor: colors.border, paddingTop: 12 },
 });

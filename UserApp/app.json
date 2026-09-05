@@ -1,0 +1,64 @@
+{
+  "expo": {
+    "name": "Aurasure User",
+    "slug": "aurasure-user",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "aurasure",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "entryPoint": "index.js",
+    "icon": "./assets/images/icon.png",
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFFFF"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.aurasure.order",
+      "softwareKeyboardLayoutMode": "pan",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Aurasure uses your location to show nearby kitchens, stores and honest delivery times."
+      }
+    },
+    "android": {
+      "package": "com.aurasure.order",
+      "edgeToEdgeEnabled": true,
+      "softwareKeyboardLayoutMode": "resize",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "monochromeImage": "./assets/images/adaptive-icon-monochrome.png",
+        "backgroundColor": "#67014B"
+      },
+      "navigationBarColor": "#FCFCFC",
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 220,
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFFFF"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Aurasure uses your location only to show nearby kitchens, stores and delivery times."
+        }
+      ]
+    ],
+    "experiments": {
+      "tsconfigPaths": true
+    },
+    "backgroundColor": "#FCFCFC"
+  }
+}

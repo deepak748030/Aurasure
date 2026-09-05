@@ -85,6 +85,11 @@ export function Screen({
   // re-padding on every inset tick (edge-to-edge / StatusBar style flips),
   // which made the home header bounce on open.
   const topInset = useStableTopInset(insets.top);
+  const ownScroll = React.useRef<ScrollView | null>(null);
+  const bindScroll = (node: ScrollView | null): void => {
+    ownScroll.current = node;
+    if (scrollRef) (scrollRef as React.MutableRefObject<ScrollView | null>).current = node;
+  };
   const showHeader = Boolean(header || title || subtitle || headerRight || back || headerLeft);
 
   const headerNode = showHeader ? (
@@ -140,9 +145,22 @@ export function Screen({
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          style={{ flex: 1, backgroundColor: topPaint }}
+          contentInsetAdjustmentBehavior="never"
+          automaticallyAdjustContentInsets={false}
+          overScrollMode="never"
+          bounces
+          alwaysBounceVertical={false}
+          nestedScrollEnabled
+          onMomentumScrollEnd={(event) => {
+            const y = event.nativeEvent.contentOffset.y;
+            if (y > 0 && y < 16) {
+              event.currentTarget?.scrollTo?.({ y: 0, animated: false });
+            }
+          }}
           contentContainerStyle={[
             padded ? { paddingHorizontal: layout.contentHorizontalPadding } : null,
-            { paddingTop: 0, paddingBottom: insets.bottom + spacing.xxl },
+            { paddingTop: 0, paddingBottom: insets.bottom + spacing.xxl, backgroundColor: bg, flexGrow: 1 },
             contentContainerStyle,
           ]}
           refreshControl={
@@ -153,6 +171,7 @@ export function Screen({
                 tintColor={c.primary}
                 colors={[c.primary]}
                 progressBackgroundColor={c.surface}
+                progressViewOffset={0}
               />
             ) : undefined
           }

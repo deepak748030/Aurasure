@@ -1,13 +1,11 @@
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
 import { Text } from '@/components/ui/Text';
 import { Icon } from '@/lib/icons';
 import { IconButton } from '@/components/ui/Button';
 import { useColors, type Palette } from '@/theme/ThemeContext';
 import { radius, spacing } from '@/theme/tokens';
 import { useSession } from '@/context/SessionContext';
-import { useCart } from '@/context/CartContext';
 import { useSheet } from '@/components/sheet/SheetProvider';
 import { haptic } from '@/lib/haptics';
 import type { ModuleKey } from '@/types';
@@ -40,9 +38,7 @@ export function HomeHeader({
   const styles = useMemo(() => createStyles(c), [c]);
   const sheet = useSheet();
   const { selectedAddress, setModule, module: active, isLoggedIn, deliveryEtaLabel } = useSession();
-  const { totalCartCount, hydrated } = useCart();
   const CHIP = c.isDark ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.16)';
-  const CHIP_BORDER = c.isDark ? 'rgba(0,0,0,0.24)' : 'rgba(255,255,255,0.24)';
   // Dark mode must use light-on-dark secondary text; the old dark rgba value
   // made the search placeholder and header metadata look black.
   const SOFT = c.isDark ? 'rgba(246,241,244,0.82)' : 'rgba(255,255,255,0.86)';
@@ -63,7 +59,6 @@ export function HomeHeader({
 
   return (
     <View style={[styles.hero, { backgroundColor: c.primary }, style]}>
-      <StatusBar style="light" />
       <View style={styles.row}>
         <Pressable
           accessibilityRole="button"
@@ -144,26 +139,6 @@ export function HomeHeader({
         </View>
       </Pressable>
 
-      {totalCartCount > 0 && onCart ? (
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => {
-            haptic.light();
-            onCart();
-          }}
-          style={({ pressed }) => [styles.cartStrip, pressed && { opacity: 0.9 }]}
-        >
-          <View style={styles.cartDot}>
-            <Text variant="micro" weight="semibold" color={c.primary}>
-              {totalCartCount}
-            </Text>
-          </View>
-          <Text variant="caption" weight="semibold" color={c.primary} numberOfLines={1} style={{ flex: 1 }}>
-            {totalCartCount} {module === 'food' ? 'dish' : 'item'}{totalCartCount === 1 ? '' : 's'} in your {module === 'food' ? 'cart' : 'bag'}
-          </Text>
-          <Icon name="chevronRight" size={15} color={c.primary} />
-        </Pressable>
-      ) : null}
     </View>
   );
 }
@@ -176,7 +151,7 @@ function createStyles(c: Palette) {
   return StyleSheet.create({
     hero: { paddingHorizontal: spacing.edge, paddingTop: spacing.sm, paddingBottom: spacing.md, gap: spacing.sm, borderBottomLeftRadius: 15, borderBottomRightRadius: 15 },
     row: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
-    greetCard: { flex: 1, gap: 1 },
+    greetCard: { flex: 1, gap: 1, minHeight: 54 },
     actions: { flexDirection: 'row', alignItems: 'center' },
     moduleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 },
     moduleChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.pill },

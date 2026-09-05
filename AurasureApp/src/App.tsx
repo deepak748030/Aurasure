@@ -21,7 +21,7 @@ function Shell(): React.ReactElement {
   return (
     <>
       {/* Status bar follows the resolved palette so the notch area never flashes white in dark mode. */}
-      <StatusBar style={resolved === 'dark' ? 'light' : 'dark'} />
+      <StatusBar style={resolved === 'dark' ? 'light' : 'dark'} translucent backgroundColor="transparent" />
       <RootNavigator />
     </>
   );

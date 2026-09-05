@@ -4,6 +4,7 @@ import {
   Platform,
   RefreshControl,
   ScrollView,
+  StatusBar,
   View,
   type StyleProp,
   type ViewStyle,
@@ -80,6 +81,10 @@ export function Screen({
   const navigation = useNavigation();
   const bg = backgroundColor ?? c.bg;
   const topPaint = headerBackground ?? bg;
+  // Lock the status-bar inset on the first real value. SafeAreaView was
+  // re-padding on every inset tick (edge-to-edge / StatusBar style flips),
+  // which made the home header bounce on open.
+  const topInset = useStableTopInset(insets.top);
   const showHeader = Boolean(header || title || subtitle || headerRight || back || headerLeft);
 
   const headerNode = showHeader ? (
@@ -162,8 +167,8 @@ export function Screen({
 
   return (
     <SafeAreaView
-      edges={edges.filter((edge) => edge !== 'bottom' || Boolean(stickyFooter))}
-      style={{ flex: 1, backgroundColor: topPaint }}
+      edges={edges.filter((edge) => edge !== 'top' && (edge !== 'bottom' || Boolean(stickyFooter)))}
+      style={{ flex: 1, backgroundColor: topPaint, paddingTop: topInset }}
     >
       <View style={{ flex: 1, backgroundColor: bg }}>
         {stickyFooter ? (
@@ -185,6 +190,14 @@ export function Screen({
       </View>
     </SafeAreaView>
   );
+}
+
+function useStableTopInset(measured: number): number {
+  const fallback = Platform.OS === 'android' ? StatusBar.currentHeight ?? 24 : 47;
+  const raw = measured > 0 ? measured : fallback;
+  const frozen = React.useRef(0);
+  if (measured > 0 && frozen.current === 0) frozen.current = measured;
+  return frozen.current || raw;
 }
 
 /** Full-bleed surface: no 4px gutter, no radius, no vertical gaps (map/lists). */

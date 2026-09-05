@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { Screen } from '@/components/ui/Screen';
 import { SegmentedTabs } from '@/components/ui/SegmentedTabs';
@@ -18,6 +18,14 @@ import type { Order, OrderStatus } from '@/types';
 
 type Tab = 'running' | 'past' | 'cancelled';
 
+/** Which order statuses belong under each tab. Declared before the component
+ *  because the grouping below reads it during render (`const` is not hoisted). */
+export const ORDER_TAB_STATUSES: Record<Tab, OrderStatus[]> = {
+  running: ['placed', 'confirmed', 'preparing', 'out_for_delivery'],
+  past: ['delivered'],
+  cancelled: ['cancelled'],
+};
+
 export function OrdersScreen({ navigation }: { navigation: Nav }): React.ReactElement {
   const c = useColors();
   const sheet = useSheet();
@@ -25,22 +33,47 @@ export function OrdersScreen({ navigation }: { navigation: Nav }): React.ReactEl
   const { isLoggedIn } = useSession();
   const [tab, setTab] = useState<Tab>('running');
 
+  /**
+   * One fetch for every tab. Asking the server per-tab meant the "Running" tab
+   * depended on `status=running` resolving server-side, and it re-fetched on
+   * every tab tap; the three tabs are just three views of the same 30 rows, so
+   * they are partitioned on the client instead.
+   */
   const ordersQuery = useQuery<{ orders: Order[] }>(
-    useCallback(
-      async () => {
-        const result = await listOrders({ status: tab === 'running' ? 'running' : undefined, limit: 30 });
-        return { orders: result.orders };
-      },
-      [tab],
-    ),
+    useCallback(async (signal: AbortSignal) => {
+      const result = await listOrders({ limit: 50 }, signal);
+      return { orders: result.orders };
+    }, []),
+    { enabled: isLoggedIn },
   );
 
-  const rows = useMemo(() => {
-    const all = ordersQuery.data?.orders ?? [];
-    if (tab === 'running') return all.filter((order) => ['placed', 'confirmed', 'preparing', 'out_for_delivery'].includes(order.status));
-    if (tab === 'cancelled') return all.filter((order) => order.status === 'cancelled');
-    return all.filter((order) => order.status === 'delivered');
-  }, [ordersQuery.data, tab]);
+  // Orders live in a bottom tab, so the screen stays mounted after the first
+  // visit and `useQuery` would never run again — a freshly placed order simply
+  // never appeared until the app was restarted. Refetch whenever the tab is
+  // focused again.
+  const refetch = ordersQuery.refetch;
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (isLoggedIn) refetch();
+    });
+    return unsubscribe;
+  }, [navigation, isLoggedIn, refetch]);
+
+  const all = useMemo(() => ordersQuery.data?.orders ?? [], [ordersQuery.data]);
+
+  /**
+   * Partition once so the tab labels can show real counts. "Completed" is
+   * anything that is neither live nor cancelled, so an order in a status this
+   * build does not know about still lands somewhere instead of vanishing.
+   */
+  const groups = useMemo(() => {
+    const running = all.filter((order) => ORDER_TAB_STATUSES.running.includes(order.status));
+    const cancelled = all.filter((order) => order.status === 'cancelled');
+    const past = all.filter((order) => !ORDER_TAB_STATUSES.running.includes(order.status) && order.status !== 'cancelled');
+    return { running, past, cancelled };
+  }, [all]);
+
+  const rows = groups[tab];
 
   const reorder = async (order: Order): Promise<void> => {
     if (!isLoggedIn) {
@@ -88,9 +121,9 @@ export function OrdersScreen({ navigation }: { navigation: Nav }): React.ReactEl
       <View style={{ paddingBottom: spacing.xs }}>
         <SegmentedTabs
           tabs={[
-            { key: 'running', label: 'Running' },
-            { key: 'past', label: 'Completed' },
-            { key: 'cancelled', label: 'Cancelled' },
+            { key: 'running', label: 'Running', count: groups.running.length },
+            { key: 'past', label: 'Completed', count: groups.past.length },
+            { key: 'cancelled', label: 'Cancelled', count: groups.cancelled.length },
           ]}
           active={tab}
           onChange={(next) => setTab(next as Tab)}
@@ -119,9 +152,3 @@ export function OrdersScreen({ navigation }: { navigation: Nav }): React.ReactEl
     </Screen>
   );
 }
-
-export const ORDER_TAB_STATUSES: Record<Tab, OrderStatus[]> = {
-  running: ['placed', 'confirmed', 'preparing', 'out_for_delivery'],
-  past: ['delivered'],
-  cancelled: ['cancelled'],
-};

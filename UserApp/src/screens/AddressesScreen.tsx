@@ -4,7 +4,7 @@ import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
 import { Button, IconButton } from '@/components/ui/Button';
 import { type IconName } from '@/lib/icons';
-import { EmptyState, Tag } from '@/components/ui/Primitives';
+import { EmptyState, ErrorState, Tag } from '@/components/ui/Primitives';
 import { ListRow, ListSection } from '@/components/list/ListRow';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { MapSurface, type MapMarker } from '@/components/map/MapSurface';
@@ -28,15 +28,46 @@ export function AddressesScreen({ navigation }: { navigation: Nav }): React.Reac
   const c = useColors();
   const sheet = useSheet();
   const { addresses, selectedAddressId, setSelectedAddressId, removeAddress, loadAddresses, isLoggedIn, selectedAddress } = useSession();
-  const [loading, setLoading] = useState(true);
+  /**
+   * Three separate flags on purpose. The old code drove the pull-to-refresh
+   * `RefreshControl` off the *initial load* flag, so the spinner was already
+   * turning the instant the screen opened and snapped back on a manual pull —
+   * which is why it looked like the screen refreshed itself forever. `loading`
+   * now paints the skeleton, `refreshing` is only ever set by a real pull, and
+   * `error` surfaces a failed fetch instead of silently showing "no addresses".
+   */
+  const [loading, setLoading] = useState(isLoggedIn);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  const load = useCallback(
+    async (mode: 'initial' | 'refresh'): Promise<void> => {
+      if (!isLoggedIn) {
+        setLoading(false);
+        setRefreshing(false);
+        setError(null);
+        return;
+      }
+      if (mode === 'refresh') setRefreshing(true);
+      else setLoading(true);
+      try {
+        await loadAddresses();
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not load your addresses.');
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [isLoggedIn, loadAddresses],
+  );
+
+  // Runs once per sign-in state change - `load` only depends on stable values,
+  // so this can never turn into a fetch loop.
   useEffect(() => {
-    if (isLoggedIn) {
-      void loadAddresses().finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
-  }, [isLoggedIn, loadAddresses]);
+    void load('initial');
+  }, [load]);
 
   const pinned = useMemo(() => addresses.filter(hasCoords), [addresses]);
   const markers = useMemo<MapMarker[]>(() => {
@@ -102,10 +133,8 @@ export function AddressesScreen({ navigation }: { navigation: Nav }): React.Reac
       subtitle={addresses.length > 0 ? `${addresses.length} saved` : 'None saved yet'}
       back
       padded={false}
-      onRefresh={() => {
-        if (isLoggedIn) void loadAddresses();
-      }}
-      refreshing={loading}
+      onRefresh={isLoggedIn ? () => void load('refresh') : undefined}
+      refreshing={refreshing}
       stickyFooter={
         <View style={{ paddingHorizontal: spacing.edge, paddingBottom: spacing.sm }}>
           <Button title="Add a new address" size="lg" icon="plus" onPress={() => navigation.navigate('AddressEdit', {})} style={{ alignSelf: 'stretch' }} />
@@ -133,10 +162,22 @@ export function AddressesScreen({ navigation }: { navigation: Nav }): React.Reac
         />
       </View>
 
-      {loading ? (
+      {!isLoggedIn ? (
+        /* Addresses are stored on the account - without a token the API returns
+           nothing, so say so instead of showing a permanently empty list. */
+        <EmptyState
+          icon="user"
+          title="Sign in to see your addresses"
+          subtitle="Saved addresses live on your Aurasure account so every device gets them."
+          actionLabel="Sign in"
+          onAction={() => navigation.navigate('Auth', { mode: 'login' })}
+        />
+      ) : loading ? (
         <View style={{ paddingHorizontal: spacing.edge, paddingTop: spacing.sm }}>
           <SkeletonList rows={3} thumb={34} />
         </View>
+      ) : error ? (
+        <ErrorState message={error} onRetry={() => void load('initial')} />
       ) : addresses.length === 0 ? (
         <EmptyState
           icon="mapPin"

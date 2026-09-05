@@ -22,7 +22,7 @@ import { ApiError } from '@/api/client';
 import { isCouponUsable } from '@/api/rewards';
 import { haptic } from '@/lib/haptics';
 import type { Nav } from '@/navigation/types';
-import type { PayBy } from '@/types';
+import type { ModuleKey, PayBy } from '@/types';
 
 /** Shown only until `/app/settings` loads — the live methods always win. */
 const FALLBACK_PAYMENTS: { key: PayBy; label: string; sub: string; icon: IconName; enabled: boolean }[] = [
@@ -44,11 +44,13 @@ export function CheckoutScreen({ navigation }: { navigation: Nav }): React.React
   const c = useColors();
   const sheet = useSheet();
   const cart = useCart();
-  const { user, isLoggedIn, addresses, selectedAddress, selectedAddressId, setSelectedAddressId } = useSession();
+  const { user, isLoggedIn, addresses, selectedAddress, selectedAddressId, setSelectedAddressId, module: browsing } = useSession();
   const [placing, setPlacing] = useState(false);
   const [noteDraft, setNoteDraft] = useState<string | null>(null);
 
-  const module = cart.lines.food.length > 0 ? 'food' : 'shop';
+  // Whichever cart actually has lines wins; ties fall back to what the user is
+  // browsing. (Hardcoding 'food' sent shop-only carts to an empty checkout.)
+  const module: ModuleKey = cart.lines[browsing].length > 0 ? browsing : cart.lines.food.length > 0 ? 'food' : cart.lines.shop.length > 0 ? 'shop' : browsing;
   const settings = useAppSettings();
   const payments = settings.data?.payments ?? FALLBACK_PAYMENTS;
   const tips = settings.data?.checkout.tips ?? FALLBACK_TIPS;

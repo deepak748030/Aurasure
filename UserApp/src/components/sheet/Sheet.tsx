@@ -131,7 +131,10 @@ export function Sheet({
 
   const styles = useMemo(() => createStyles(c), [c]);
 
-  if (!mounted) return <View />;
+  // Do not leave an empty native Modal mounted after the exit animation.
+  // Android can keep its white surface above the tab bar for a frame when a
+  // placeholder View is returned here.
+  if (!mounted) return null;
 
   const dismiss = (): void => {
     if (dismissible) {
@@ -292,7 +295,7 @@ export function SheetOption({
   selected?: boolean;
   onPress: () => void;
   right?: React.ReactNode;
-}): React.ReactElement {
+}): React.ReactElement | null {
   const c = useColors();
   return (
     <Pressable

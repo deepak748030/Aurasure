@@ -62,7 +62,7 @@ export function SheetProvider({ children }: { children: React.ReactNode }): Reac
     const done = resolver.current;
     resolver.current = null;
     if (done) done(false);
-    const timer = setTimeout(() => setRequest(null), 260);
+    const timer = setTimeout(() => setRequest(null), 320);
     return () => clearTimeout(timer);
   }, []);
 
@@ -104,7 +104,7 @@ export function SheetProvider({ children }: { children: React.ReactNode }): Reac
                   const done = resolver.current;
                   resolver.current = null;
                   setVisible(false);
-                  setTimeout(() => setRequest(null), 220);
+                  setTimeout(() => setRequest(null), 320);
                   done?.(true);
                 },
               },
@@ -123,7 +123,7 @@ export function SheetProvider({ children }: { children: React.ReactNode }): Reac
               const done = resolver.current;
               resolver.current = null;
               setVisible(false);
-              setTimeout(() => setRequest(null), 220);
+              setTimeout(() => setRequest(null), 320);
               done?.(value);
             },
           });

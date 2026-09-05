@@ -3,7 +3,7 @@ import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/Text';
-import { BRAND } from '@/lib/icons';
+import { Icon, BRAND } from '@/lib/icons';
 import { useColors } from '@/theme/ThemeContext';
 import { radius, spacing } from '@/theme/tokens';
 import { useSession } from '@/context/SessionContext';

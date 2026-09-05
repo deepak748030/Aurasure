@@ -79,6 +79,7 @@ export function Screen({
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const bg = backgroundColor ?? c.bg;
+  const topPaint = headerBackground ?? bg;
   const showHeader = Boolean(header || title || subtitle || headerRight || back || headerLeft);
 
   const headerNode = showHeader ? (
@@ -126,7 +127,7 @@ export function Screen({
 
   const content = (
     <>
-      {headerNode ? <View style={{ backgroundColor: headerBackground ?? bg }}>{headerNode}</View> : null}
+      {headerNode ? <View style={{ backgroundColor: topPaint }}>{headerNode}</View> : null}
       {scroll ? (
         <ScrollView
           ref={scrollRef}
@@ -162,7 +163,7 @@ export function Screen({
   return (
     <SafeAreaView
       edges={edges.filter((edge) => edge !== 'bottom' || Boolean(stickyFooter))}
-      style={{ flex: 1, backgroundColor: bg }}
+      style={{ flex: 1, backgroundColor: topPaint }}
     >
       <View style={{ flex: 1, backgroundColor: bg }}>
         {stickyFooter ? (

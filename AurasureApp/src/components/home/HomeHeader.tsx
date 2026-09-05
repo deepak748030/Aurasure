@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { Text } from '@/components/ui/Text';
 import { Icon } from '@/lib/icons';
 import { IconButton } from '@/components/ui/Button';
@@ -39,7 +40,7 @@ export function HomeHeader({
   const styles = useMemo(() => createStyles(c), [c]);
   const sheet = useSheet();
   const { selectedAddress, setModule, module: active, isLoggedIn, deliveryEtaLabel } = useSession();
-  const { totalCartCount } = useCart();
+  const { totalCartCount, hydrated } = useCart();
   const CHIP = c.isDark ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.16)';
   const CHIP_BORDER = c.isDark ? 'rgba(0,0,0,0.24)' : 'rgba(255,255,255,0.24)';
   // Dark mode must use light-on-dark secondary text; the old dark rgba value
@@ -62,6 +63,7 @@ export function HomeHeader({
 
   return (
     <View style={[styles.hero, { backgroundColor: c.primary }, style]}>
+      <StatusBar style="light" />
       <View style={styles.row}>
         <Pressable
           accessibilityRole="button"

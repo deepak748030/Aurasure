@@ -154,6 +154,7 @@ export function HomeFoodScreen({ navigation }: { navigation: Nav }): React.React
         void checkHealth();
       }}
       refreshing={home.refreshing}
+      headerBackground={c.primary}
       header={
         <HomeHeader
           module={module}

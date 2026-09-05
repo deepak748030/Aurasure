@@ -113,6 +113,7 @@ export function MenuScreen({ navigation }: { navigation: Nav }): React.ReactElem
         wallet.refresh();
       }}
       refreshing={wallet.refreshing}
+      headerBackground={c.primary}
       header={
         <FlushSurface style={{ backgroundColor: c.primary }}>
           <View style={{ padding: spacing.edge, paddingTop: spacing.sm, gap: spacing.md }}>
@@ -121,7 +122,7 @@ export function MenuScreen({ navigation }: { navigation: Nav }): React.ReactElem
               onPress={() => navigation.navigate(isLoggedIn ? 'Profile' : 'Auth', isLoggedIn ? undefined : { mode: 'login' })}
               style={({ pressed }) => [styles.identity, { opacity: pressed ? 0.9 : 1 }]}
             >
-              <Avatar name={user?.name ?? 'Guest'} uri={user?.avatar?.uri ?? null} size={52} ring />
+              <Avatar name={user?.name ?? 'Guest'} uri={null} size={52} ring />
               <View style={{ flex: 1 }}>
                 <Text variant="h3" weight="bold" color={c.white} numberOfLines={1}>
                   {user?.name ?? 'Welcome to Aurasure'}

@@ -112,15 +112,40 @@ export function pointsToRupees(points: number): number {
   return Math.floor((Number(points) || 0) / 100) * 10;
 }
 
-export function tierFor(points: number): { name: string; color: string; progress: number } {
-  if (points >= 5000) return { name: 'Platinum', color: '#64748B', progress: 1 };
-  if (points >= 2500) return { name: 'Gold', color: '#E5A710', progress: (points - 2500) / 2500 };
-  if (points >= 1000) return { name: 'Silver', color: '#94A3B8', progress: (points - 1000) / 1500 };
-  return { name: 'Bronze', color: '#C2703D', progress: points / 1000 };
+export interface TierBand {
+  name: string;
+  min: number;
+  color: string;
 }
 
-/** Pilot cities the seeded outlets live in (Raipur first, like the reference app). */
-export const CITIES = ['Raipur', 'Bhilai', 'Durg', 'Bastar', 'Rajnanagaon', 'Delhi', 'Mumbai', 'Bengaluru'] as const;
+const DEFAULT_TIERS: TierBand[] = [
+  { name: 'Bronze', min: 0, color: '#C2703D' },
+  { name: 'Silver', min: 1000, color: '#94A3B8' },
+  { name: 'Gold', min: 2500, color: '#E5A710' },
+  { name: 'Platinum', min: 5000, color: '#64748B' },
+];
+
+/**
+ * Tier chip math. Pass the live bands from `/app/settings` (or the loyalty
+ * payload) so an admin tier edit reflects everywhere; defaults match the
+ * server fallback.
+ */
+export function tierFor(
+  points: number,
+  bands: readonly TierBand[] = DEFAULT_TIERS,
+): { name: string; color: string; progress: number; nextTier: string; nextAt: number | null } {
+  const rows = (bands.length > 0 ? [...bands] : DEFAULT_TIERS).sort((a, b) => a.min - b.min);
+  let current = rows[0]!;
+  let next: TierBand | null = null;
+  for (const row of rows) {
+    if (points >= row.min) {
+      current = row;
+      next = rows[rows.indexOf(row) + 1] ?? null;
+    }
+  }
+  const progress = next ? Math.min(1, Math.max(0, (points - current.min) / Math.max(1, next.min - current.min))) : 1;
+  return { name: current.name, color: current.color, progress, nextTier: next?.name ?? current.name, nextAt: next?.min ?? null };
+}
 
 /** "3 items · ₹740" style summary used on account rows. */
 export function orderSummary(orders: { items: unknown[]; total: number }[]): string {

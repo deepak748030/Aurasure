@@ -64,6 +64,23 @@ export function getOrder(id: string): Promise<Order> {
   return apiGetFull<{ order: Order }>(`/orders/${encodeURIComponent(id)}`, { auth: true }).then((r) => r.data.order);
 }
 
+export interface OrderOutlet {
+  id: string;
+  name: string;
+  city: string | null;
+  lat: number | null;
+  lng: number | null;
+  etaMinutes: number;
+}
+
+/** Order + outlet snapshot (name, city, coordinates) for the tracking map. */
+export function fetchOrderDetail(id: string, signal?: AbortSignal): Promise<{ order: Order; outlet: OrderOutlet | null }> {
+  return apiGetFull<{ order: Order; outlet: OrderOutlet | null }>(`/orders/${encodeURIComponent(id)}`, {
+    auth: true,
+    signal,
+  }).then((r) => r.data);
+}
+
 /** Only `cancelled` is accepted from a customer - the server enforces that. */
 export function cancelOrder(id: string, cancelReason: string): Promise<Order> {
   return apiPatch<{ order: Order }>(

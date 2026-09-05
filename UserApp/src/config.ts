@@ -20,7 +20,6 @@ export const API_BASE_URL = getApiBaseUrl();
 export const API_PREFIX = '/api/v1';
 
 export const CURRENCY = (process.env.EXPO_PUBLIC_CURRENCY ?? '₹').trim() || '₹';
-export const SUPPORT_PHONE = (process.env.EXPO_PUBLIC_SUPPORT_PHONE ?? '+919000000000').trim();
 
 /** Seeded demo customer so a fresh install can be explored in one tap. */
 export const DEMO_CREDENTIALS = {

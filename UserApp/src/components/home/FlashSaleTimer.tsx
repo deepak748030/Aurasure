@@ -6,9 +6,9 @@ import { radius, spacing } from '@/theme/tokens';
 
 /**
  * `flash_sale_timer_view_widget.dart` + `timer_widget.dart`: four primary tiles
- * (days · hours · mins · sec) counting down to the end of the running window.
- * The API has no flash-sale schedule, so the window is derived on the device —
- * every 6 hours, aligned to the clock — and the label says so.
+ * (days · hours · mins · sec) counting down to the sale's server `endsAt`.
+ * The 6-hour local window below is only a fallback for callers that render the
+ * timer without a live event (there are none left — both callers pass a target).
  */
 export const FLASH_WINDOW_HOURS = 6;
 

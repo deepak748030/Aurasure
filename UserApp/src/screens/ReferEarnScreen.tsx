@@ -33,19 +33,21 @@ export function ReferEarnScreen({ navigation }: { navigation: Nav }): React.Reac
   const earnings = query.data?.earnings ?? 0;
   const friends = query.data?.friends ?? 0;
   const referredBy = query.data?.referredBy ?? user?.referredBy ?? null;
+  const reward = query.data?.reward ?? { wallet: 50, points: 250, referrerWallet: 100 };
+  const terms = query.data?.terms ?? [];
 
   const copy = async (): Promise<void> => {
     if (!mine) return;
     await Clipboard.setStringAsync(mine);
     haptic.success();
-    sheet.success('Code copied', `${mine} — send it to a friend and they get ${money(50)} on their first order.`);
+    sheet.success('Code copied', `${mine} — send it to a friend and they get ${money(reward.wallet)} on their first order.`);
   };
 
   const share = async (): Promise<void> => {
     if (!mine) return;
     try {
       await Share.share({
-        message: `Order with my Aurasure code ${mine} and get ${money(50)} off your first order. ${BRAND_URL}`,
+        message: `Order with my Aurasure code ${mine} and get ${money(reward.wallet)} off your first order. ${BRAND_URL}`,
       });
     } catch {
       sheet.info('Sharing unavailable', 'Copy the code instead and paste it anywhere.');
@@ -93,9 +95,9 @@ export function ReferEarnScreen({ navigation }: { navigation: Nav }): React.Reac
         </View>
 
         <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
-          <Tag label="₹50 for them" icon="gift" tone="success" />
-          <Tag label="₹50 for you after their first order" icon="referral" tone="muted" />
-          <Tag label="No limit" icon="percent" tone="muted" />
+          <Tag label={`${money(reward.wallet)} for them`} icon="gift" tone="success" />
+          <Tag label={`${money(reward.referrerWallet)} for you after their first order`} icon="referral" tone="muted" />
+          <Tag label={`+${reward.points} pts each`} icon="loyalty" tone="muted" />
         </View>
 
         {query.loading ? (
@@ -110,6 +112,22 @@ export function ReferEarnScreen({ navigation }: { navigation: Nav }): React.Reac
             <MetaRow label="Referred by" value={referredBy || 'Nobody yet'} tone={referredBy ? 'success' : undefined} />
           </View>
         )}
+
+        {terms.length > 0 ? (
+          <View style={{ padding: spacing.md, borderRadius: radius.lg, borderWidth: 1, borderColor: c.border, backgroundColor: c.surface }}>
+            <Text variant="overline" tone="faint" style={{ paddingBottom: 6 }}>
+              HOW IT WORKS
+            </Text>
+            {terms.map((term) => (
+              <View key={term} style={{ flexDirection: 'row', gap: 8, paddingVertical: 3 }}>
+                <Icon name="circleCheck" size={13} color={c.success} style={{ marginTop: 2 }} />
+                <Text variant="caption" tone="muted" style={{ flex: 1 }}>
+                  {term}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
 
         {!referredBy ? (
           <ListSection title="HAVE A FRIEND'S CODE?">

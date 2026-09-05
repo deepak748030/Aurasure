@@ -161,14 +161,28 @@ const listBrands = asyncHandler(async (req, res) => {
   });
 });
 
-/** GET /api/v1/shop/brands/:id — brand + its live products. */
+/** GET /api/v1/shop/brands/:id — brand + live products + store snapshots. */
 const getBrand = asyncHandler(async (req, res) => {
   const brand = await Brand.findOne({ id: req.params.id, active: true });
   if (!brand) throw ApiError.notFound('Brand not found', 'BRAND_NOT_FOUND');
   const products = await Product.find({ brand: brand.name, ...VISIBLE_APPROVAL }).sort({ rating: -1, reviews: -1 });
   const json = brand.toJSON();
   if (json.image) json.image = toAppImage(json.image);
-  return ok(res, { brand: json, products: products.map(cleanImages) });
+  const storeIds = [...new Set(products.map((p) => p.storeId).filter(Boolean))];
+  const stores = {};
+  if (storeIds.length) {
+    const docs = await ShopStore.find({ id: { $in: storeIds } });
+    for (const doc of docs) {
+      stores[doc.id] = {
+        id: doc.id,
+        name: doc.name,
+        deliveryFee: doc.deliveryFee || 0,
+        minOrder: doc.minOrder || 0,
+        etaMinutes: doc.deliveryMins || 40,
+      };
+    }
+  }
+  return ok(res, { brand: json, products: products.map(cleanImages), stores });
 });
 
 module.exports = {

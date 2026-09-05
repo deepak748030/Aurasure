@@ -11,6 +11,7 @@ import { SegmentedTabs } from '@/components/ui/SegmentedTabs';
 import { SkeletonHero, SkeletonList } from '@/components/ui/Skeleton';
 import { useQuery } from '@/hooks/useQuery';
 import { useCartActions } from '@/hooks/useCartActions';
+import { useOutletResolver } from '@/hooks/useOutletResolver';
 import { fetchFoodCategories, fetchFoodItems, fetchShopCategoryProducts } from '@/api/catalog';
 import { useCart } from '@/context/CartContext';
 import { useSession } from '@/context/SessionContext';
@@ -34,6 +35,7 @@ export function CategoryScreen({ navigation, route }: ScreenProps<'Category'>): 
   const cart = useCart();
   const actions = useCartActions();
   const { module, isFavorite, toggleFavorite } = useSession();
+  const resolveOutlet = useOutletResolver(module);
   const { id } = route.params;
   const [sort, setSort] = useState<Sort>('recommended');
   const [term, setTerm] = useState('');
@@ -152,8 +154,7 @@ export function CategoryScreen({ navigation, route }: ScreenProps<'Category'>): 
                   onFavorite={() => void toggleFavorite(module, item.id)}
                   onOpen={() => open(item)}
                   onAdd={() => {
-                    const outletId = module === 'food' ? item.restaurantId ?? '' : item.storeId ?? '';
-                    void actions.quickAdd(module, item, { id: outletId, name: '', deliveryFee: 0, minOrder: 0, etaMinutes: item.prepTime ?? 30 });
+                    void (async () => actions.quickAdd(module, item, await resolveOutlet(item)))();
                   }}
                   onInc={() => {
                     const line = cart.linesFor(module).find((row) => row.refId === item.id);

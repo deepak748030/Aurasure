@@ -8,6 +8,7 @@ import { ListRow, ListSection, MetaRow } from '@/components/list/ListRow';
 import { Tag } from '@/components/ui/Primitives';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useQuery } from '@/hooks/useQuery';
+import { useAppSettings } from '@/hooks/useAppSettings';
 import { fetchWallet, topUpWallet, type WalletState } from '@/api/rewards';
 import { ApiError } from '@/api/client';
 import { useSession } from '@/context/SessionContext';
@@ -17,8 +18,6 @@ import { radius, spacing } from '@/theme/tokens';
 import { money, relative } from '@/lib/format';
 import { haptic } from '@/lib/haptics';
 import type { Nav } from '@/navigation/types';
-
-const PRESETS = [100, 250, 500, 1000];
 
 /**
  * Wallet: balance card, add-money sheet (the server just credits the ledger —
@@ -32,9 +31,11 @@ export function WalletScreen({ navigation }: { navigation: Nav }): React.ReactEl
   const [busy, setBusy] = useState(false);
 
   const query = useQuery<WalletState>(useCallback(() => fetchWallet(), [user?.wallet]), { enabled: isLoggedIn });
+  const settings = useAppSettings();
   const state = query.data;
   const balance = state?.balance ?? user?.wallet ?? 0;
   const transactions = state?.transactions ?? [];
+  const presets = settings.data?.wallet.topupPresets ?? [100, 250, 500, 1000];
 
   const addMoney = async (): Promise<void> => {
     if (!isLoggedIn) {
@@ -44,7 +45,7 @@ export function WalletScreen({ navigation }: { navigation: Nav }): React.ReactEl
     const value = await sheet.pick({
       title: 'Add money to wallet',
       subtitle: 'This demo build credits the wallet directly — no payment gateway is charged',
-      options: PRESETS.map((amount) => ({ label: `Add ${money(amount)}`, value: String(amount), description: 'Credited instantly', icon: 'wallet' as IconName })),
+      options: presets.map((amount) => ({ label: `Add ${money(amount)}`, value: String(amount), description: 'Credited instantly', icon: 'wallet' as IconName })),
     });
     if (!value) return;
     setBusy(true);
@@ -99,7 +100,7 @@ export function WalletScreen({ navigation }: { navigation: Nav }): React.ReactEl
         </View>
 
         <View style={{ flexDirection: 'row', gap: 6 }}>
-          {PRESETS.map((amount) => (
+          {presets.map((amount) => (
             <Pressable
               key={amount}
               accessibilityRole="button"

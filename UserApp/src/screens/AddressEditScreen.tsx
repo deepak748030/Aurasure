@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Icon, type IconName } from '@/lib/icons';
 import { Tag } from '@/components/ui/Primitives';
 import { MapSurface } from '@/components/map/MapSurface';
+import { hasCoords } from '@/lib/geo';
 import { useSession } from '@/context/SessionContext';
 import { useColors } from '@/theme/ThemeContext';
 import { useSheet } from '@/components/sheet/SheetProvider';
@@ -38,7 +39,7 @@ export function AddressEditScreen({ navigation, route }: { navigation: Nav; rout
   const [city, setCity] = useState(existing?.city ?? 'Raipur');
   const [pin, setPin] = useState(existing?.pin ?? '');
   const [isDefault, setIsDefault] = useState(existing?.isDefault ?? addresses.length === 0);
-  const [saveCoords, setSaveCoords] = useState(false);
+  const [saveCoords, setSaveCoords] = useState(() => hasCoords(existing));
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -61,7 +62,8 @@ export function AddressEditScreen({ navigation, route }: { navigation: Nav; rout
     if (!validate()) return;
     setBusy(true);
     try {
-      const payload = { label: activeLabel.label, line: line.trim(), city: city.trim(), pin: pin.trim(), isDefault };
+      const pinCoords = saveCoords && coords ? { lat: coords.latitude, lng: coords.longitude } : saveCoords && hasCoords(existing) ? { lat: existing.lat, lng: existing.lng } : { lat: null, lng: null };
+      const payload = { label: activeLabel.label, line: line.trim(), city: city.trim(), pin: pin.trim(), isDefault, ...pinCoords };
       if (existing) {
         await editAddress(existing.id, payload);
         if (isDefault) setSelectedAddressId(existing.id);
@@ -69,14 +71,10 @@ export function AddressEditScreen({ navigation, route }: { navigation: Nav; rout
         const created = await addAddress(payload);
         if (isDefault || addresses.length === 0) setSelectedAddressId(created.id);
       }
-      if (saveCoords && coords) {
-        // No API field for coordinates — kept in memory for this session only.
-        haptic.selection();
-      }
       haptic.success();
       sheet.show({
         title: existing ? 'Address updated' : 'Address saved',
-        message: `${activeLabel.label} · ${line.trim().slice(0, 48)} is ready to use at checkout.`,
+        message: `${activeLabel.label} · ${line.trim().slice(0, 48)} is ready to use at checkout.${saveCoords && (coords || hasCoords(existing)) ? ' The map pin was saved with it.' : ''}`,
         icon: 'circleCheck',
         tone: 'success',
         dismissLabel: 'Done',
@@ -140,8 +138,13 @@ export function AddressEditScreen({ navigation, route }: { navigation: Nav; rout
           <MapSurface
             height={140}
             showControls={false}
-            userLabel={coords ? 'Current location' : 'Not pinned'}
-            markers={coords ? [{ id: 'me', label: 'You', x: 0.5, y: 0.5, icon: 'mapPin', tone: 'primary', active: true }] : []}
+            userLabel={coords ? 'Current location' : hasCoords(existing) ? 'Saved pin' : 'Not pinned'}
+            showUserDot={false}
+            markers={
+              coords || hasCoords(existing)
+                ? [{ id: 'me', label: 'Pin', x: 0.5, y: 0.5, icon: 'mapPin', tone: 'primary', active: true }]
+                : []
+            }
           />
         </View>
 
@@ -170,6 +173,30 @@ export function AddressEditScreen({ navigation, route }: { navigation: Nav; rout
             onPress={() => void useCurrentLocation()}
             style={{ alignSelf: 'stretch' }}
           />
+          <Pressable
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: saveCoords }}
+            onPress={() => {
+              haptic.selection();
+              setSaveCoords((prev) => !prev);
+            }}
+            style={({ pressed }) => [styles.defaultRow, { borderColor: c.border, opacity: pressed ? 0.94 : 1 }]}
+          >
+            <View style={[styles.checkbox, { borderColor: saveCoords ? c.primary : c.borderStrong, backgroundColor: saveCoords ? c.primary : 'transparent' }]}>
+              {saveCoords ? <Icon name="check" size={12} color={c.onPrimary} /> : null}
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text variant="bodySm" weight="semibold">
+                Save this pin with the address
+              </Text>
+              <Text variant="micro" tone="muted">
+                {coords
+                  ? `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)} — helps the rider find you`
+                  : 'Pin your location first, then save it here'}
+              </Text>
+            </View>
+            <Tag label={saveCoords ? 'ON' : 'OFF'} tone={saveCoords ? 'success' : 'muted'} />
+          </Pressable>
           <Pressable
             accessibilityRole="checkbox"
             accessibilityState={{ checked: isDefault }}

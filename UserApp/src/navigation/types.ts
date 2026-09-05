@@ -15,7 +15,7 @@ export type RootStackParamList = {
   Vibe: { id: string; name: string; tagline?: string };
   FlashSale: undefined;
   Brands: undefined;
-  BrandItems: { name: string };
+  BrandItems: { id: string; name: string };
   SeeAll: { kind: 'restaurants' | 'items' | 'products' | 'stores' | 'offers' | 'popular' | 'new'; title: string; categoryId?: string };
   Search: { initial?: string } | undefined;
   Cart: undefined;

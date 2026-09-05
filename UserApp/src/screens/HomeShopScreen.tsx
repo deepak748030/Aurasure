@@ -11,15 +11,15 @@ import { SkeletonCard, SkeletonHero, SkeletonList, SkeletonRail } from '@/compon
 import { Text } from '@/components/ui/Text';
 import { Icon } from '@/lib/icons';
 import { SmartImage } from '@/components/ui/SmartImage';
-import { groupBrands } from '@/lib/brands';
 import { useQuery } from '@/hooks/useQuery';
+import { fetchActiveFlashSale, fetchBrands, type Brand, type FlashSalePayload } from '@/api/app';
 import { useCartActions } from '@/hooks/useCartActions';
 import { useCart } from '@/context/CartContext';
 import { useSession } from '@/context/SessionContext';
 import { useColors } from '@/theme/ThemeContext';
 import { useSheet } from '@/components/sheet/SheetProvider';
 import { radius, spacing } from '@/theme/tokens';
-import { discountPercent, money } from '@/lib/format';
+import { money } from '@/lib/format';
 import type { Nav } from '@/navigation/types';
 import {
   fetchBanners,
@@ -50,6 +50,8 @@ interface ShopHomePayload {
   offers: CatalogItem[];
   trending: CatalogItem[];
   fresh: CatalogItem[];
+  brands: Brand[];
+  flash: FlashSalePayload;
 }
 
 export function HomeShopScreen({ navigation }: { navigation: Nav }): React.ReactElement {
@@ -61,7 +63,7 @@ export function HomeShopScreen({ navigation }: { navigation: Nav }): React.React
 
   const home = useQuery<ShopHomePayload>(
     useCallback(async () => {
-      const [banners, categories, recommended, popularStores, popular, offers, trending, fresh, newStores] = await Promise.all([
+      const [banners, categories, recommended, popularStores, popular, offers, trending, fresh, newStores, brands, flash] = await Promise.all([
         fetchBanners('shop'),
         fetchShopCategories(),
         fetchStores({ recommended: true, limit: 12 }),
@@ -71,8 +73,10 @@ export function HomeShopScreen({ navigation }: { navigation: Nav }): React.React
         fetchProducts({ trending: true, limit: 12 }),
         fetchProducts({ isNew: true, limit: 12 }),
         fetchStores({ niche: true, limit: 12 }),
+        fetchBrands(),
+        fetchActiveFlashSale('shop'),
       ]);
-      return { banners, categories, recommended, popularStores, newStores, popular, offers, trending, fresh };
+      return { banners, categories, recommended, popularStores, newStores, popular, offers, trending, fresh, brands, flash };
     }, []),
   );
 
@@ -99,15 +103,11 @@ export function HomeShopScreen({ navigation }: { navigation: Nav }): React.React
     return data.recommended.filter((store) => storeIds.has(store.id));
   }, [data, favorites]);
 
-  const brands = useMemo(
-    () => (data ? groupBrands([...data.popular, ...data.offers, ...data.trending, ...data.fresh]) : []),
-    [data],
-  );
+  const brands = useMemo(() => data?.brands ?? [], [data]);
 
-  const flashSale = useMemo(() => {
-    if (!data) return [];
-    return data.offers.filter((product) => discountPercent(product.mrp, product.price) >= 10).slice(0, 8);
-  }, [data]);
+  const flash = useMemo(() => data?.flash ?? null, [data]);
+  const flashSale = useMemo(() => (flash?.sale ? flash.items.slice(0, 8) : []), [flash]);
+  const flashEndsAt = useMemo(() => (flash?.sale ? new Date(flash.sale.endsAt) : undefined), [flash]);
 
   const loved = useMemo(() => {
     if (!data) return [];
@@ -222,11 +222,11 @@ export function HomeShopScreen({ navigation }: { navigation: Nav }): React.React
             </Rail>
           ) : null}
 
-          {flashSale.length > 0 ? (
+          {flash?.sale && flashSale.length > 0 ? (
             <View style={{ marginTop: spacing.section, backgroundColor: c.gradientPromo[0], paddingVertical: spacing.md }}>
               <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm }}>
                 <View style={{ flex: 1 }}>
-                  <SectionHeader title="Flash sale" subtitle="Deepest discounts, ending soon" icon="zap" actionLabel={`${flashSale.length} deals`} />
+                  <SectionHeader title={flash.sale.title} subtitle={flash.sale.subtitle} icon="zap" actionLabel={`${flash.items.length} deals`} />
                 </View>
                 <Pressable accessibilityRole="button" onPress={() => navigation.navigate('FlashSale')} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: 3, paddingBottom: spacing.md }}>
                   <Text variant="caption" weight="semibold" color={c.primary}>
@@ -235,9 +235,11 @@ export function HomeShopScreen({ navigation }: { navigation: Nav }): React.React
                   <Icon name="chevronRight" size={13} color={c.primary} />
                 </Pressable>
               </View>
-              <View style={{ paddingHorizontal: spacing.edge, paddingBottom: spacing.sm }}>
-                <FlashSaleTimer compact />
-              </View>
+              {flashEndsAt ? (
+                <View style={{ paddingHorizontal: spacing.edge, paddingBottom: spacing.sm }}>
+                  <FlashSaleTimer compact target={flashEndsAt} />
+                </View>
+              ) : null}
               <Rail>
                 {flashSale.map((product) => (
                   <ItemCard key={product.id} {...cardProps(product)} />
@@ -258,9 +260,9 @@ export function HomeShopScreen({ navigation }: { navigation: Nav }): React.React
               <View style={styles.brandGrid}>
                 {brands.slice(0, 8).map((brand) => (
                   <Pressable
-                    key={brand.name}
+                    key={brand.id}
                     accessibilityRole="button"
-                    onPress={() => navigation.navigate('BrandItems', { name: brand.name })}
+                    onPress={() => navigation.navigate('BrandItems', { id: brand.id, name: brand.name })}
                     style={({ pressed }) => [styles.brandCell, { backgroundColor: pressed ? c.surfaceAlt : c.surfaceHi }]}
                   >
                     {brand.image ? (

@@ -14,6 +14,9 @@ import { useColors } from '@/theme/ThemeContext';
 import { useSheet } from '@/components/sheet/SheetProvider';
 import { radius, spacing, feedback } from '@/theme/tokens';
 import { money } from '@/lib/format';
+import { useAppSettings } from '@/hooks/useAppSettings';
+import { fetchDeliveryEstimate } from '@/api/app';
+import { useQuery } from '@/hooks/useQuery';
 import { createOrder } from '@/api/orders';
 import { ApiError } from '@/api/client';
 import { isCouponUsable } from '@/api/rewards';
@@ -21,13 +24,14 @@ import { haptic } from '@/lib/haptics';
 import type { Nav } from '@/navigation/types';
 import type { PayBy } from '@/types';
 
-const PAYMENTS: { key: PayBy; label: string; sub: string; icon: IconName; enabled: boolean }[] = [
+/** Shown only until `/app/settings` loads — the live methods always win. */
+const FALLBACK_PAYMENTS: { key: PayBy; label: string; sub: string; icon: IconName; enabled: boolean }[] = [
   { key: 'cod', label: 'Cash on delivery', sub: 'Pay the rider when it arrives', icon: 'cash', enabled: true },
   { key: 'wallet', label: 'Aurasure wallet', sub: 'Deducted instantly, refunded on cancellation', icon: 'wallet', enabled: true },
   { key: 'upi', label: 'UPI / card', sub: 'Not enabled on this server build', icon: 'upi', enabled: false },
 ];
 
-const TIPS = [0, 10, 20, 30, 50];
+const FALLBACK_TIPS = [0, 10, 20, 30, 50];
 
 /**
  * Checkout. Same block order as `features/checkout/*` in the reference app:
@@ -45,6 +49,17 @@ export function CheckoutScreen({ navigation }: { navigation: Nav }): React.React
   const [noteDraft, setNoteDraft] = useState<string | null>(null);
 
   const module = cart.lines.food.length > 0 ? 'food' : 'shop';
+  const settings = useAppSettings();
+  const payments = settings.data?.payments ?? FALLBACK_PAYMENTS;
+  const tips = settings.data?.checkout.tips ?? FALLBACK_TIPS;
+  const estimate = useQuery(
+    useCallback(
+      (signal: AbortSignal) => fetchDeliveryEstimate(module, selectedAddress?.city || undefined, signal),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [module, selectedAddress?.city, isLoggedIn],
+    ),
+    { enabled: isLoggedIn },
+  );
   const lines = cart.linesFor(module);
   const outlet = cart.outletFor(module);
   const itemTotal = cart.totalFor(module);
@@ -53,7 +68,13 @@ export function CheckoutScreen({ navigation }: { navigation: Nav }): React.React
   const deliveryFee = cart.deliveryType === 'pickup' ? 0 : outlet?.deliveryFee ?? 0;
   const tip = cart.tip[module];
   const toPay = Math.max(0, itemTotal + deliveryFee - discount);
-  const slots = useMemo(() => buildSlots(), []);
+  const slots = useMemo(() => {
+    const list = buildSlots();
+    const eta = estimate.data?.label;
+    if (eta && list[0]) list[0] = { ...list[0], sub: eta };
+    return list;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estimate.data?.label]);
   const activeSlot = slots.find((slot) => slot.id === cart.slotId) ?? slots[0] ?? { id: 'asap', label: 'As soon as possible', sub: 'Usually 20-35 min', etaMinutes: null };
 
   const eligible = useMemo(() => (user?.coupons ?? []).filter((row) => isCouponUsable(row, itemTotal).ok), [user, itemTotal]);
@@ -185,34 +206,35 @@ export function CheckoutScreen({ navigation }: { navigation: Nav }): React.React
   const choosePayment = async (): Promise<void> => {
     const value = await sheet.pick({
       title: 'Payment method',
-      options: PAYMENTS.map((row) => ({
-        label: row.label,
+      options: payments.map((row) => ({
+        label: row.enabled ? row.label : `${row.label} (unavailable)`,
         value: row.key,
-        description: row.enabled ? row.sub : row.sub,
+        description: row.sub,
         icon: row.icon,
       })),
     });
     if (!value) return;
-    const next = PAYMENTS.find((row) => row.key === value);
+    const next = payments.find((row) => row.key === value);
     if (!next) return;
     if (!next.enabled) {
       sheet.show({
         title: `${next.label} is not available yet`,
-        message: 'This Aurasure build settles orders with cash on delivery or the in-app wallet. Pay online will arrive with the payment gateway.',
+        message: next.sub,
         icon: 'info',
         tone: 'info',
         dismissLabel: 'OK',
       });
       return;
     }
-    cart.setPayBy(next.key);
+    if (next.key !== 'cod' && next.key !== 'wallet' && next.key !== 'upi') return;
+    cart.setPayBy(next.key as PayBy);
   };
 
   const pickTip = async (): Promise<void> => {
     const value = await sheet.pick({
       title: 'Tip your delivery partner',
       subtitle: 'Added to the order note — hand it to the rider in cash',
-      options: TIPS.map((amount) => ({ label: amount === 0 ? 'No tip' : `₹${amount}`, value: String(amount), icon: 'bike' as IconName })),
+      options: tips.map((amount) => ({ label: amount === 0 ? 'No tip' : `₹${amount}`, value: String(amount), icon: 'bike' as IconName })),
     });
     if (value === null) return;
     cart.setTip(module, Number(value) || 0);
@@ -387,7 +409,7 @@ export function CheckoutScreen({ navigation }: { navigation: Nav }): React.React
 
           {/* Payment */}
           <ListSection title="Payment">
-            {PAYMENTS.map((row, index) => {
+            {payments.map((row, index) => {
               const on = cart.payBy === row.key;
               return (
                 <ListRow
@@ -398,7 +420,7 @@ export function CheckoutScreen({ navigation }: { navigation: Nav }): React.React
                   iconTone={row.enabled ? 'primary' : 'muted'}
                   onPress={() => void choosePayment()}
                   selected={on}
-                  last={index === PAYMENTS.length - 1}
+                  last={index === payments.length - 1}
                   trailing={
                     <View style={[styles.radio, { borderColor: on ? c.primary : c.borderStrong }]}>
                       {on ? <View style={{ width: 10, height: 10, borderRadius: radius.pill, backgroundColor: c.primary }} /> : null}

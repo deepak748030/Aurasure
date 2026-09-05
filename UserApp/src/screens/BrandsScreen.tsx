@@ -6,8 +6,7 @@ import { SmartImage } from '@/components/ui/SmartImage';
 import { EmptyState } from '@/components/ui/Primitives';
 import { SkeletonRail } from '@/components/ui/Skeleton';
 import { useQuery } from '@/hooks/useQuery';
-import { fetchProducts } from '@/api/catalog';
-import { groupBrands } from '@/lib/brands';
+import { fetchBrands, type Brand } from '@/api/app';
 import { useColors } from '@/theme/ThemeContext';
 import { radius, spacing } from '@/theme/tokens';
 import { initials } from '@/lib/format';
@@ -16,18 +15,17 @@ import type { Nav } from '@/navigation/types';
 
 /**
  * `brands_screen.dart` — every brand in the catalogue, three tiles per row.
- * Tiles come from the `brand` field of live products (`/shop/products`), which
- * is the closest this API has to the reference's brand table.
+ * Brands are a real collection (`/shop/brands`) with live product counts.
  */
 export function BrandsScreen({ navigation }: { navigation: Nav }): React.ReactElement {
   const c = useColors();
-  const query = useQuery(useCallback(() => fetchProducts({ limit: 100 }), []), {});
-  const brands = useMemo(() => groupBrands(query.data ?? []), [query.data]);
+  const query = useQuery<Brand[]>(useCallback((signal: AbortSignal) => fetchBrands(signal), []), {});
+  const brands = useMemo(() => query.data ?? [], [query.data]);
 
   return (
     <Screen
       title="All brands"
-      subtitle={query.loading ? 'Scanning the shelves…' : `${brands.length} brands with items in stock`}
+      subtitle={query.loading ? 'Loading brands…' : `${brands.length} brands in the catalogue`}
       back
       padded={false}
       onRefresh={query.refresh}
@@ -38,7 +36,7 @@ export function BrandsScreen({ navigation }: { navigation: Nav }): React.ReactEl
           <SkeletonRail count={6} cardWidth={104} height={104} />
         </View>
       ) : brands.length === 0 ? (
-        <EmptyState icon="tag" title="No brands published yet" subtitle="Products get a brand tile as soon as a store fills in the brand field." />
+        <EmptyState icon="tag" title="No brands published yet" subtitle="Brands appear here as soon as the catalogue team adds them." />
       ) : (
         <View style={styles.grid}>
           {brands.map((brand) => (
@@ -48,7 +46,7 @@ export function BrandsScreen({ navigation }: { navigation: Nav }): React.ReactEl
               accessibilityLabel={`${brand.name}, ${brand.items} items`}
               onPress={() => {
                 haptic.light();
-                navigation.navigate('BrandItems', { name: brand.name });
+                navigation.navigate('BrandItems', { id: brand.id, name: brand.name });
               }}
               style={({ pressed }) => [styles.cell, { backgroundColor: pressed ? c.surfaceAlt : c.surfaceHi, borderColor: c.border }]}
             >

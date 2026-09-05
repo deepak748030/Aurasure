@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
@@ -7,91 +7,92 @@ import { Button } from '@/components/ui/Button';
 import { Icon, type IconName } from '@/lib/icons';
 import { ListSection, MetaRow } from '@/components/list/ListRow';
 import { Tag } from '@/components/ui/Primitives';
+import { SkeletonList } from '@/components/ui/Skeleton';
+import { useQuery } from '@/hooks/useQuery';
+import { useAppSettings } from '@/hooks/useAppSettings';
+import { createSupportTicket, fetchFaqs, fetchMyTickets, type FaqItem } from '@/api/app';
+import { ApiError } from '@/api/client';
 import { useSession } from '@/context/SessionContext';
 import { useColors } from '@/theme/ThemeContext';
 import { useSheet } from '@/components/sheet/SheetProvider';
 import { radius, spacing } from '@/theme/tokens';
-import { SUPPORT_PHONE } from '@/config';
 import { money } from '@/lib/format';
 import { haptic } from '@/lib/haptics';
 import type { Nav } from '@/navigation/types';
 
-interface Faq {
-  q: string;
-  a: string;
-  match: string[];
-  icon: IconName;
-}
+const TICKET_STATUS: Record<string, { label: string; tone: 'success' | 'warning' | 'muted' }> = {
+  open: { label: 'Open', tone: 'warning' },
+  in_progress: { label: 'In progress', tone: 'muted' },
+  resolved: { label: 'Resolved', tone: 'success' },
+};
 
-const FAQS: Faq[] = [
-  { q: 'How do I place an order?', a: 'Open a store, tap ADD on what you want, then the cart and Place order. The store confirms it and you can watch every step in Track order.', match: ['order', 'place', 'buy'], icon: 'cart' },
-  { q: 'Can I cancel after ordering?', a: 'Yes — free until the store confirms, from the order screen. After that the store has to approve it. Wallet payments are refunded the moment a cancellation goes through.', match: ['cancel', 'refund', 'drop'], icon: 'circleX' },
-  { q: 'When is the wallet charged?', a: 'Only if you pick "Aurasure wallet" as the payment method. Then it is debited when the order is created and credited back if the order is cancelled.', match: ['wallet', 'pay', 'charge', 'money'], icon: 'wallet' },
-  { q: 'How do coupons work?', a: 'Claim a code in Coupons, then apply it in the cart. One coupon per order, and it needs the minimum order value. The server re-checks it when you place the order.', match: ['coupon', 'promo', 'code', 'discount'], icon: 'coupon' },
-  { q: 'How are loyalty points counted?', a: '5 points for every ₹100 spent, rounded down. 100 points redeem as ₹10 in your wallet, and a cancelled order takes its points back.', match: ['loyalty', 'point', 'tier'], icon: 'loyalty' },
-  { q: 'Can I pay with UPI or card?', a: 'Not in this build — it ships with cash on delivery and the in-app wallet. The payment method row tells you when a gateway is enabled.', match: ['upi', 'card', 'gateway', 'online'], icon: 'creditCard' },
-  { q: 'Why is my cart locked to one store?', a: 'Every order comes from a single kitchen or shop, so mixing stores would silently drop items. Adding from a new store asks whether to replace the cart.', match: ['cart', 'store', 'mix', 'two'], icon: 'store' },
-  { q: 'The item price changed at checkout', a: 'Prices come from the live catalogue. If a store updates a price while your cart is open, the invoice uses the new one — it is shown before you place the order.', match: ['price', 'changed', 'cost'], icon: 'tag' },
-  { q: 'The app says the server is offline', a: 'The API is reachable but its database is not up, or the base URL in your .env is wrong. Settings shows the exact address being used; the store operator starts MongoDB.', match: ['offline', 'server', 'db', 'error', 'health'], icon: 'wifiOff' },
-  { q: 'How do I change my delivery address?', a: 'Tap the address in the home header, pick a saved one or add a new one. The chosen address is used for distance and shown to the rider.', match: ['address', 'location', 'deliver'], icon: 'mapPin' },
-];
-
-/** Help centre: searchable FAQ + the channels that actually exist here. */
+/** Help centre: searchable FAQ + contact channels + support tickets, all server-driven. */
 export function HelpScreen({ navigation }: { navigation: Nav }): React.ReactElement {
   const c = useColors();
   const sheet = useSheet();
-  const { online, user } = useSession();
+  const { online, user, isLoggedIn } = useSession();
   const [term, setTerm] = useState('');
   const [open, setOpen] = useState<string | null>(null);
   const [ticket, setTicket] = useState('');
+  const [sending, setSending] = useState(false);
 
+  const settings = useAppSettings();
+  const support = settings.data?.support;
+  const phone = support?.phone ?? '+919000000000';
+  const displayPhone = support?.displayPhone ?? phone;
+  const email = support?.email ?? 'support@aurasure.app';
+
+  const faqs = useQuery<FaqItem[]>(useCallback((signal: AbortSignal) => fetchFaqs(signal), []), {});
+  const tickets = useQuery(useCallback((signal: AbortSignal) => fetchMyTickets(signal), []), { enabled: isLoggedIn });
+
+  const allFaqs = useMemo(() => faqs.data ?? [], [faqs.data]);
   const rows = useMemo(() => {
     const needle = term.trim().toLowerCase();
-    if (needle.length < 2) return FAQS;
-    return FAQS.filter((faq) => `${faq.q} ${faq.a} ${faq.match.join(' ')}`.toLowerCase().includes(needle));
-  }, [term]);
+    if (needle.length < 2) return allFaqs;
+    return allFaqs.filter((faq) => `${faq.q} ${faq.a} ${(faq.match ?? []).join(' ')}`.toLowerCase().includes(needle));
+  }, [term, allFaqs]);
 
   const contact = async (channel: 'phone' | 'email' | 'wa'): Promise<void> => {
     const targets = {
-      phone: `tel:${SUPPORT_PHONE}`,
-      email: `mailto:support@aurasure.app?subject=Aurasure customer support&body=${encodeURIComponent(`Order / issue details:\n\n(phone: ${user?.phone ?? ''})`)}`,
-      wa: `https://wa.me/${SUPPORT_PHONE.replace(/\D/g, '')}?text=${encodeURIComponent('Hi Aurasure, I need help with my order.')}`,
+      phone: `tel:${phone}`,
+      email: `mailto:${email}?subject=Aurasure customer support&body=${encodeURIComponent(`Order / issue details:\n\n(phone: ${user?.phone ?? ''})`)}`,
+      wa: `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent('Hi Aurasure, I need help with my order.')}`,
     } as const;
     try {
       await Linking.openURL(targets[channel]);
     } catch {
-      sheet.info('Opening not supported here', `This device could not open that link. Support number: ${SUPPORT_PHONE}`);
+      sheet.info('Opening not supported here', `This device could not open that link. Support number: ${displayPhone}`);
     }
   };
 
   const sendTicket = async (): Promise<void> => {
+    if (!isLoggedIn) {
+      sheet.show({
+        title: 'Sign in first',
+        message: 'Support tickets are linked to your account so replies find you.',
+        icon: 'user',
+        tone: 'info',
+        dismissLabel: 'Later',
+        actions: [{ label: 'Sign in', onPress: () => navigation.navigate('Auth', { mode: 'login' }), variant: 'primary' }],
+      });
+      return;
+    }
     if (ticket.trim().length < 12) {
       sheet.warning('Tell us a bit more', 'A sentence or two about what happened helps us find your order.');
       return;
     }
-    const value = ticket.trim();
-    setTicket('');
-    sheet.show({
-      title: 'Message written',
-      message: 'This build has no support-ticket endpoint, so nothing was sent to a queue. Copy it into a call or email instead — we kept it out of your order notes on purpose.',
-      icon: 'chat',
-      tone: 'warning',
-      dismissLabel: 'Close',
-      actions: [
-        {
-          label: 'Call support',
-          variant: 'primary',
-          onPress: () => void contact('phone'),
-        },
-        {
-          label: 'Email it',
-          variant: 'secondary',
-          onPress: () => {
-            void Linking.openURL(`mailto:support@aurasure.app?subject=Aurasure issue&body=${encodeURIComponent(value)}`);
-          },
-        },
-      ],
-    });
+    setSending(true);
+    try {
+      const created = await createSupportTicket(ticket.trim());
+      setTicket('');
+      tickets.refresh();
+      haptic.success();
+      sheet.success('Message sent', `Ticket ${created.id} is with our team. Replies appear under Notifications.`);
+    } catch (error) {
+      sheet.error('Could not send', error instanceof ApiError ? error.message : 'Check your connection and try again.');
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -118,9 +119,9 @@ export function HelpScreen({ navigation }: { navigation: Nav }): React.ReactElem
         <View style={styles.channelRow}>
           {(
             [
-              { key: 'phone', label: 'Call', value: SUPPORT_PHONE, icon: 'phone' as IconName, channel: 'phone' as const },
-              { key: 'email', label: 'Email', value: 'support@aurasure.app', icon: 'mail' as IconName, channel: 'email' as const },
-              { key: 'wa', label: 'WhatsApp', value: SUPPORT_PHONE, icon: 'chat' as IconName, channel: 'wa' as const },
+              { key: 'phone', label: 'Call', value: displayPhone, icon: 'phone' as IconName, channel: 'phone' as const },
+              { key: 'email', label: 'Email', value: email, icon: 'mail' as IconName, channel: 'email' as const },
+              { key: 'wa', label: 'WhatsApp', value: displayPhone, icon: 'chat' as IconName, channel: 'wa' as const },
             ]
           ).map((row) => (
             <Pressable
@@ -147,7 +148,18 @@ export function HelpScreen({ navigation }: { navigation: Nav }): React.ReactElem
 
         {/* FAQ */}
         <ListSection title={`FREQUENT QUESTIONS · ${rows.length}`}>
-          {rows.length === 0 ? (
+          {faqs.loading ? (
+            <View style={{ padding: spacing.md }}>
+              <SkeletonList rows={4} thumb={30} />
+            </View>
+          ) : faqs.error ? (
+            <View style={{ padding: spacing.md, gap: 6 }}>
+              <Text variant="bodySm" tone="muted">
+                Answers could not be loaded ({faqs.error.message}). The contact channels above still work.
+              </Text>
+              <Button title="Retry" size="sm" variant="secondary" onPress={() => faqs.refetch()} style={{ alignSelf: 'flex-start' }} />
+            </View>
+          ) : rows.length === 0 ? (
             <View style={{ padding: spacing.md, gap: 6 }}>
               <Text variant="bodySm" tone="muted">
                 Nothing matches “{term}”. Try “cancel”, “wallet” or “coupon”, or write to us below.
@@ -197,12 +209,45 @@ export function HelpScreen({ navigation }: { navigation: Nav }): React.ReactElem
           <Text variant="subtitle" weight="semibold">
             Write to us
           </Text>
-          <Input label="What happened?" value={ticket} onChangeText={setTicket} multiline placeholder="Order AUR-FD-1042 arrived without the dip. The store did not answer." hint="No ticket API exists on this build — we will not pretend otherwise" icon="chat" />
+          <Input label="What happened?" value={ticket} onChangeText={setTicket} multiline placeholder="Order AUR-FD-1042 arrived without the dip. The store did not answer." hint={`Replies land under Notifications${support ? ` · answers in ~${support.slaMinutes} min` : ''}`} icon="chat" />
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Button title="Prepare message" icon="arrowUpRight" onPress={() => void sendTicket()} style={{ flex: 1 }} />
+            <Button title={sending ? 'Sending…' : 'Send message'} icon="send" loading={sending} onPress={() => void sendTicket()} style={{ flex: 1 }} />
             <Button title="Order history" variant="secondary" icon="orders" onPress={() => navigation.navigate('Tabs')} />
           </View>
         </View>
+
+        {/* Ticket history */}
+        {isLoggedIn && (tickets.data?.length ?? 0) > 0 ? (
+          <ListSection title={`YOUR MESSAGES · ${tickets.data?.length ?? 0}`}>
+            {(tickets.data ?? []).map((item) => {
+              const status = TICKET_STATUS[item.status] ?? TICKET_STATUS.open!;
+              return (
+                <View key={item.id} style={{ padding: spacing.sm, gap: 4 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text variant="micro" tone="faint" style={{ flex: 1 }}>
+                      {item.id}
+                      {item.orderCode ? ` · ${item.orderCode}` : ''}
+                    </Text>
+                    <Tag label={status.label} tone={status.tone} />
+                  </View>
+                  <Text variant="caption" tone="muted" numberOfLines={2}>
+                    {item.message}
+                  </Text>
+                  {item.response ? (
+                    <View style={{ padding: spacing.sm, borderRadius: radius.md, backgroundColor: c.primaryFaint, gap: 2 }}>
+                      <Text variant="micro" weight="semibold" color={c.primary}>
+                        Support replied
+                      </Text>
+                      <Text variant="caption" tone="muted">
+                        {item.response}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              );
+            })}
+          </ListSection>
+        ) : null}
 
         <View style={{ padding: spacing.md, borderRadius: radius.lg, backgroundColor: c.surfaceHi, gap: 4 }}>
           <Text variant="overline" tone="faint">
@@ -212,8 +257,8 @@ export function HelpScreen({ navigation }: { navigation: Nav }): React.ReactElem
           <MetaRow label="Your role" value={user ? `${user.name} · customer` : 'Guest'} />
           <MetaRow label="Wallet" value={money(user?.wallet ?? 0)} />
           <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
-            <Tag label="Mon-Sat · 9:00-21:00" icon="clock" tone="muted" />
-            <Tag label="Answers in ~15 min" icon="zap" tone="muted" />
+            <Tag label={support?.hours ?? 'Mon–Sat · 9:00–21:00'} icon="clock" tone="muted" />
+            <Tag label={`Answers in ~${support?.slaMinutes ?? 15} min`} icon="zap" tone="muted" />
           </View>
         </View>
       </View>

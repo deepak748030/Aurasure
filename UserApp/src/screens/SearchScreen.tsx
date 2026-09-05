@@ -10,6 +10,7 @@ import { ItemRow } from '@/components/list/ItemRow';
 import { SkeletonList, SkeletonRail } from '@/components/ui/Skeleton';
 import { useQuery } from '@/hooks/useQuery';
 import { search, type SearchResults } from '@/api/catalog';
+import { fetchTrending } from '@/api/app';
 import { useSession } from '@/context/SessionContext';
 import { useCart } from '@/context/CartContext';
 import { useCartActions } from '@/hooks/useCartActions';
@@ -18,11 +19,6 @@ import { useSheet } from '@/components/sheet/SheetProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { money } from '@/lib/format';
 import type { Nav } from '@/navigation/types';
-
-const SUGGESTIONS: Record<'food' | 'shop', string[]> = {
-  food: ['Biryani', 'Pizza', 'Dosa', 'Burger', 'Cake', 'Coffee', 'Thali', 'Rolls'],
-  shop: ['Milk', 'Bread', 'Eggs', 'Shampoo', 'T-shirt', 'Earphones', 'Vitamins', 'Detergent'],
-};
 
 type Scope = 'all' | 'items' | 'stores';
 
@@ -36,6 +32,11 @@ export function SearchScreen({ navigation, route }: { navigation: Nav; route: { 
   const [submitted, setSubmitted] = useState(route.params?.initial ?? '');
   const [scope, setScope] = useState<Scope>('all');
 
+  const trending = useQuery<string[]>(
+    useCallback((signal: AbortSignal) => fetchTrending(module, signal), [module]),
+    {},
+  );
+
   const results = useQuery<SearchResults | null>(
     useCallback(async () => {
       const term = submitted.trim();
@@ -48,6 +49,24 @@ export function SearchScreen({ navigation, route }: { navigation: Nav; route: { 
   const items = useMemo(() => (module === 'food' ? (results.data?.items ?? []) : (results.data?.products ?? [])), [results.data, module]);
   const stores = useMemo(() => (module === 'food' ? (results.data?.restaurants ?? []) : (results.data?.stores ?? [])), [results.data, module]);
   const searching = submitted.trim().length >= 2 && results.loading;
+  const minPrice = useMemo(() => (items.length > 0 ? Math.min(...items.map((item) => item.price)) : null), [items]);
+
+  /** Real outlet snapshot from the result rows — never a zeroed stub. */
+  const outletFor = useCallback(
+    (outletId: string): { id: string; name: string; deliveryFee: number; minOrder: number; etaMinutes: number } => {
+      const found = stores.find((row) => row.id === outletId) as
+        | { name: string; deliveryFee: number; minOrder: number; deliveryTime?: number; deliveryMins?: number }
+        | undefined;
+      return {
+        id: outletId,
+        name: found?.name ?? '',
+        deliveryFee: found?.deliveryFee ?? 0,
+        minOrder: found?.minOrder ?? 0,
+        etaMinutes: found?.deliveryTime ?? found?.deliveryMins ?? 30,
+      };
+    },
+    [stores],
+  );
 
   const run = (term: string): void => {
     const clean = term.trim();
@@ -128,7 +147,7 @@ export function SearchScreen({ navigation, route }: { navigation: Nav; route: { 
               POPULAR SEARCHES
             </Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-              {SUGGESTIONS[module].map((term) => (
+              {(trending.data ?? []).map((term) => (
                 <Chip key={term} label={term} icon="search" size="sm" onPress={() => run(term)} />
               ))}
             </View>
@@ -187,7 +206,7 @@ export function SearchScreen({ navigation, route }: { navigation: Nav; route: { 
                     onOpen={() => navigation.navigate('Item', { module, id: item.id })}
                     onAdd={() => {
                       const outletId = module === 'food' ? item.restaurantId ?? '' : item.storeId ?? '';
-                      void actions.quickAdd(module, item, { id: outletId, name: '', deliveryFee: 0, minOrder: 0, etaMinutes: 30 });
+                      void actions.quickAdd(module, item, outletFor(outletId));
                     }}
                     onInc={() => {
                       const line = cart.linesFor(module).find((row) => row.refId === item.id);
@@ -206,7 +225,7 @@ export function SearchScreen({ navigation, route }: { navigation: Nav; route: { 
           <View style={{ paddingHorizontal: spacing.edge, paddingTop: spacing.md }}>
             <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
               <Tag label={`${total} result${total === 1 ? '' : 's'}`} icon="search" tone="muted" />
-              <Tag label={`from ${money(0)}+`} icon="tag" tone="muted" />
+              {minPrice !== null ? <Tag label={`from ${money(minPrice)}`} icon="tag" tone="muted" /> : null}
             </View>
           </View>
         </View>

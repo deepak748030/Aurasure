@@ -16,6 +16,7 @@ import { useColors } from '@/theme/ThemeContext';
 import { useSheet } from '@/components/sheet/SheetProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { joinedOn, money, tierFor } from '@/lib/format';
+import { useAppSettings } from '@/hooks/useAppSettings';
 import type { Nav } from '@/navigation/types';
 import type { Order } from '@/types';
 
@@ -41,7 +42,8 @@ export function ProfileScreen({ navigation }: { navigation: Nav }): React.ReactE
     return { orders: result.orders };
   }, [user]), {});
 
-  const tier = tierFor(user?.loyaltyPoints ?? 0);
+  const settings = useAppSettings();
+  const tier = tierFor(user?.loyaltyPoints ?? 0, settings.data?.loyalty.tiers);
 
   if (!isLoggedIn || !user) {
     return (
@@ -195,7 +197,7 @@ export function ProfileScreen({ navigation }: { navigation: Nav }): React.ReactE
         <ListSection title="ACCOUNT">
           <ListRow title="Delivery addresses" subtitle="Saved places you order to" icon="mapPin" onPress={() => navigation.navigate('Addresses')} meta={`${(orders.data?.orders ?? []).length} recent`} />
           <ListRow title="Wallet & transactions" subtitle="Add money, see every debit and credit" icon="wallet" onPress={() => navigation.navigate('Wallet')} />
-          <ListRow title="Loyalty & tiers" subtitle="5 points per ₹100 · redeem 100 points = ₹10" icon="loyalty" onPress={() => navigation.navigate('Loyalty')} />
+          <ListRow title="Loyalty & tiers" subtitle={`${settings.data?.loyalty.earnPer100 ?? 5} points per ₹100 · redeem ${settings.data?.loyalty.redeemPoints ?? 100} points = ${money(settings.data?.loyalty.redeemValue ?? 10)}`} icon="loyalty" onPress={() => navigation.navigate('Loyalty')} />
           <ListRow title="Coupons" subtitle="Claimed offers and their conditions" icon="coupon" onPress={() => navigation.navigate('Coupons')} />
           <ListRow title="Refer & earn" subtitle={rewards.data ? `${rewards.data.referral.code} · ${money(rewards.data.referral.earnings)} earned` : 'Share your code'} icon="referral" onPress={() => navigation.navigate('ReferEarn')} />
           <ListRow

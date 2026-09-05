@@ -26,6 +26,8 @@ export interface UserAddress {
   city: string;
   pin: string;
   isDefault: boolean;
+  lat: number | null;
+  lng: number | null;
 }
 
 export interface FavoriteRef {
@@ -126,6 +128,9 @@ export interface Restaurant {
   isPopular?: boolean;
   offer?: string;
   line?: string;
+  city?: string;
+  lat?: number | null;
+  lng?: number | null;
   cover: ImageRef | null;
   tags: string[];
   categoryIds: string[];
@@ -213,6 +218,8 @@ export interface ShopStore {
   isClosed?: boolean;
   tags: string[];
   categoryIds: string[];
+  lat?: number | null;
+  lng?: number | null;
   cover: ImageRef | null;
 }
 

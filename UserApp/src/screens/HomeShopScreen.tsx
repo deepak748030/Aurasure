@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Screen } from '@/components/ui/Screen';
 import { HomeHeader } from '@/components/home/HomeHeader';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
@@ -10,6 +10,8 @@ import { CategoryTile, ItemCard, SpecialOfferCard, StoreCard } from '@/component
 import { SkeletonCard, SkeletonHero, SkeletonList, SkeletonRail } from '@/components/ui/Skeleton';
 import { Text } from '@/components/ui/Text';
 import { Icon } from '@/lib/icons';
+import { SmartImage } from '@/components/ui/SmartImage';
+import { groupBrands } from '@/lib/brands';
 import { useQuery } from '@/hooks/useQuery';
 import { useCartActions } from '@/hooks/useCartActions';
 import { useCart } from '@/context/CartContext';
@@ -96,6 +98,11 @@ export function HomeShopScreen({ navigation }: { navigation: Nav }): React.React
     const storeIds = new Set([...data.popular, ...data.offers].filter((product) => savedRefs.has(product.id)).map((product) => product.storeId));
     return data.recommended.filter((store) => storeIds.has(store.id));
   }, [data, favorites]);
+
+  const brands = useMemo(
+    () => (data ? groupBrands([...data.popular, ...data.offers, ...data.trending, ...data.fresh]) : []),
+    [data],
+  );
 
   const flashSale = useMemo(() => {
     if (!data) return [];
@@ -239,6 +246,41 @@ export function HomeShopScreen({ navigation }: { navigation: Nav }): React.React
             </View>
           ) : null}
 
+          {brands.length > 0 ? (
+            <View style={{ marginTop: spacing.section }}>
+              <SectionHeader
+                title="Brands"
+                subtitle={`Shop by maker · ${brands.length} in the catalogue`}
+                icon="tag"
+                actionLabel="All brands"
+                onAction={() => navigation.navigate('Brands')}
+              />
+              <View style={styles.brandGrid}>
+                {brands.slice(0, 8).map((brand) => (
+                  <Pressable
+                    key={brand.name}
+                    accessibilityRole="button"
+                    onPress={() => navigation.navigate('BrandItems', { name: brand.name })}
+                    style={({ pressed }) => [styles.brandCell, { backgroundColor: pressed ? c.surfaceAlt : c.surfaceHi }]}
+                  >
+                    {brand.image ? (
+                      <SmartImage source={brand.image} name={brand.name} style={styles.brandArt} radiusOverride={radius.md} />
+                    ) : (
+                      <View style={[styles.brandArt, styles.brandPlate, { backgroundColor: c.primarySoft }]}>
+                        <Text variant="caption" weight="bold" color={c.primary}>
+                          {brand.name.slice(0, 2).toUpperCase()}
+                        </Text>
+                      </View>
+                    )}
+                    <Text variant="micro" tone="muted" numberOfLines={1} center>
+                      {brand.name}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          ) : null}
+
           {data?.offers[0] ? (
             <View style={{ marginTop: spacing.section }}>
               <SectionHeader title="Special offer" subtitle="Price drops you can use today" icon="tag" />
@@ -335,3 +377,10 @@ export function HomeShopScreen({ navigation }: { navigation: Nav }): React.React
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  brandGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 13, paddingHorizontal: spacing.edge, paddingTop: spacing.sm },
+  brandCell: { width: '22%', borderRadius: radius.lg, padding: spacing.xs, alignItems: 'center', gap: 4 },
+  brandArt: { width: 60, height: 60, borderRadius: radius.md },
+  brandPlate: { alignItems: 'center', justifyContent: 'center' },
+});

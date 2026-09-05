@@ -14,6 +14,8 @@ export type RootStackParamList = {
   Category: { module: 'food' | 'shop'; id: string; name: string };
   Vibe: { id: string; name: string; tagline?: string };
   FlashSale: undefined;
+  Brands: undefined;
+  BrandItems: { name: string };
   SeeAll: { kind: 'restaurants' | 'items' | 'products' | 'stores' | 'offers' | 'popular' | 'new'; title: string; categoryId?: string };
   Search: { initial?: string } | undefined;
   Cart: undefined;

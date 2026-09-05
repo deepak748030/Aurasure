@@ -292,6 +292,29 @@ export function HomeFoodScreen({ navigation }: { navigation: Nav }): React.React
             </Rail>
           ) : null}
 
+          {data && data.restaurants.length > 0 ? (
+            <Rail
+              title="Closest to you"
+              subtitle="Shortest drive first"
+              icon="navigation"
+              actionLabel="All stores"
+              onAction={() => navigation.navigate('SeeAll', { kind: 'restaurants', title: 'All restaurants' })}
+            >
+              {[...data.restaurants]
+                .sort((a, b) => a.deliveryTime - b.deliveryTime)
+                .slice(0, 8)
+                .map((restaurant) => (
+                  <StoreCard
+                    key={restaurant.id}
+                    store={restaurant}
+                    onPress={() => navigation.navigate('Outlet', { module: 'food', id: restaurant.id, name: restaurant.name })}
+                    favorite={isFavorite('food', restaurant.id)}
+                    onFavorite={() => void toggleFavorite('food', restaurant.id)}
+                  />
+                ))}
+            </Rail>
+          ) : null}
+
           {loved.length > 0 ? (
             <Rail title="Items you love" subtitle="From your favourites" icon="heart" actionLabel="Favourites" onAction={() => navigation.navigate('Favorites')}>
               <View style={{ flexDirection: 'row', gap: 8 }}>

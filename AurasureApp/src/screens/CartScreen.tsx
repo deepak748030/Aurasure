@@ -16,6 +16,7 @@ import { useColors } from '@/theme/ThemeContext';
 import { useSheet } from '@/components/sheet/SheetProvider';
 import { radius, spacing, feedback } from '@/theme/tokens';
 import { money } from '@/lib/format';
+import { haptic } from '@/lib/haptics';
 import type { Nav } from '@/navigation/types';
 import { couponLabel, isCouponUsable } from '@/api/rewards';
 import type { CartLine, ModuleKey } from '@/types';

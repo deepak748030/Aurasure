@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, Platform, StyleSheet, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Sheet, SheetOption } from '@/components/sheet/Sheet';
@@ -79,12 +79,19 @@ export function PaymentSheet({
   visible,
   amount,
   purpose,
+  method,
   onClose,
   onPaid,
 }: {
   visible: boolean;
   amount: number;
   purpose: 'wallet' | 'order';
+  /**
+   * Pass this when the caller has already selected the method on its own page.
+   * The sheet then opens Razorpay directly instead of asking the user to choose
+   * the same method again.
+   */
+  method?: PayMethod;
   onClose: () => void;
   onPaid: (result: PaymentConfirm) => void;
 }): React.ReactElement | null {
@@ -92,18 +99,59 @@ export function PaymentSheet({
   const sheet = useSheet();
   const [busy, setBusy] = useState(false);
   const [html, setHtml] = useState<string | null>(null);
+  const busyRef = useRef(false);
+  const autoStartedKey = useRef<string | null>(null);
+  const startSeq = useRef(0);
 
-  const start = async (method: PayMethod): Promise<void> => {
-    setBusy(true);
-    try {
-      const intent = await createPaymentIntent({ amount, purpose, method });
-      setHtml(checkoutHtml({ ...intent, method }));
-    } catch (error) {
-      sheet.error('Could not start payment', error instanceof ApiError ? error.message : 'Try again.');
-    } finally {
-      setBusy(false);
+  const selectedMethod = useMemo(() => (method && METHODS.some((row) => row.key === method) ? method : undefined), [method]);
+  const selectedRow = useMemo(() => METHODS.find((row) => row.key === selectedMethod), [selectedMethod]);
+
+  const handleSheetClose = useCallback(() => {
+    startSeq.current += 1;
+    setHtml(null);
+    onClose();
+  }, [onClose]);
+
+  const start = useCallback(
+    async (nextMethod: PayMethod, options: { closeOnError?: boolean } = {}): Promise<void> => {
+      if (busyRef.current) return;
+      const seq = startSeq.current + 1;
+      startSeq.current = seq;
+      busyRef.current = true;
+      setBusy(true);
+      try {
+        const intent = await createPaymentIntent({ amount, purpose, method: nextMethod });
+        if (startSeq.current !== seq) return;
+        setHtml(checkoutHtml({ ...intent, method: nextMethod }));
+      } catch (error) {
+        if (options.closeOnError) handleSheetClose();
+        sheet.error('Could not start payment', error instanceof ApiError ? error.message : 'Try again.');
+      } finally {
+        busyRef.current = false;
+        setBusy(false);
+      }
+    },
+    [amount, handleSheetClose, purpose, sheet],
+  );
+
+  const autoKey = selectedMethod ? `${purpose}:${amount}:${selectedMethod}` : null;
+  useEffect(() => {
+    if (!visible) {
+      autoStartedKey.current = null;
+      startSeq.current += 1;
+      setHtml(null);
+      return;
     }
-  };
+    if (!selectedMethod || !autoKey || html || busyRef.current || autoStartedKey.current === autoKey) return;
+    autoStartedKey.current = autoKey;
+    void start(selectedMethod, { closeOnError: true });
+  }, [autoKey, html, selectedMethod, start, visible]);
+
+  const closeCheckout = useCallback(() => {
+    startSeq.current += 1;
+    setHtml(null);
+    if (selectedMethod) onClose();
+  }, [onClose, selectedMethod]);
 
   const onMessage = async (raw: string): Promise<void> => {
     let payload: { type?: string; razorpay_payment_id?: string; razorpay_order_id?: string; razorpay_signature?: string; reason?: string } = {};
@@ -113,7 +161,7 @@ export function PaymentSheet({
       return;
     }
     if (payload.type === 'dismiss' || payload.type === 'failed') {
-      setHtml(null);
+      closeCheckout();
       if (payload.type === 'failed') sheet.error('Payment failed', payload.reason || 'Try another method.');
       return;
     }
@@ -127,7 +175,7 @@ export function PaymentSheet({
       setHtml(null);
       onPaid(result);
     } catch (error) {
-      setHtml(null);
+      closeCheckout();
       sheet.error('Could not confirm payment', error instanceof ApiError ? error.message : 'Contact support if money was deducted.');
     }
   };
@@ -137,22 +185,29 @@ export function PaymentSheet({
   return (
     <>
       <Sheet
-        visible={visible && !html}
-        onClose={onClose}
+        visible={visible && !html && Boolean(selectedMethod)}
+        onClose={handleSheetClose}
+        title="Opening Razorpay"
+        subtitle={`${money(amount)} · ${selectedRow?.label ?? 'Online payment'}`}
+        icon={selectedRow?.icon ?? 'creditCard'}
+        dismissLabel="Cancel"
+      >
+        <View style={{ paddingVertical: spacing.md, alignItems: 'center' }}>
+          <ActivityIndicator color={c.primary} />
+          <Text variant="caption" tone="muted" style={{ marginTop: 8 }}>
+            Opening secure checkout…
+          </Text>
+        </View>
+      </Sheet>
+
+      <Sheet
+        visible={visible && !html && !selectedMethod}
+        onClose={handleSheetClose}
         title="Pay with Razorpay"
         subtitle={`${money(amount)} · UPI, Paytm, PhonePe, cards or net banking`}
         icon="creditCard"
         dismissLabel="Cancel"
       >
-        {METHODS.map((row) => (
-          <SheetOption
-            key={row.key}
-            label={row.label}
-            description={row.description}
-            icon={row.icon}
-            onPress={() => void start(row.key)}
-          />
-        ))}
         {busy ? (
           <View style={{ paddingVertical: spacing.md, alignItems: 'center' }}>
             <ActivityIndicator color={c.primary} />
@@ -160,10 +215,20 @@ export function PaymentSheet({
               Opening secure checkout…
             </Text>
           </View>
-        ) : null}
+        ) : (
+          METHODS.map((row) => (
+            <SheetOption
+              key={row.key}
+              label={row.label}
+              description={row.description}
+              icon={row.icon}
+              onPress={() => void start(row.key)}
+            />
+          ))
+        )}
       </Sheet>
 
-      <Modal visible={Boolean(html)} animationType="slide" onRequestClose={() => setHtml(null)}>
+      <Modal visible={Boolean(html)} animationType="slide" onRequestClose={closeCheckout}>
         <View style={[styles.checkout, { backgroundColor: c.primary }]}>
           {html && Platform.OS !== 'web' ? (
             <WebView

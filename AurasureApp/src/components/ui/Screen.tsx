@@ -140,7 +140,7 @@ export function Screen({
       {headerNode ? <View style={{ backgroundColor: topPaint }}>{headerNode}</View> : null}
       {scroll ? (
         <ScrollView
-          ref={scrollRef}
+          ref={bindScroll}
           onScroll={onScroll}
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
@@ -155,7 +155,7 @@ export function Screen({
           onMomentumScrollEnd={(event) => {
             const y = event.nativeEvent.contentOffset.y;
             if (y > 0 && y < 16) {
-              event.currentTarget?.scrollTo?.({ y: 0, animated: false });
+              ownScroll.current?.scrollTo({ y: 0, animated: false });
             }
           }}
           contentContainerStyle={[

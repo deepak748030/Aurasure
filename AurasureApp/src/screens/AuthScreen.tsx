@@ -12,6 +12,8 @@ import { useSheet } from '@/components/sheet/SheetProvider';
 import { ApiError } from '@/api/client';
 import { haptic } from '@/lib/haptics';
 
+const DEMO_CREDENTIALS = { phone: '9876543210', password: 'aurasure123' };
+
 /**
  * Login / register in one screen (the reference app uses `login_view.dart` +
  * `registration_view.dart`). Every failure — including the server's

@@ -19,6 +19,7 @@ import { fetchDeliveryEstimate } from '@/api/app';
 import { useQuery } from '@/hooks/useQuery';
 import { createOrder } from '@/api/orders';
 import { PaymentSheet } from '@/components/payments/PaymentSheet';
+import type { PayMethod } from '@/api/payments';
 import { ApiError } from '@/api/client';
 import { isCouponUsable } from '@/api/rewards';
 import { haptic } from '@/lib/haptics';
@@ -35,6 +36,16 @@ const FALLBACK_PAYMENTS: { key: PayBy; label: string; sub: string; icon: IconNam
 ];
 
 const FALLBACK_TIPS = [0, 10, 20, 30, 50];
+const CHECKOUT_PAY_BY = ['cod', 'wallet', 'upi', 'card', 'netbanking'] as const;
+type OnlinePayBy = Extract<PayBy, PayMethod>;
+
+function isCheckoutPayBy(value: string): value is PayBy {
+  return CHECKOUT_PAY_BY.includes(value as PayBy);
+}
+
+function onlineMethodFor(payBy: PayBy): OnlinePayBy | null {
+  return payBy === 'upi' || payBy === 'card' || payBy === 'netbanking' ? payBy : null;
+}
 
 /**
  * Checkout. Same block order as `features/checkout/*` in the reference app:
@@ -50,7 +61,7 @@ export function CheckoutScreen({ navigation }: { navigation: Nav }): React.React
   const { user, isLoggedIn, addresses, selectedAddress, selectedAddressId, setSelectedAddressId, module: browsing } = useSession();
   const [placing, setPlacing] = useState(false);
   const [noteDraft, setNoteDraft] = useState<string | null>(null);
-  const [payOpen, setPayOpen] = useState(false);
+  const [payOpenMethod, setPayOpenMethod] = useState<OnlinePayBy | null>(null);
 
   // Whichever cart actually has lines wins; ties fall back to what the user is
   // browsing. (Hardcoding 'food' sent shop-only carts to an empty checkout.)
@@ -120,6 +131,7 @@ export function CheckoutScreen({ navigation }: { navigation: Nav }): React.React
       if (ok) navigation.navigate('AddressEdit', {});
       return;
     }
+    let payBy: PayBy = cart.payBy;
     if (walletShort) {
       const ok = await sheet.confirm({
         title: 'Wallet is short',
@@ -132,19 +144,20 @@ export function CheckoutScreen({ navigation }: { navigation: Nav }): React.React
         navigation.navigate('Wallet');
         return;
       }
+      payBy = 'cod';
       cart.setPayBy('cod');
     }
 
-    const online = cart.payBy === 'upi' || cart.payBy === 'card' || cart.payBy === 'netbanking';
-    if (online) {
-      setPayOpen(true);
+    const onlineMethod = onlineMethodFor(payBy);
+    if (onlineMethod) {
+      setPayOpenMethod(onlineMethod);
       return;
     }
 
-    await submitOrder();
+    await submitOrder(undefined, payBy);
   };
 
-  const submitOrder = async (paymentId?: string): Promise<void> => {
+  const submitOrder = async (paymentId?: string, payByOverride: PayBy = cart.payBy): Promise<void> => {
     setPlacing(true);
     try {
       const result = await createOrder({
@@ -152,7 +165,7 @@ export function CheckoutScreen({ navigation }: { navigation: Nav }): React.React
         items: lines,
         address: addressText,
         deliveryFee,
-        payBy: cart.payBy,
+        payBy: payByOverride,
         ...(paymentId ? { paymentId } : {}),
         ...(coupon?.code ? { couponCode: coupon.code } : {}),
         ...(activeSlot.etaMinutes ? { etaMinutes: activeSlot.etaMinutes } : {}),
@@ -220,30 +233,29 @@ export function CheckoutScreen({ navigation }: { navigation: Nav }): React.React
     if (value) cart.setSlot(value);
   };
 
-  const choosePayment = async (): Promise<void> => {
-    const value = await sheet.pick({
-      title: 'Payment method',
-      options: payments.map((row) => ({
-        label: row.enabled ? row.label : `${row.label} (unavailable)`,
-        value: row.key,
-        description: row.sub,
-        icon: row.icon,
-      })),
-    });
-    if (!value) return;
-    const next = payments.find((row) => row.key === value);
-    if (!next) return;
-    if (!next.enabled) {
+  const selectPayment = (row: { key: string; label: string; sub: string; icon: IconName; enabled: boolean }): void => {
+    if (!row.enabled) {
       sheet.show({
-        title: `${next.label} is not available yet`,
-        message: next.sub,
+        title: `${row.label} is not available yet`,
+        message: row.sub,
         icon: 'info',
         tone: 'info',
         dismissLabel: 'OK',
       });
       return;
     }
-    cart.setPayBy(next.key as PayBy);
+    if (!isCheckoutPayBy(row.key)) {
+      sheet.show({
+        title: `${row.label} is handled inside Razorpay`,
+        message: 'Choose UPI / online payment at checkout, then complete this option in Razorpay.',
+        icon: 'creditCard',
+        tone: 'info',
+        dismissLabel: 'OK',
+      });
+      return;
+    }
+    if (cart.payBy !== row.key) haptic.selection();
+    cart.setPayBy(row.key);
   };
 
   const pickTip = async (): Promise<void> => {
@@ -434,7 +446,7 @@ export function CheckoutScreen({ navigation }: { navigation: Nav }): React.React
                   subtitle={row.key === 'wallet' ? `Balance ${money(user?.wallet ?? 0)}${on ? ` · paying ${money(toPay)}` : ''}` : row.sub}
                   icon={row.icon}
                   iconTone={row.enabled ? 'primary' : 'muted'}
-                  onPress={() => void choosePayment()}
+                  onPress={() => selectPayment(row)}
                   selected={on}
                   last={index === payments.length - 1}
                   trailing={
@@ -484,13 +496,15 @@ export function CheckoutScreen({ navigation }: { navigation: Nav }): React.React
         ) : null}
       </KeyboardAvoidingView>
       <PaymentSheet
-        visible={payOpen}
+        visible={payOpenMethod != null}
         amount={toPay}
         purpose="order"
-        onClose={() => setPayOpen(false)}
+        method={payOpenMethod ?? undefined}
+        onClose={() => setPayOpenMethod(null)}
         onPaid={(result) => {
-          setPayOpen(false);
-          void submitOrder(result.paymentId);
+          const paidBy = payOpenMethod ?? cart.payBy;
+          setPayOpenMethod(null);
+          void submitOrder(result.paymentId, paidBy);
         }}
       />
     </Screen>

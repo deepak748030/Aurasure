@@ -52,6 +52,7 @@ export function SidebarContent({
     if (badge === 'pendingPartners') return stats.pendingPartners ?? 0;
     if (badge === 'pendingVendors') return stats.pendingVendors ?? 0;
     if (badge === 'pendingRiders') return stats.pendingRiders ?? 0;
+    if (badge === 'openTickets') return stats.openTickets ?? 0;
     return 0;
   };
 

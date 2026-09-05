@@ -66,6 +66,9 @@ export default function RestaurantsPage() {
   const fields: FieldDef[] = [
     { name: 'name', label: 'Restaurant name', type: 'text', required: true, placeholder: 'Spice Villa' },
     { name: 'line', label: 'Address line', type: 'text', placeholder: 'Civil Lines, Raipur' },
+    { name: 'city', label: 'City', type: 'text', placeholder: 'Raipur', hint: 'Feeds the app city picker.' },
+    { name: 'lat', label: 'Latitude', type: 'coordinate', placeholder: '21.2514' },
+    { name: 'lng', label: 'Longitude', type: 'coordinate', placeholder: '81.6296' },
     { name: 'cuisines', label: 'Cuisines', type: 'tags', hint: 'Comma separated · North Indian, Chinese' },
     { name: 'tags', label: 'Tags', type: 'tags', hint: 'Comma separated' },
     {

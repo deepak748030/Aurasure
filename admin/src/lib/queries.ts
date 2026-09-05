@@ -3,13 +3,17 @@
 import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import { api, apiRaw, type ListMeta, type RequestOptions } from './api';
 import type {
+  AppSettingsDoc,
   AuditEntry,
   CatalogRecord,
+  ContentDoc,
   CustomerDetail,
   CustomerRow,
   Lookups,
+  NotificationRow,
   Order,
   PartnerApplication,
+  SupportTicket,
   ReportOverview,
   Stats,
   SystemInfo,
@@ -403,6 +407,107 @@ export function useCustomerMutations(id: string) {
   });
 
   return { wallet, loyalty, role };
+}
+
+/* --------------------- notifications / support / content -------------------- */
+
+export function useNotifications(query: { q?: string; broadcast?: string; page?: number; limit?: number } = {}) {
+  return useQuery({
+    queryKey: ['notifications', query],
+    queryFn: async () => {
+      const res = await apiRaw<{ notifications: NotificationRow[] }>('/admin/notifications', {
+        query: { q: query.q, broadcast: query.broadcast, page: query.page, limit: query.limit },
+      });
+      return { rows: res.data.notifications ?? [], meta: res.meta as ListMeta | undefined };
+    },
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useBroadcastMutation() {
+  const qc = useQueryClient();
+  const invalidate = () => {
+    void qc.invalidateQueries({ queryKey: ['notifications'] });
+    void qc.invalidateQueries({ queryKey: ['audit'] });
+  };
+  const broadcast = useMutation({
+    mutationFn: (body: Record<string, unknown>) => api('/admin/notifications/broadcast', { method: 'POST', body }),
+    onSuccess: invalidate,
+  });
+  const remove = useMutation({
+    mutationFn: (id: string) => api(`/admin/notifications/${id}`, { method: 'DELETE' }),
+    onSuccess: invalidate,
+  });
+  return { broadcast, remove };
+}
+
+export function useTickets(query: { status?: string; q?: string; page?: number; limit?: number } = {}) {
+  return useQuery({
+    queryKey: ['tickets', query],
+    queryFn: async () => {
+      const res = await apiRaw<{ tickets: SupportTicket[] }>('/admin/support-tickets', {
+        query: { status: query.status, q: query.q, page: query.page, limit: query.limit },
+      });
+      return { rows: res.data.tickets ?? [], meta: res.meta as ListMeta | undefined };
+    },
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useTicketMutation() {
+  const qc = useQueryClient();
+  const update = useMutation({
+    mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) =>
+      api(`/admin/support-tickets/${id}`, { method: 'PATCH', body }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['tickets'] });
+      void qc.invalidateQueries({ queryKey: ['stats'] });
+      void qc.invalidateQueries({ queryKey: ['audit'] });
+    },
+  });
+  return { update };
+}
+
+export function useContents() {
+  return useQuery({
+    queryKey: ['contents'],
+    queryFn: async () => {
+      const res = await api<{ contents: ContentDoc[] }>('/admin/content');
+      return res.contents ?? [];
+    },
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useContentMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ key, body }: { key: string; body: Record<string, unknown> }) =>
+      api(`/admin/content/${key}`, { method: 'PUT', body }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['contents'] });
+      void qc.invalidateQueries({ queryKey: ['audit'] });
+    },
+  });
+}
+
+export function useAppSettings() {
+  return useQuery({
+    queryKey: ['app-settings'],
+    queryFn: () => api<{ settings: AppSettingsDoc | null }>('/admin/app-settings'),
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useAppSettingsMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) => api('/admin/app-settings', { method: 'PUT', body }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['app-settings'] });
+      void qc.invalidateQueries({ queryKey: ['audit'] });
+    },
+  });
 }
 
 /** Convenience re-export so pages can fire one-off calls without importing api. */

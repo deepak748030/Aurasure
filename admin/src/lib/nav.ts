@@ -18,6 +18,12 @@ import {
   ShoppingCart,
   Ticket,
   Bike,
+  Zap,
+  Megaphone,
+  FileText,
+  MessageSquareText,
+  SlidersHorizontal,
+  Award,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -26,7 +32,7 @@ export interface NavItem {
   icon: LucideIcon;
   /** Match child routes too (e.g. /orders/ord_1). */
   exact?: boolean;
-  badge?: 'liveOrders' | 'pendingPartners' | 'pendingVendors' | 'pendingRiders';
+  badge?: 'liveOrders' | 'pendingPartners' | 'pendingVendors' | 'pendingRiders' | 'openTickets';
 }
 
 export interface NavSection {
@@ -71,13 +77,16 @@ export const NAV: NavSection[] = [
       { label: 'Stores', href: '/shop/stores', icon: Store },
       { label: 'Products', href: '/shop/products', icon: Boxes },
       { label: 'Shop categories', href: '/shop/categories', icon: Tags },
+      { label: 'Brands', href: '/shop/brands', icon: Award },
     ],
   },
   {
     title: 'Promotions',
     items: [
+      { label: 'Flash sales', href: '/flash-sales', icon: Zap },
       { label: 'Banners', href: '/banners', icon: ImageIcon },
       { label: 'Promo codes', href: '/promos', icon: Ticket },
+      { label: 'Notifications', href: '/notifications', icon: Megaphone },
     ],
   },
   {
@@ -87,6 +96,14 @@ export const NAV: NavSection[] = [
       { label: 'Vendors (KYC)', href: '/vendors', icon: Store, badge: 'pendingVendors' },
       { label: 'Delivery partners (KYC)', href: '/riders', icon: Bike, badge: 'pendingRiders' },
       { label: 'Partner applications', href: '/partners', icon: UserCheck, badge: 'pendingPartners' },
+    ],
+  },
+  {
+    title: 'Content & support',
+    items: [
+      { label: 'Content pages', href: '/content', icon: FileText },
+      { label: 'Support inbox', href: '/support', icon: MessageSquareText, badge: 'openTickets' },
+      { label: 'App configuration', href: '/app-config', icon: SlidersHorizontal },
     ],
   },
   {

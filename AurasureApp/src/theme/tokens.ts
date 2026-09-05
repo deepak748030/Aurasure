@@ -1,5 +1,5 @@
 /**
- * Aurasure User app design tokens.
+ * Aurasure app design tokens.
  *
  * HARD LAYOUT RULES (project-wide, do not break):
  *  1. Every screen gutter is exactly `spacing.edge` = 4 on the LEFT and RIGHT.

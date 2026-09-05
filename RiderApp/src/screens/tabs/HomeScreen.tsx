@@ -1,490 +1,904 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
-  Alert,
   FlatList,
+  Image,
   Pressable,
   StyleSheet,
   Switch,
-  TouchableOpacity,
   View,
-} from 'react-native';
-import { useIsFocused, useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Screen } from '@/components/ui/Screen';
-import { Text } from '@/components/ui/Text';
-import { Button } from '@/components/ui/Button';
-import { Icon } from '@/lib/icons';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { riderApi, type DeliveryTask, type OfferResponse } from '@/api/rider';
-import { useRider } from '@/context/RiderContext';
-import { colors } from '@/theme/colors';
-import { formatINR } from '@/lib/format';
-import { haptic } from '@/lib/haptics';
-import type { RootStackParamList } from '@/navigation/types';
-import type { IconName } from '@/types';
+} from "react-native";
+import { useIsFocused, useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Screen } from "@/components/ui/Screen";
+import { Text } from "@/components/ui/Text";
+import { Button } from "@/components/ui/Button";
+import { RiderModal, type RiderModalAction } from "@/components/ui/RiderModal";
+import { Icon } from "@/lib/icons";
+import { MapSurface, type MapStop } from "@/components/MapSurface";
+import {
+  Card,
+  IconButton,
+  Metric,
+  ProgressBar,
+  SectionTitle,
+  StatusPill,
+  RoutePoint,
+} from "@/components/ui/RiderUI";
+import { riderApi, type DeliveryTask, type OfferResponse } from "@/api/rider";
+import { useRider } from "@/context/RiderContext";
+import { colors } from "@/theme/colors";
+import { formatINR } from "@/lib/format";
+import { haptic } from "@/lib/haptics";
+import type { RootStackParamList } from "@/navigation/types";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
+type HomeDialog = {
+  title: string;
+  message: string;
+  icon?: "circleAlert" | "check" | "map";
+  iconColor?: string;
+  actions: RiderModalAction[];
+};
 
-// ─── Stat tile ───────────────────────────────────────────────────────────────
-function StatTile({ icon, label, value, accent }: { icon: IconName; label: string; value: string; accent: string }) {
-  return (
-    <View style={[styles.tile, { borderColor: colors.border }]}>
-      <View style={[styles.tileIcon, { backgroundColor: accent + '18' }]}>
-        <Icon name={icon} size={16} color={accent} />
-      </View>
-      <Text variant="h3" weight="bold" style={{ marginTop: 6 }}>{value}</Text>
-      <Text variant="caption" color={colors.textTertiary} numberOfLines={1}>{label}</Text>
-    </View>
-  );
+const DEFAULT_MAP = [
+  {
+    latitude: 18.5204,
+    longitude: 73.8567,
+    label: "Your zone",
+    type: "rider" as const,
+  },
+  {
+    latitude: 18.527,
+    longitude: 73.866,
+    label: "Pickup hotspot",
+    type: "pickup" as const,
+  },
+  {
+    latitude: 18.511,
+    longitude: 73.842,
+    label: "Customer area",
+    type: "drop" as const,
+  },
+];
+
+function offerStops(task: DeliveryTask): MapStop[] {
+  const pickup =
+    task.pickup.lat != null && task.pickup.lng != null
+      ? [
+          {
+            latitude: Number(task.pickup.lat),
+            longitude: Number(task.pickup.lng),
+            label: task.vendorName,
+            type: "pickup" as const,
+          },
+        ]
+      : [];
+  const drop =
+    task.drop.lat != null && task.drop.lng != null
+      ? [
+          {
+            latitude: Number(task.drop.lat),
+            longitude: Number(task.drop.lng),
+            label: task.drop.name,
+            type: "drop" as const,
+          },
+        ]
+      : [];
+  return [...pickup, ...drop];
 }
 
-// ─── Offer card ──────────────────────────────────────────────────────────────
 function OfferCard({
-  task, busy, onAccept, onReject, onMap,
+  task,
+  busy,
+  onAccept,
+  onReject,
+  onMap,
 }: {
   task: DeliveryTask;
   busy: boolean;
   onAccept: () => void;
   onReject: () => void;
   onMap: () => void;
-}) {
-  const placedMinsAgo = Math.floor((Date.now() - new Date(task.createdAt).getTime()) / 60000);
+}): React.ReactElement {
+  const [seconds, setSeconds] = useState(30);
+  useEffect(() => {
+    const age = Math.max(
+      0,
+      Math.floor((Date.now() - new Date(task.createdAt).getTime()) / 1000),
+    );
+    setSeconds(Math.max(0, 30 - age));
+    const timer = setInterval(
+      () => setSeconds((value) => Math.max(0, value - 1)),
+      1000,
+    );
+    return () => clearInterval(timer);
+  }, [task.createdAt]);
+  const expired = seconds === 0;
   return (
-    <View style={styles.offerCard}>
-      {/* Header */}
-      <View style={styles.offerHeader}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
-          <View style={[styles.tileIcon, { backgroundColor: colors.brand[50] }]}>
-            <Icon name="bike" size={16} color={colors.brand[600]} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text variant="title" weight="bold" numberOfLines={1}>
-              {task.vendorName}
-            </Text>
-            <Text variant="caption" color={colors.textTertiary}>
-              {task.orderCode} · {placedMinsAgo <= 0 ? 'just now' : `${placedMinsAgo} min ago`}
-            </Text>
-          </View>
+    <Card style={styles.offerCard}>
+      <View style={styles.offerTop}>
+        <View style={styles.offerIcon}>
+          <Icon
+            name={task.module === "food" ? "utensils" : "package"}
+            size={20}
+            color={colors.brand[600]}
+          />
         </View>
-        <View style={styles.payoutBadge}>
-          <Text variant="title" weight="bold" color={colors.success}>+{formatINR(task.riderPayout)}</Text>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text variant="title" weight="bold" numberOfLines={1}>
+            {task.vendorName || "Aurasure partner store"}
+          </Text>
+          <Text variant="caption" color={colors.textSecondary} numberOfLines={1}>
+            {task.orderCode} · {task.items.length} item
+            {task.items.length === 1 ? "" : "s"}
+          </Text>
+        </View>
+        <View style={styles.payout}>
+          <Text variant="caption" color={colors.success} numberOfLines={1}>
+            GUARANTEED
+          </Text>
+          <Text
+            variant="h3"
+            weight="bold"
+            color={colors.success}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+          >
+            {formatINR(task.riderPayout)}
+          </Text>
         </View>
       </View>
-
-      {/* Route */}
-      <View style={styles.routeRow}>
-        <Icon name="store" size={14} color={colors.warning} />
-        <Text variant="bodySm" color={colors.textSecondary} numberOfLines={1} style={{ flex: 1, marginLeft: 6 }}>
-          {task.pickup.address}
-        </Text>
+      <View style={styles.offerRoute}>
+        <RoutePoint
+          type="pickup"
+          title={task.vendorName || "Pickup point"}
+          address={task.pickup.address}
+        />
+        <RoutePoint
+          type="drop"
+          title={task.drop.name || "Customer"}
+          address={task.drop.address}
+          last
+        />
       </View>
-      <View style={styles.routeRow}>
-        <Icon name="mapPin" size={14} color={colors.danger} />
-        <Text variant="bodySm" color={colors.textSecondary} numberOfLines={1} style={{ flex: 1, marginLeft: 6 }}>
-          {task.drop.address}
-        </Text>
-      </View>
-
-      {/* Info chips */}
-      <View style={styles.chipsRow}>
-        <View style={styles.chip}>
-          <Icon name="rupee" size={12} color={colors.textSecondary} />
-          <Text variant="caption" color={colors.textSecondary}>{formatINR(task.total)}</Text>
+      <View style={styles.offerMeta}>
+        <View style={styles.metaItem}>
+          <Icon name="mapPinned" size={14} color={colors.textSecondary} />
+          <Text variant="caption" color={colors.textSecondary}>
+            {task.distanceKm
+              ? `${task.distanceKm.toFixed(1)} km trip`
+              : "Nearby trip"}
+          </Text>
         </View>
-        <View style={styles.chip}>
-          <Icon name="package" size={12} color={colors.textSecondary} />
-          <Text variant="caption" color={colors.textSecondary}>{task.items.length} item{task.items.length !== 1 ? 's' : ''}</Text>
+        <View style={styles.metaItem}>
+          <Icon
+            name={task.codAmount > 0 ? "cash" : "circleCheck"}
+            size={14}
+            color={task.codAmount > 0 ? colors.warning : colors.success}
+          />
+          <Text
+            variant="caption"
+            color={task.codAmount > 0 ? colors.warning : colors.success}
+            weight="semibold"
+          >
+            {task.codAmount > 0
+              ? `COD ${formatINR(task.codAmount)}`
+              : "Prepaid"}
+          </Text>
         </View>
-        {task.codAmount > 0 ? (
-          <View style={[styles.chip, { backgroundColor: colors.warningBg }]}>
-            <Icon name="wallet" size={12} color={colors.warning} />
-            <Text variant="caption" color={colors.warning} weight="bold">COD {formatINR(task.codAmount)}</Text>
-          </View>
-        ) : (
-          <View style={[styles.chip, { backgroundColor: colors.successBg }]}>
-            <Icon name="circleCheck" size={12} color={colors.success} />
-            <Text variant="caption" color={colors.success}>Prepaid</Text>
-          </View>
-        )}
-        {task.distanceKm ? (
-          <View style={styles.chip}>
-            <Icon name="mapPinned" size={12} color={colors.textSecondary} />
-            <Text variant="caption" color={colors.textSecondary}>{task.distanceKm.toFixed(1)} km</Text>
-          </View>
-        ) : null}
+        <View
+          style={[
+            styles.timer,
+            expired && { backgroundColor: colors.dangerBg },
+          ]}
+        >
+          <Icon
+            name="timer"
+            size={14}
+            color={expired ? colors.danger : colors.warning}
+          />
+          <Text
+            variant="caption"
+            weight="bold"
+            color={expired ? colors.danger : colors.warning}
+          >
+            {expired ? "Expired" : `${seconds}s`}
+          </Text>
+        </View>
       </View>
-
-      {/* Buttons */}
-      <View style={styles.offerBtns}>
-        <TouchableOpacity style={styles.mapBtn} onPress={onMap}>
-          <Icon name="mapPin" size={18} color={colors.brand[600]} />
-          <Text variant="caption" weight="bold" color={colors.brand[600]}>Map</Text>
-        </TouchableOpacity>
+      <View style={styles.offerActions}>
+        <Pressable onPress={onMap} style={styles.mapAction}>
+          <Icon name="map" size={18} color={colors.brand[600]} />
+          <Text variant="caption" weight="bold" color={colors.brand[600]}>
+            View map
+          </Text>
+        </Pressable>
         <View style={{ flex: 1 }}>
-          <Button title="Ignore" variant="ghost" size="sm" loading={busy} onPress={onReject} />
+          <Button
+            title="Ignore"
+            variant="ghost"
+            size="sm"
+            loading={busy}
+            onPress={onReject}
+          />
         </View>
-        <View style={{ flex: 1.6 }}>
-          <Button title="Accept" variant="success" size="sm" loading={busy} onPress={onAccept} />
+        <View style={{ flex: 1.45 }}>
+          <Button
+            title="Accept delivery"
+            variant="success"
+            size="sm"
+            loading={busy}
+            disabled={expired}
+            onPress={onAccept}
+          />
         </View>
       </View>
-    </View>
+    </Card>
   );
 }
 
-// ─── Main HomeScreen ──────────────────────────────────────────────────────────
 export function HomeScreen(): React.ReactElement {
   const { rider, setRider, refresh } = useRider();
   const navigation = useNavigation<Nav>();
   const focused = useIsFocused();
   const [data, setData] = useState<OfferResponse | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [dutyBusy, setDutyBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+  const [dialog, setDialog] = useState<HomeDialog | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const pull = useCallback(async (silent = false) => {
-    if (!silent) setBusy(true);
+    if (!silent) setLoading(true);
     try {
-      const offers = await riderApi.offers();
-      setData(offers);
-      setError('');
+      setData(await riderApi.offers());
+      setError("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load deliveries');
+      setError(
+        err instanceof Error ? err.message : "Could not sync deliveries",
+      );
     } finally {
-      setBusy(false);
+      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     if (!focused) return;
     void pull();
-    timerRef.current = setInterval(() => void pull(true), 20000);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    timerRef.current = setInterval(() => void pull(true), 15000);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, [focused, pull]);
 
-  const sendLocation = async () => {
-    try {
-      const { getCurrentPositionAsync, requestForegroundPermissionsAsync } = await import('expo-location');
-      const perm = await requestForegroundPermissionsAsync();
-      if (perm.status !== 'granted') return;
-      const pos = await getCurrentPositionAsync({ accuracy: 3 });
-      const res = await riderApi.locationBatch([{ lat: pos.coords.latitude, lng: pos.coords.longitude, at: new Date().toISOString() }]);
-      setRider(res.rider);
-    } catch { /* web / no permission */ }
+  const getLocationPoint = async () => {
+    const Location = await import("expo-location");
+    const permission = await Location.requestForegroundPermissionsAsync();
+    if (permission.status !== "granted") return null;
+    const position = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+    });
+    return {
+      lat: position.coords.latitude,
+      lng: position.coords.longitude,
+      accuracy: position.coords.accuracy,
+      speed: position.coords.speed,
+      at: new Date().toISOString(),
+    };
   };
 
-  const toggleDuty = async (state: 'online' | 'offline' | 'break') => {
-    setDutyBusy(true);
+  const locateAndSend = async (): Promise<boolean> => {
     try {
-      if (state === 'online') await sendLocation();
-      const res = await riderApi.setDuty(state);
+      if (!online) {
+        setError("Go online to share your location with operations.");
+        return false;
+      }
+      const point = await getLocationPoint();
+      if (!point) {
+        setError("Location permission is needed while you are online.");
+        return false;
+      }
+      const response = await riderApi.locationBatch([point]);
+      setRider(response.rider);
+      return true;
+    } catch {
+      setError(
+        "Location is unavailable. You can try again from phone settings.",
+      );
+      return false;
+    }
+  };
+
+  const setDuty = async (state: "online" | "offline" | "break") => {
+    setDutyBusy(true);
+    setError("");
+    try {
+      let point: Awaited<ReturnType<typeof getLocationPoint>> = null;
+      if (state === "online") {
+        point = await getLocationPoint();
+        if (!point) {
+          setError("Location permission is needed to go online.");
+          return;
+        }
+      }
+      const response = await riderApi.setDuty(state);
+      setRider(response.rider);
+      if (point) {
+        const locationResponse = await riderApi.locationBatch([point]);
+        setRider(locationResponse.rider);
+      }
       haptic.success();
-      setRider(res.rider);
       await pull();
     } catch (err) {
       haptic.error();
-      Alert.alert('Error', err instanceof Error ? err.message : 'Duty change failed');
+      setError(
+        err instanceof Error ? err.message : "Duty status could not be changed",
+      );
     } finally {
       setDutyBusy(false);
     }
   };
 
-  const handleDutySwitch = (val: boolean) => {
-    if (!val) {
-      Alert.alert('Go offline?', 'You will stop receiving delivery offers.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Go offline', style: 'destructive', onPress: () => void toggleDuty('offline') },
-      ]);
-    } else {
-      void toggleDuty('online');
+  const toggle = (value: boolean) => {
+    if (!value && rider?.dutyState === "on_task") {
+      setError("Finish your active delivery before going offline.");
+      return;
     }
+    if (value) {
+      void setDuty("online");
+      return;
+    }
+    setDialog({
+      title: "Go offline?",
+      message:
+        "New delivery offers will pause. Your active delivery will not be cancelled.",
+      icon: "circleAlert",
+      iconColor: colors.warning,
+      actions: [
+        { label: "Stay online", variant: "secondary", onPress: () => undefined },
+        {
+          label: "Go offline",
+          variant: "danger",
+          onPress: () => void setDuty("offline"),
+        },
+      ],
+    });
   };
 
   const accept = async (task: DeliveryTask) => {
-    setBusy(true);
+    setLoading(true);
     try {
       await riderApi.accept(task.id);
-      haptic.success();
       await refresh();
-      navigation.navigate('ActiveTask');
+      haptic.success();
+      navigation.navigate("ActiveTask");
     } catch (err) {
       haptic.error();
-      Alert.alert('Error', err instanceof Error ? err.message : 'Could not accept');
+      setDialog({
+        title: "Delivery unavailable",
+        message:
+          err instanceof Error
+            ? err.message
+            : "Another rider may have accepted this offer.",
+        icon: "circleAlert",
+        iconColor: colors.danger,
+        actions: [
+          { label: "Got it", variant: "secondary", onPress: () => undefined },
+        ],
+      });
     } finally {
-      setBusy(false);
+      setLoading(false);
     }
   };
 
   const reject = async (task: DeliveryTask) => {
-    if (!data) return;
     try {
-      await riderApi.reject(task.id);
-      setData({ ...data, offers: data.offers.filter((t) => t.id !== task.id) });
-    } catch { /* silent */ }
+      await riderApi.reject(task.id, "Not suitable");
+      setData((old) =>
+        old
+          ? { ...old, offers: old.offers.filter((item) => item.id !== task.id) }
+          : old,
+      );
+    } catch {
+      /* keeping an offer on screen is safer than pretending it was rejected */
+    }
   };
 
-  const duty = (rider?.dutyState ?? 'offline') as string;
-  const online = duty === 'online' || duty === 'on_task';
-  const onBreak = duty === 'break';
-  const offers = data?.offers ?? [];
+  const online =
+    rider?.dutyState === "online" || rider?.dutyState === "on_task";
+  const onBreak = rider?.dutyState === "break";
   const active = data?.activeTask;
-
-  const dutyBg = online ? '#16A34A' : onBreak ? '#D97706' : '#64748B';
-  const dutyLabel = online ? 'Online — receiving orders' : onBreak ? 'On break' : 'Offline';
+  const offers = data?.offers ?? [];
+  const mapStops = useMemo(
+    () =>
+      active
+        ? offerStops(active)
+        : offers[0]
+          ? offerStops(offers[0])
+          : DEFAULT_MAP,
+    [active, offers],
+  );
+  const shiftProgress = Math.min(1, (rider?.currentDayTrips ?? 0) / 10);
 
   return (
-    <Screen
-      title="Deliveries"
-      subtitle={rider?.name ? `Hi, ${rider.name.split(' ')[0]} 👋` : ''}
+    <>
+      <Screen
+        title="Home"
+      subtitle={
+        rider?.name
+          ? `Good morning, ${rider.name.split(" ")[0]}`
+          : "Your delivery shift"
+      }
+      headerRight={
+        <IconButton
+          icon="bell"
+          onPress={() => navigation.navigate("Notifications")}
+        />
+      }
       scroll={false}
       padded={false}
-      headerRight={
-        <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ padding: 4 }}>
-          <Icon name="bell" size={22} color={colors.text} />
-        </TouchableOpacity>
-      }
     >
       <FlatList
         data={offers}
-        keyExtractor={(t) => t.id}
-        contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 0 }}
-        ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+        keyExtractor={(item) => item.id}
+        refreshing={loading}
         onRefresh={() => void pull()}
-        refreshing={busy}
-        ListHeaderComponent={() => (
-          <View>
-            {/* ── Duty Card ── */}
-            <View style={[styles.dutyCard, { backgroundColor: dutyBg }]}>
-              <View style={{ flex: 1 }}>
-                <Text variant="title" weight="bold" color="#fff">{dutyLabel}</Text>
-                <Text variant="caption" color="rgba(255,255,255,0.75)" style={{ marginTop: 2 }}>
-                  {online
-                    ? 'Offers appear below automatically.'
-                    : onBreak
-                      ? 'Taking a short break. Offers paused.'
-                      : 'Go online to receive delivery orders.'}
-                </Text>
+        contentContainerStyle={{ paddingBottom: 36 }}
+        ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+        ListHeaderComponent={
+          <>
+            <View style={styles.dutyWrap}>
+              <View style={styles.dutyCard}>
+                <View
+                  style={[
+                    styles.liveIcon,
+                    {
+                      backgroundColor: online
+                        ? colors.successBg
+                        : onBreak
+                          ? colors.warningBg
+                          : colors.surfaceAlt,
+                    },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.liveDot,
+                      {
+                        backgroundColor: online
+                          ? colors.success
+                          : onBreak
+                            ? colors.warning
+                            : colors.textTertiary,
+                      },
+                    ]}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text variant="title" weight="bold">
+                    {online
+                      ? "You are online"
+                      : onBreak
+                        ? "You are on a break"
+                        : "You are offline"}
+                  </Text>
+                  <Text variant="caption" color={colors.textSecondary}>
+                    {online
+                      ? "Receiving nearby delivery requests"
+                      : onBreak
+                        ? "Requests are paused for now"
+                        : "Go online when you are ready to deliver"}
+                  </Text>
+                </View>
+                <Switch
+                  value={online}
+                  onValueChange={toggle}
+                  disabled={dutyBusy || onBreak}
+                  trackColor={{ false: "#DDE2E2", true: "#A5D8B9" }}
+                  thumbColor={online ? colors.success : "#FFFFFF"}
+                />
               </View>
-              <Switch
-                value={online}
-                onValueChange={handleDutySwitch}
-                disabled={dutyBusy || onBreak}
-                trackColor={{ false: 'rgba(255,255,255,0.28)', true: 'rgba(255,255,255,0.28)' }}
-                thumbColor="#fff"
-                ios_backgroundColor="rgba(255,255,255,0.3)"
-              />
+              {onBreak ? (
+                <View style={styles.breakRow}>
+                  <Text variant="caption" color={colors.warning}>
+                    Break mode is on
+                  </Text>
+                  <Pressable onPress={() => void setDuty("online")}>
+                    <Text
+                      variant="caption"
+                      weight="bold"
+                      color={colors.brand[600]}
+                    >
+                      Resume shift
+                    </Text>
+                  </Pressable>
+                </View>
+              ) : online && rider?.dutyState !== "on_task" ? (
+                <Pressable
+                  onPress={() => void setDuty("break")}
+                  style={styles.breakRow}
+                >
+                  <Text variant="caption" color={colors.textSecondary}>
+                    Need a short break?
+                  </Text>
+                  <Text
+                    variant="caption"
+                    weight="bold"
+                    color={colors.brand[600]}
+                  >
+                    Pause requests
+                  </Text>
+                </Pressable>
+              ) : null}
             </View>
 
-            {/* Break / Go-back buttons when on break */}
-            {onBreak ? (
-              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
-                <Button title="Resume (go online)" size="sm" loading={dutyBusy} onPress={() => void toggleDuty('online')} />
-                <Button title="End shift" variant="ghost" size="sm" loading={dutyBusy} onPress={() => void toggleDuty('offline')} />
-              </View>
-            ) : online ? (
-              <View style={{ marginBottom: 12 }}>
-                <Button title="Take a break" variant="secondary" size="sm" loading={dutyBusy} onPress={() => void toggleDuty('break')} />
+            {rider && rider.codInHand > 0 ? (
+              <View style={styles.codAlert}>
+                <Icon name="cash" size={18} color={colors.warning} />
+                <View style={{ flex: 1 }}>
+                  <Text variant="title" weight="semibold">
+                    {formatINR(rider.codInHand)} cash in hand
+                  </Text>
+                  <Text variant="caption" color={colors.textSecondary}>
+                    Limit {formatINR(rider.maxCodLimit)} · deposit from Earnings
+                    before the limit
+                  </Text>
+                </View>
+                <Icon name="chevronRight" size={18} color={colors.warning} />
               </View>
             ) : null}
 
-            {/* COD warning */}
-            {rider?.codInHand && rider.codInHand > 0 ? (
-              <View style={styles.codWarn}>
-                <Icon name="wallet" size={16} color={colors.warning} />
-                <Text variant="caption" weight="semibold" color={colors.warning} style={{ flex: 1, marginLeft: 8 }}>
-                  COD in hand: {formatINR(rider.codInHand)} — deposit before going online if limit is near.
+            <MapSurface
+              height={214}
+              stops={mapStops}
+              onLocate={
+                online
+                  ? () => void locateAndSend()
+                  : () =>
+                      setError(
+                        "Go online to share your location with operations.",
+                      )
+              }
+              onMapPress={() =>
+                active
+                  ? navigation.navigate("OrderMap", { taskId: active.id })
+                  : undefined
+              }
+            />
+            <View style={styles.mapCaption}>
+              <View>
+                <Text variant="title" weight="bold">
+                  {online ? "Live delivery zone" : "Your delivery zone"}
+                </Text>
+                <Text variant="caption" color={colors.textSecondary}>
+                  {online
+                    ? "Nearby hotspots & active routes"
+                    : "Map activates when you go online"}
                 </Text>
               </View>
-            ) : null}
+              <Pressable
+                onPress={() =>
+                  active
+                    ? navigation.navigate("OrderMap", { taskId: active.id })
+                    : online
+                      ? void locateAndSend()
+                      : setError(
+                          "Go online to share your location with operations.",
+                        )
+                }
+                style={styles.zoneButton}
+              >
+                <Icon
+                  name={active ? "navigation" : "locate"}
+                  size={15}
+                  color={colors.brand[600]}
+                />
+                <Text variant="caption" weight="bold" color={colors.brand[600]}>
+                  {active ? "Open route" : "Locate me"}
+                </Text>
+              </Pressable>
+            </View>
 
-            {/* Active task banner */}
             {active ? (
               <Pressable
-                onPress={() => navigation.navigate('ActiveTask')}
-                style={({ pressed }) => [styles.activeBanner, pressed && { opacity: 0.88 }]}
+                onPress={() => navigation.navigate("ActiveTask")}
+                style={styles.activeCard}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <View style={[styles.tileIcon, { backgroundColor: colors.brand[100] }]}>
-                    <Icon name="bike" size={18} color={colors.brand[700]} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text variant="title" weight="bold" color={colors.brand[900]}>
-                      Active delivery — {active.orderCode}
-                    </Text>
-                    <Text variant="caption" color={colors.brand[700]}>
-                      {active.state.replace(/_/g, ' ')} · {active.vendorName} → {active.drop.name}
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate('OrderMap', { taskId: active.id })}
-                    style={styles.mapIconBtn}
-                  >
-                    <Icon name="mapPin" size={18} color={colors.brand[600]} />
-                  </TouchableOpacity>
-                  <Icon name="chevronRight" size={18} color={colors.brand[400]} />
+                <View style={styles.activeHeader}>
+                  <StatusPill
+                    label="ACTIVE DELIVERY"
+                    color={colors.brand[600]}
+                    background={colors.brand[100]}
+                    icon="bike"
+                  />
+                  <Icon
+                    name="chevronRight"
+                    size={18}
+                    color={colors.brand[600]}
+                  />
                 </View>
+                <Text variant="h3" weight="bold" style={{ marginTop: 8 }}>
+                  {active.orderCode} · {active.vendorName}
+                </Text>
+                <Text
+                  variant="caption"
+                  color={colors.brand[700]}
+                  style={{ marginTop: 3 }}
+                >
+                  {active.state.replace(/_/g, " ")} · {active.drop.name}
+                </Text>
+                <ProgressBar
+                  value={
+                    ["accepted", "at_pickup", "picked_up", "at_drop"].indexOf(
+                      active.state,
+                    ) / 3
+                  }
+                  color={colors.brand[600]}
+                  track={colors.brand[100]}
+                />
               </Pressable>
             ) : null}
 
-            {/* Stats grid */}
-            <View style={styles.statsRow}>
-              <StatTile icon="bike" label="Trips today" value={String(rider?.currentDayTrips ?? 0)} accent={colors.brand[600]} />
-              <StatTile icon="rupee" label="Earned today" value={formatINR(rider?.currentDayEarnings ?? 0)} accent={colors.success} />
-              <StatTile icon="wallet" label="COD in hand" value={formatINR(rider?.codInHand ?? 0)} accent={colors.warning} />
-              <StatTile icon="star" label="Rating" value={`${rider?.rating ?? 5}`} accent="#F59E0B" />
+            <View style={styles.sectionGutter}>
+              <SectionTitle
+                title="Today at a glance"
+                action="Earnings"
+                onAction={() =>
+                  navigation.navigate("Earnings" as never)
+                }
+              />
+              <View style={styles.metrics}>
+                <Metric
+                  icon="bike"
+                  label="Trips today"
+                  value={String(rider?.currentDayTrips ?? 0)}
+                />
+                <Metric
+                  icon="rupee"
+                  label="Earned today"
+                  value={formatINR(rider?.currentDayEarnings ?? 0)}
+                  color={colors.success}
+                />
+                <Metric
+                  icon="star"
+                  label="Rating"
+                  value={(rider?.rating ?? 5).toFixed(1)}
+                  color={colors.star}
+                />
+              </View>
+              <Card tone="tint" style={{ marginTop: 8 }}>
+                <View style={styles.goalTop}>
+                  <View>
+                    <Text
+                      variant="caption"
+                      color={colors.brand[700]}
+                      weight="bold"
+                    >
+                      TODAY'S 10-TRIP GOAL
+                    </Text>
+                    <Text variant="bodySm" color={colors.textSecondary}>
+                      {rider?.currentDayTrips ?? 0} of 10 trips completed
+                    </Text>
+                  </View>
+                  <Text variant="h3" weight="bold" color={colors.brand[600]}>
+                    {Math.round(shiftProgress * 100)}%
+                  </Text>
+                </View>
+                <ProgressBar value={shiftProgress} />
+              </Card>
             </View>
 
             {error ? (
-              <Text variant="caption" color={colors.danger} style={{ marginBottom: 8 }}>{error}</Text>
-            ) : null}
-
-            {/* Offers header */}
-            {online && offers.length > 0 ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                <Text variant="h3" weight="bold">New Offers</Text>
-                <View style={styles.liveChip}>
-                  <View style={styles.liveDot} />
-                  <Text variant="caption" weight="bold" color={colors.success}>{offers.length}</Text>
-                </View>
+              <View style={styles.error}>
+                <Icon name="circleAlert" size={16} color={colors.danger} />
+                <Text
+                  variant="caption"
+                  color={colors.danger}
+                  style={{ flex: 1 }}
+                >
+                  {error}
+                </Text>
               </View>
             ) : null}
-          </View>
-        )}
+            {online && offers.length > 0 ? (
+              <View style={styles.sectionGutter}>
+                <SectionTitle
+                  title="New delivery requests"
+                  action={`${offers.length} nearby`}
+                />
+              </View>
+            ) : null}
+          </>
+        }
         ListEmptyComponent={
-          !online ? (
-            <EmptyState icon="bike" title="You are offline" subtitle="Switch online above to start receiving delivery offers." />
-          ) : (
-            <EmptyState icon="clock" title="No offers right now" subtitle="We refresh every 20 seconds. Keep the app open." />
-          )
+          <View style={styles.sectionGutter}>
+            <Card tone={online ? "tint" : "white"}>
+              <View style={{ alignItems: "center", paddingVertical: 24 }}>
+                <Icon
+                  name={online ? "clockCheck" : "bike"}
+                  size={32}
+                  color={online ? colors.success : colors.brand[600]}
+                />
+                <Text variant="h3" weight="bold" style={{ marginTop: 10 }}>
+                  {online ? "No requests right now" : "Ready when you are"}
+                </Text>
+                <Text
+                  variant="bodySm"
+                  color={colors.textSecondary}
+                  style={{ textAlign: "center", marginTop: 4 }}
+                >
+                  {online
+                    ? "We check every few seconds. Keep this screen open for the next offer."
+                    : "Switch on your availability to start receiving delivery requests."}
+                </Text>
+              </View>
+            </Card>
+          </View>
         }
         renderItem={({ item }) => (
-          <OfferCard
-            task={item}
-            busy={busy}
-            onAccept={() => void accept(item)}
-            onReject={() => void reject(item)}
-            onMap={() => navigation.navigate('OrderMap', { taskId: item.id })}
-          />
+          <View style={styles.sectionGutter}>
+            <OfferCard
+              task={item}
+              busy={loading}
+              onAccept={() => void accept(item)}
+              onReject={() => void reject(item)}
+              onMap={() => navigation.navigate("OrderMap", { taskId: item.id })}
+            />
+          </View>
         )}
       />
-    </Screen>
+      </Screen>
+      <RiderModal
+        visible={Boolean(dialog)}
+        title={dialog?.title ?? ""}
+        message={dialog?.message}
+        icon={dialog?.icon}
+        iconColor={dialog?.iconColor}
+        actions={dialog?.actions ?? []}
+        onClose={() => setDialog(null)}
+      />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
+  dutyWrap: { paddingHorizontal: 4, paddingTop: 8 },
   dutyCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 10,
-    gap: 12,
-  },
-  codWarn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.warningBg,
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 10,
-  },
-  activeBanner: {
-    backgroundColor: colors.brand[50],
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: colors.brand[200],
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 14,
-  },
-  tile: {
-    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 11,
     backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 10,
-    borderWidth: 1,
-  },
-  tileIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  liveChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: colors.successBg,
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  liveDot: { width: 7, height: 7, borderRadius: 99, backgroundColor: colors.success },
-  offerCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 14,
     borderWidth: 1,
     borderColor: colors.border,
+    borderRadius: 16,
+    padding: 12,
   },
-  offerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
+  liveIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  payoutBadge: {
-    backgroundColor: colors.successBg,
-    borderRadius: 10,
+  liveDot: { width: 13, height: 13, borderRadius: 7 },
+  breakRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 8,
+    paddingHorizontal: 3,
+  },
+  codAlert: {
+    marginHorizontal: 4,
+    marginTop: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 11,
+    backgroundColor: colors.warningBg,
+    borderRadius: 12,
+  },
+  mapCaption: {
+    marginHorizontal: 4,
+    paddingVertical: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  zoneButton: {
+    flexDirection: "row",
+    gap: 5,
+    alignItems: "center",
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 7,
+    borderRadius: 9,
+    backgroundColor: colors.brand[50],
   },
-  routeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  chipsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 8,
+  activeCard: {
+    marginHorizontal: 4,
     marginBottom: 12,
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: 7,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-  },
-  offerBtns: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  mapBtn: {
-    width: 48,
-    height: 42,
-    borderRadius: 10,
     backgroundColor: colors.brand[50],
     borderWidth: 1,
     borderColor: colors.brand[100],
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: 16,
+    padding: 13,
   },
-  mapIconBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 8,
+  activeHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  sectionGutter: { paddingHorizontal: 4 },
+  metrics: { flexDirection: "row", gap: 7 },
+  goalTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 9,
+  },
+  error: {
+    marginHorizontal: 4,
+    marginBottom: 10,
+    padding: 10,
+    borderRadius: 10,
+    backgroundColor: colors.dangerBg,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+  },
+  offerCard: { padding: 13 },
+  offerTop: { flexDirection: "row", alignItems: "center", gap: 9 },
+  offerIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
     backgroundColor: colors.brand[50],
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  payout: { alignItems: "flex-end", width: 92, flexShrink: 0 },
+  offerRoute: { marginTop: 13 },
+  offerMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 9,
+    paddingTop: 10,
+    marginTop: 3,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  metaItem: { flexDirection: "row", alignItems: "center", gap: 4 },
+  timer: {
+    marginLeft: "auto",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: colors.warningBg,
+    borderRadius: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+  },
+  offerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    marginTop: 12,
+  },
+  mapAction: {
+    height: 42,
+    paddingHorizontal: 9,
+    borderRadius: 10,
+    backgroundColor: colors.brand[50],
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
   },
 });

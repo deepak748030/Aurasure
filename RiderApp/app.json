@@ -2,7 +2,7 @@
   "expo": {
     "name": "Aurasure Rider",
     "slug": "aurasure-rider",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "orientation": "portrait",
     "scheme": "aurasurerider",
     "userInterfaceStyle": "light",
@@ -12,23 +12,24 @@
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FFFFFF"
+      "backgroundColor": "#67014B"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.aurasure.rider",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Aurasure Rider uses your location while on a delivery to show pickup and drop points, and to keep the live-ops board accurate."
+        "NSLocationWhenInUseUsageDescription": "Aurasure Rider uses your location while you are online or completing a delivery to show routes and keep operations updated.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Aurasure Rider shares your location only during an online shift or active delivery so customers and operations can follow the delivery safely."
       }
     },
     "android": {
       "package": "com.aurasure.rider",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#5B46E5"
+        "backgroundColor": "#67014B"
       },
-      "navigationBarColor": "#F5EAF3",
-      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+      "navigationBarColor": "#FFFFFF",
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION", "ACCESS_BACKGROUND_LOCATION", "FOREGROUND_SERVICE", "FOREGROUND_SERVICE_LOCATION"]
     },
     "web": {
       "bundler": "metro",
@@ -42,10 +43,18 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 240,
           "resizeMode": "contain",
-          "backgroundColor": "#FFFFFF"
+          "backgroundColor": "#67014B"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Aurasure Rider shares your location only while you are online or on an active delivery.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true
         }
       ]
     ],
-    "backgroundColor": "#F5EAF3"
+    "backgroundColor": "#FFFFFF"
   }
 }

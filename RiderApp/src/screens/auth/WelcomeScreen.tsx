@@ -1,85 +1,138 @@
-import React, { useEffect } from 'react';
-import { View } from 'react-native';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import React from "react";
+import { Image, View } from "react-native";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { Screen } from "@/components/ui/Screen";
+import { Text } from "@/components/ui/Text";
+import { Button } from "@/components/ui/Button";
+import { Icon } from "@/lib/icons";
+import { Card } from "@/components/ui/RiderUI";
+import { colors } from "@/theme/colors";
+import type { RootStackParamList } from "@/navigation/types";
 
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Screen } from '@/components/ui/Screen';
-import { Text } from '@/components/ui/Text';
-import { Button } from '@/components/ui/Button';
-import { Icon } from '@/lib/icons';
-import { colors } from '@/theme/colors';
-import type { RootStackParamList } from '@/navigation/types';
-import type { IconName } from '@/types';
-
-type Props = NativeStackScreenProps<RootStackParamList, 'Welcome'>;
-
-const ROWS: { icon: IconName; title: string; body: string }[] = [
-  { icon: 'bike', title: 'Deliver on bike, scooter or EV', body: 'Pick a vehicle, upload documents and go live after admin KYC.' },
-  { icon: 'shield', title: 'Every document verified', body: 'Aadhaar, DL, PAN, vehicle RC and photo — approved only at 100%.' },
-  { icon: 'wallet', title: 'Pay per trip, never per hour', body: 'Trip payout + incentives. COD collected stays with you briefly.' },
-  { icon: 'phone', title: 'One phone = one role', body: 'The same number cannot be a customer, vendor and rider at once.' },
+type Props = NativeStackScreenProps<RootStackParamList, "Welcome">;
+const BENEFITS = [
+  {
+    icon: "map" as const,
+    title: "Nearby delivery requests",
+    body: "See pickup, drop and guaranteed pay before you accept.",
+  },
+  {
+    icon: "wallet" as const,
+    title: "Clear earnings",
+    body: "Track trip pay, incentives, payouts and COD in one place.",
+  },
+  {
+    icon: "shield" as const,
+    title: "Support when you need it",
+    body: "OTP checks, proof of delivery and SOS keep every trip safer.",
+  },
 ];
-
 export function WelcomeScreen({ navigation }: Props): React.ReactElement {
-  useEffect(() => undefined, []);
-
   return (
-    <Screen scroll padded appBarColor={colors.appBarHero} statusBarStyle="light">
-      <Animated.View entering={FadeInDown.duration(420)}>
-        <View style={{ backgroundColor: '#16A34A', borderRadius: 20, padding: 22, marginTop: 8 }}>
-          <Text variant="overline" color="rgba(255,255,255,0.72)">
-            AURASURE DELIVERY PARTNER
-          </Text>
-          <Text variant="display" color={colors.white} style={{ marginTop: 8 }}>
-            Deliver. Pick up. Get paid.
-          </Text>
-          <Text variant="body" color="rgba(255,255,255,0.86)" style={{ marginTop: 10 }}>
-            Accept nearby orders, verify pickup and drop OTPs, and keep your COD record clean in one rider profile.
-          </Text>
-        </View>
-      </Animated.View>
-
-      <View style={{ marginTop: 18, gap: 10 }}>
-        {ROWS.map((row, i) => (
-          <Animated.View
-            key={row.title}
-            entering={FadeInUp.delay(80 * i).duration(380)}
-            style={{
-              flexDirection: 'row',
-              gap: 12,
-              backgroundColor: colors.surface,
-              borderRadius: 16,
-              padding: 14,
-              borderWidth: 1,
-              borderColor: colors.border,
-            }}
-          >
-            <View
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 14,
-                backgroundColor: colors.brand[50],
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Icon name={row.icon} size={22} color={colors.brand[600]} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text variant="title">{row.title}</Text>
-              <Text variant="bodySm" color={colors.textSecondary}>
-                {row.body}
+    <Screen
+      scroll
+      padded={false}
+      appBarColor={colors.brand[600]}
+      statusBarStyle="light"
+    >
+      <View style={{ paddingHorizontal: 4 }}>
+        <View
+          style={{
+            backgroundColor: colors.brand[600],
+            paddingTop: 18,
+            paddingBottom: 28,
+            paddingHorizontal: 15,
+            borderBottomLeftRadius: 25,
+            borderBottomRightRadius: 25,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 9 }}>
+            <Image
+              source={require("../../../assets/images/icon.png")}
+              style={{ width: 42, height: 42, borderRadius: 13 }}
+            />
+            <View>
+              <Text variant="title" weight="bold" color={colors.white}>
+                AURASURE
+              </Text>
+              <Text variant="caption" color="rgba(255,255,255,.7)">
+                DELIVERY PARTNER
               </Text>
             </View>
-          </Animated.View>
-        ))}
+          </View>
+          <Text
+            variant="display"
+            color={colors.white}
+            style={{ marginTop: 36 }}
+          >
+            Ride with purpose.{`\n`}Earn with every trip.
+          </Text>
+          <Text
+            variant="body"
+            color="rgba(255,255,255,.8)"
+            style={{ marginTop: 11 }}
+          >
+            Your workday, made simpler — from the first request to your final
+            payout.
+          </Text>
+        </View>
+        <View style={{ paddingHorizontal: 4, paddingTop: 20 }}>
+          <Text variant="h2" weight="bold">
+            Everything you need on the road
+          </Text>
+          {BENEFITS.map((item) => (
+            <Card
+              key={item.title}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginTop: 10,
+                padding: 12,
+              }}
+            >
+              <View
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 13,
+                  backgroundColor: colors.brand[50],
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Icon name={item.icon} size={21} color={colors.brand[600]} />
+              </View>
+              <View style={{ flex: 1, marginLeft: 11 }}>
+                <Text variant="title" weight="bold">
+                  {item.title}
+                </Text>
+                <Text variant="caption" color={colors.textSecondary}>
+                  {item.body}
+                </Text>
+              </View>
+            </Card>
+          ))}
+          <Button
+            title="Sign in to rider account"
+            variant="login"
+            size="lg"
+            onPress={() => navigation.navigate("Login")}
+            style={{ marginTop: 22 }}
+          />
+          <Button
+            title="Create rider account"
+            variant="ghost"
+            onPress={() => navigation.navigate("Register")}
+          />
+          <Text
+            variant="caption"
+            color={colors.textTertiary}
+            style={{ textAlign: "center", marginTop: 5 }}
+          >
+            One phone number · one Aurasure role
+          </Text>
+        </View>
       </View>
-
-      <Animated.View entering={FadeInUp.delay(420)} style={{ marginTop: 22, gap: 10 }}>
-        <Button title="Register as a delivery partner" variant="login" size="lg" onPress={() => navigation.navigate('Register')} />
-        <Button title="I already have a rider number" variant="secondary" onPress={() => navigation.navigate('Login')} />
-      </Animated.View>
     </Screen>
   );
 }

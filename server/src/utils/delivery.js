@@ -59,8 +59,8 @@ async function createDeliveryTaskForOrder(order) {
       phone: vendorPhone,
       address: vendorAddress,
       otp: makeOtp(),
-      lat: null,
-      lng: null,
+      lat: vendor?.geo?.lat ?? null,
+      lng: vendor?.geo?.lng ?? null,
     },
     drop: {
       name: dropName,

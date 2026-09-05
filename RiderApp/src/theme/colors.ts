@@ -1,86 +1,62 @@
-// Central color system for Aurasure. Light theme, professional and calm.
-// Brand = indigo/violet "aura". Food module uses warm coral. Shop uses brand.
-
+// Aurasure Rider design system. The reference delivery app uses a deep plum
+// primary, a clean white canvas and a green "available" state. Keep these
+// values in one place so the rider UI stays legible in daylight.
 export const brand = {
-  50: '#EEF1FF',
-  100: '#E1E5FF',
-  200: '#C9D0FF',
-  300: '#A8B2FF',
-  400: '#867EFF',
-  500: '#6A5EF5',
-  600: '#5B46E5',
-  700: '#4B36C9',
-  800: '#3D2CA3',
-  900: '#2E2178',
-};
-
-export const food = {
-  50: '#FFF1EC',
-  100: '#FFE0D3',
-  200: '#FFC2AD',
-  300: '#FF9D7C',
-  400: '#FF7E54',
-  500: '#FF6A3D',
-  600: '#F2542A',
-  700: '#CC3F1C',
-  800: '#A33318',
-  900: '#7E2B16',
+  50: "#F9EFF6",
+  100: "#F1D8E9",
+  200: "#E5B5D2",
+  300: "#D78BB8",
+  400: "#C55E9B",
+  500: "#A9327B",
+  600: "#67014B",
+  700: "#52003B",
+  800: "#3E002D",
+  900: "#2A001F",
 };
 
 export const colors = {
   brand,
-  food,
-
-  // neutral ink scale
+  food: { 50: "#FFF3E6", 100: "#FFE1BA", 500: "#F19A27", 600: "#E47E12" },
   ink: {
-    900: '#0B1020',
-    800: '#1A2030',
-    700: '#2B3346',
-    600: '#4A5468',
-    500: '#6B7488',
-    400: '#8B93A7',
-    300: '#B4BAC8',
-    200: '#DDE0E8',
-    100: '#EEF0F5',
-    50: '#F6F7FB',
+    50: "#F6F8F8",
+    100: "#EDF0F0",
+    200: "#DDE2E2",
+    300: "#C2CBCD",
+    400: "#929B9D",
+    500: "#657174",
+    600: "#465154",
+    700: "#303B3E",
+    800: "#202B2D",
+    900: "#172022",
   },
-
-  // App chrome: the strip painted behind the status bar (Android notification
-  // bar) and behind the gesture nav pill. Deliberately the same soft plum as
-  // the tab bar so both system bars read as part of the app.
-  appBar: '#F5EAF3',
-  // Deep plum used by the gradient heroes (Menu / Gate). Dark enough that the
-  // system-bar contrast flips to white icons on its own.
-  appBarHero: '#6A0A45',
-
-  // semantic surfaces & text
-  background: '#F6F7FB',
-  surface: '#FFFFFF',
-  surfaceAlt: '#F1F3F9',
-  border: '#E7E9F1',
-  borderStrong: '#D6DAE6',
-
-  text: '#0B1020',
-  textSecondary: '#5B6478',
-  textTertiary: '#98A1B3',
-
-  white: '#FFFFFF',
-  black: '#000000',
-
-  success: '#16A34A',
-  successBg: '#E7F6EC',
-  warning: '#F59E0B',
-  warningBg: '#FEF3E2',
-  danger: '#EF4444',
-  dangerBg: '#FDECEC',
-  star: '#F5A623',
-
-  overlay: 'rgba(11,16,32,0.42)',
-
-  // module accents
-  foodAccent: '#FF6A3D',
-  shopAccent: '#5B46E5',
-
-};
+  background: "#FCFCFC",
+  surface: "#FFFFFF",
+  surfaceAlt: "#F6F7F7",
+  border: "#E8E9EA",
+  borderStrong: "#D6DADB",
+  text: "#172022",
+  textSecondary: "#657174",
+  textTertiary: "#929B9D",
+  white: "#FFFFFF",
+  black: "#000000",
+  success: "#24A85C",
+  successBg: "#E8F7EF",
+  warning: "#F19A27",
+  warningBg: "#FFF4E4",
+  danger: "#E84D4F",
+  dangerBg: "#FDEDEC",
+  info: "#1D95FF",
+  infoBg: "#EAF5FF",
+  star: "#F4A62A",
+  overlay: "rgba(17, 26, 28, 0.48)",
+  mapWater: "#DDEDF0",
+  mapRoad: "#FFFFFF",
+  mapRoadMajor: "#F2C7B1",
+  mapPark: "#DCEEDC",
+  appBar: "#FFFFFF",
+  appBarHero: "#67014B",
+  foodAccent: "#F19A27",
+  shopAccent: "#67014B",
+} as const;
 
 export type ColorScheme = typeof colors;

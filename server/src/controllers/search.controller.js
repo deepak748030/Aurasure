@@ -9,6 +9,8 @@ const asyncHandler = require('../utils/asyncHandler');
 const { ok, paginate } = require('../utils/response');
 const { toAppImage } = require('../utils/imageRef');
 
+const VISIBLE_APPROVAL = { approvalStatus: { $in: ['approved', null] } };
+
 function escapeRegex(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -39,14 +41,14 @@ const search = asyncHandler(async (req, res) => {
 
   if (module === 'food') {
     const [items, restaurants] = await Promise.all([
-      FoodItem.find({ $or: [{ name: rx }, { description: rx }, { tags: rx }] }).limit(limit),
+      FoodItem.find({ ...VISIBLE_APPROVAL, $or: [{ name: rx }, { description: rx }, { tags: rx }] }).limit(limit),
       Restaurant.find({ $or: [{ name: rx }, { cuisines: rx }, { tags: rx }, { line: rx }] }).limit(limit),
     ]);
     return ok(res, { query: q, module, items: clean(items), restaurants: clean(restaurants), products: [], stores: [] });
   }
 
   const [products, stores] = await Promise.all([
-    Product.find({ $or: [{ name: rx }, { brand: rx }, { description: rx }, { tags: rx }] }).limit(limit),
+    Product.find({ ...VISIBLE_APPROVAL, $or: [{ name: rx }, { brand: rx }, { description: rx }, { tags: rx }] }).limit(limit),
     ShopStore.find({ $or: [{ name: rx }, { road: rx }, { tags: rx }] }).limit(limit),
   ]);
   return ok(res, { query: q, module, items: [], restaurants: [], products: clean(products), stores: clean(stores) });

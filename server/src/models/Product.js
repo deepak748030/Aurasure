@@ -24,6 +24,11 @@ const productSchema = new mongoose.Schema(
     sizes: { type: [String] },
     image: { type: mongoose.Schema.Types.Mixed, default: null },
     categoryId: { type: String, required: true, index: true },
+    variants: { type: [mongoose.Schema.Types.Mixed], default: [] },
+    addonGroups: { type: [mongoose.Schema.Types.Mixed], default: [] },
+    stockQty: { type: Number, default: null },
+    approvalStatus: { type: String, enum: ['approved', 'pending', 'rejected'], default: 'approved' },
+    rejectionReason: { type: String, default: '' },
   },
   {
     timestamps: true,

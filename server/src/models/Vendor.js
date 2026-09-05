@@ -37,6 +37,25 @@ const hoursSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const geoSchema = new mongoose.Schema(
+  {
+    lat: { type: Number, default: null },
+    lng: { type: Number, default: null },
+  },
+  { _id: false },
+);
+
+const staffSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true },
+    name: { type: String, required: true },
+    phone: { type: String, required: true },
+    role: { type: String, enum: ['vendor_staff'], default: 'vendor_staff' },
+    active: { type: Boolean, default: true },
+  },
+  { _id: false },
+);
+
 const vendorSchema = new mongoose.Schema(
   {
     id: { type: String, required: true, unique: true, index: true },
@@ -71,6 +90,9 @@ const vendorSchema = new mongoose.Schema(
     isVeg: { type: Boolean, default: false },
     bank: { type: bankSchema, default: () => ({}) },
     hours: { type: hoursSchema, default: () => ({}) },
+    geo: { type: geoSchema, default: () => ({}) },
+    pauseUntil: { type: Date, default: null },
+    pauseReason: { type: String, default: '' },
     cover: { type: mongoose.Schema.Types.Mixed, default: null },
     documents: { type: [documentSchema], default: [] },
     reviewNote: { type: String, default: '' },
@@ -81,6 +103,11 @@ const vendorSchema = new mongoose.Schema(
     acceptingOrders: { type: Boolean, default: false },
     outletId: { type: String, default: null, index: true },
     payoutBalance: { type: Number, default: 0, min: 0 },
+    staff: { type: [staffSchema], default: [] },
+    pushTokens: {
+      type: [{ token: { type: String, required: true }, platform: { type: String, default: 'unknown' }, createdAt: { type: Date, default: Date.now } }],
+      default: [],
+    },
     issues: {
       type: [
         {

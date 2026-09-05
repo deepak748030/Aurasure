@@ -22,6 +22,11 @@ const foodItemSchema = new mongoose.Schema(
     tags: { type: [String], default: [] },
     image: { type: mongoose.Schema.Types.Mixed, default: null },
     categoryIds: { type: [String], default: [] },
+    variants: { type: [mongoose.Schema.Types.Mixed], default: [] },
+    addonGroups: { type: [mongoose.Schema.Types.Mixed], default: [] },
+    stockQty: { type: Number, default: null },
+    approvalStatus: { type: String, enum: ['approved', 'pending', 'rejected'], default: 'approved' },
+    rejectionReason: { type: String, default: '' },
   },
   {
     timestamps: true,

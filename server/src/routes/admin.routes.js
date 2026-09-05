@@ -7,6 +7,7 @@ const vendorsAdmin = require('../controllers/adminVendors.controller');
 const ridersAdmin = require('../controllers/adminRiders.controller');
 const deliveryAdmin = require('../controllers/adminDelivery.controller');
 const console_ = require('../controllers/adminCatalog.controller');
+const vendorCatalogue = require('../controllers/adminVendorCatalog.controller');
 const uploads = require('../controllers/upload.controller');
 const promos = require('../controllers/promo.controller');
 const { singleImage, manyImages } = require('../middlewares/upload');
@@ -78,6 +79,8 @@ router.post('/customers/:id/wallet', console_.adjustWallet);
 router.post('/customers/:id/loyalty', console_.adjustLoyalty);
 
 router.get('/reports/overview', console_.reportOverview);
+router.get('/catalogue/pending', vendorCatalogue.pending);
+router.post('/catalogue/:id/decision', vendorCatalogue.decide);
 router.get('/lookups', console_.lookups);
 router.get('/system', console_.systemInfo);
 

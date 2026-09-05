@@ -1,68 +1,156 @@
-import React from 'react';
-import { View } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
-import { Screen } from '@/components/ui/Screen';
-import { Text } from '@/components/ui/Text';
-import { Button } from '@/components/ui/Button';
-import { Icon } from '@/lib/icons';
-import { useRider } from '@/context/RiderContext';
-import { colors } from '@/theme/colors';
+import React from "react";
+import { Pressable, View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Screen } from "@/components/ui/Screen";
+import { Text } from "@/components/ui/Text";
+import { Button } from "@/components/ui/Button";
+import { Icon } from "@/lib/icons";
+import { Card, StatusPill } from "@/components/ui/RiderUI";
+import { useRider } from "@/context/RiderContext";
+import { colors } from "@/theme/colors";
+import type { RootStackParamList } from "@/navigation/types";
 
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 export function PendingScreen(): React.ReactElement {
   const { rider, refresh, logout } = useRider();
-  const status = rider?.status ?? 'submitted';
+  const navigation = useNavigation<Nav>();
+  const status = rider?.status ?? "submitted";
   const copy: Record<string, string> = {
-    submitted: 'Our team is checking your Aadhaar, DL, PAN, RC and photo. You cannot go online yet.',
-    under_review: 'A reviewer has opened your file. Keep the app handy — they may request a sharper shot.',
-    rejected: 'Something did not match. Read the note, fix that document, and submit again.',
-    needs_info: 'One document is unclear. Replace it and submit again — you do not restart the whole form.',
-    suspended: 'Your partner account is paused by admin. Raise a ticket from Profile or wait for a call.',
+    submitted:
+      "Our team is checking your Aadhaar, DL, PAN, RC and profile photo.",
+    under_review:
+      "A reviewer has opened your file. We will notify you if anything needs a clearer photo.",
+    suspended:
+      "Your partner account is temporarily paused. Please contact support for help.",
   };
-
   return (
-    <Screen title="Verification" subtitle={rider?.name || rider?.phone} onRefresh={() => void refresh()}>
-      <Animated.View
-        entering={FadeIn}
-        style={{
-          backgroundColor: colors.surface,
-          borderRadius: 20,
-          padding: 22,
-          borderWidth: 1,
-          borderColor: colors.border,
-          alignItems: 'center',
-        }}
+    <Screen
+      title="Verification"
+      subtitle={rider?.name || rider?.phone}
+      onRefresh={() => void refresh()}
+    >
+      <Card
+        tone="tint"
+        style={{ alignItems: "center", padding: 22, marginBottom: 16 }}
       >
-        <Icon name="shield" size={42} color={colors.brand[600]} />
-        <Text variant="h2" style={{ marginTop: 12, textAlign: 'center', textTransform: 'capitalize' }}>
-          {status.replace('_', ' ')}
+        <View
+          style={{
+            width: 62,
+            height: 62,
+            borderRadius: 22,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: colors.brand[100],
+          }}
+        >
+          <Icon
+            name={status === "suspended" ? "shieldLock" : "document"}
+            size={32}
+            color={status === "suspended" ? colors.danger : colors.brand[600]}
+          />
+        </View>
+        <StatusPill
+          label={status.replace(/_/g, " ")}
+          color={status === "suspended" ? colors.danger : colors.warning}
+          background={
+            status === "suspended" ? colors.dangerBg : colors.warningBg
+          }
+          icon="clock"
+        />
+        <Text
+          variant="h2"
+          weight="bold"
+          style={{ marginTop: 13, textAlign: "center" }}
+        >
+          {status === "under_review"
+            ? "Almost there"
+            : status === "suspended"
+              ? "Account paused"
+              : "Documents submitted"}
         </Text>
-        <Text variant="body" color={colors.textSecondary} style={{ marginTop: 8, textAlign: 'center' }}>
-          {copy[status] ?? copy.submitted}
+        <Text
+          variant="bodySm"
+          color={colors.textSecondary}
+          style={{ textAlign: "center", marginTop: 7 }}
+        >
+          {copy[status] || copy.submitted}
         </Text>
         {rider?.reviewNote ? (
-          <Text variant="bodySm" color={colors.warning} style={{ marginTop: 12, textAlign: 'center' }}>
-            Admin: {rider.reviewNote}
+          <Text
+            variant="caption"
+            color={colors.warning}
+            style={{ textAlign: "center", marginTop: 12 }}
+          >
+            Admin note: {rider.reviewNote}
           </Text>
         ) : null}
-      </Animated.View>
-
-      <View style={{ marginTop: 16 }}>
-        {(rider?.documents ?? []).map((d) => (
-          <View key={d.key} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10 }}>
-            <Text variant="bodySm" style={{ flex: 1, paddingRight: 8 }}>
-              {d.label}
+      </Card>
+      <Text
+        variant="overline"
+        color={colors.textTertiary}
+        style={{ marginBottom: 8 }}
+      >
+        DOCUMENT CHECKLIST
+      </Text>
+      <Card style={{ paddingVertical: 4 }}>
+        {(rider?.documents ?? []).map((doc) => (
+          <View
+            key={doc.key}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              paddingVertical: 10,
+              borderBottomWidth: 1,
+              borderBottomColor: colors.border,
+            }}
+          >
+            <Icon
+              name={
+                doc.verified ? "circleCheck" : doc.uri ? "clock" : "closeCircle"
+              }
+              size={18}
+              color={
+                doc.verified
+                  ? colors.success
+                  : doc.uri
+                    ? colors.warning
+                    : colors.danger
+              }
+            />
+            <Text variant="bodySm" style={{ flex: 1, marginLeft: 9 }}>
+              {doc.label}
             </Text>
-            <Text variant="caption" color={d.verified ? colors.success : d.uri ? colors.warning : colors.danger}>
-              {d.verified ? 'Verified' : d.uri ? 'In review' : 'Missing'}
+            <Text
+              variant="caption"
+              weight="bold"
+              color={
+                doc.verified
+                  ? colors.success
+                  : doc.uri
+                    ? colors.warning
+                    : colors.danger
+              }
+            >
+              {doc.verified ? "Verified" : doc.uri ? "In review" : "Missing"}
             </Text>
           </View>
         ))}
-      </View>
-
-      <View style={{ marginTop: 20, gap: 10 }}>
-        <Button title="Refresh status" variant="secondary" onPress={() => void refresh()} />
-        <Button title="Sign out" variant="ghost" onPress={logout} />
-      </View>
+      </Card>
+      <Button
+        title="Refresh verification"
+        variant="secondary"
+        onPress={() => void refresh()}
+        style={{ marginTop: 18 }}
+      />
+      {status === "suspended" ? (
+        <Button
+          title="Contact support"
+          variant="ghost"
+          onPress={() => navigation.navigate("Utility", { kind: "help" })}
+        />
+      ) : null}
+      <Button title="Sign out" variant="ghost" onPress={logout} />
     </Screen>
   );
 }

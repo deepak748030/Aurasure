@@ -1,181 +1,30 @@
 import React, { useState } from 'react';
-import { Alert, Switch, TouchableOpacity, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Switch, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { BackButton } from '@/components/ui/BackButton';
+import { Card, Badge } from '@/components/ui/VendorUI';
 import { Icon } from '@/lib/icons';
-import { vendorApi } from '@/api/vendor';
+import { vendorApi, uploadVendorImage, type CatalogItem } from '@/api/vendor';
+import { pickImage } from '@/lib/pickImage';
 import { colors } from '@/theme/colors';
+import { radius } from '@/theme/tokens';
 import { haptic } from '@/lib/haptics';
+import { useVendor } from '@/context/VendorContext';
 import type { RootStackParamList } from '@/navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddItem'>;
-
+function imageUri(image: CatalogItem['image']): string | null { return typeof image === 'string' ? image : image?.uri ?? null; }
 export function AddItemScreen({ route, navigation }: Props): React.ReactElement {
-  const existing = route?.params?.item;
-  const isEdit = Boolean(existing?.id);
-
-  const [name, setName] = useState(existing?.name ?? '');
-  const [price, setPrice] = useState(existing?.price != null ? String(existing.price) : '');
-  const [mrp, setMrp] = useState(existing?.mrp != null ? String(existing.mrp) : '');
-  const [description, setDescription] = useState(existing?.description ?? '');
-  const [prepTime, setPrepTime] = useState(existing?.prepTime != null ? String(existing.prepTime) : '15');
-  const [isVeg, setIsVeg] = useState(existing?.isVeg !== false);
-  const [inStock, setInStock] = useState(existing?.inStock !== false && existing?.isAvailable !== false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-
-  const save = async () => {
-    if (!name.trim()) {
-      setError('Item name is required');
-      haptic.error();
-      return;
-    }
-    if (!price.trim() || isNaN(Number(price))) {
-      setError('Enter a valid price');
-      haptic.error();
-      return;
-    }
-    setBusy(true);
-    setError('');
-    try {
-      await vendorApi.saveItem({
-        ...(isEdit && existing?.id ? { id: existing.id } : {}),
-        name: name.trim(),
-        price: Number(price),
-        mrp: mrp.trim() ? Number(mrp) : Number(price),
-        description: description.trim(),
-        prepTime: Number(prepTime) || 15,
-        isVeg,
-        inStock,
-        isAvailable: inStock,
-      });
-      haptic.success();
-      navigation.goBack();
-    } catch (e) {
-      haptic.error();
-      setError(e instanceof Error ? e.message : 'Save failed');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <Screen
-      title={isEdit ? 'Edit Item' : 'Add Item'}
-      keyboardAvoiding
-      headerLeft={
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 8 }}>
-          <Icon name="chevronLeft" size={26} color={colors.text} />
-        </TouchableOpacity>
-      }
-    >
-      <Input
-        label="Item Name *"
-        value={name}
-        onChangeText={setName}
-        placeholder="e.g. Butter Chicken, Aura Tee"
-        leftIcon="utensils"
-      />
-      <Input
-        label="Selling Price ₹ *"
-        value={price}
-        onChangeText={setPrice}
-        keyboardType="decimal-pad"
-        leftIcon="rupee"
-        placeholder="0"
-      />
-      <Input
-        label="MRP ₹ (crossed-out original price)"
-        value={mrp}
-        onChangeText={setMrp}
-        keyboardType="decimal-pad"
-        leftIcon="tag"
-        placeholder="Leave blank = same as price"
-      />
-      <Input
-        label="Description"
-        value={description}
-        onChangeText={setDescription}
-        multiline
-        placeholder="Briefly describe this item..."
-      />
-      <Input
-        label="Prep Time (minutes)"
-        value={prepTime}
-        onChangeText={setPrepTime}
-        keyboardType="number-pad"
-        leftIcon="timer"
-        placeholder="15"
-      />
-
-      {/* Veg toggle */}
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          backgroundColor: colors.surface,
-          borderRadius: 10,
-          borderWidth: 1,
-          borderColor: colors.border,
-          padding: 14,
-          marginBottom: 14,
-        }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <Icon name="leaf" size={18} color={isVeg ? colors.success : colors.textTertiary} />
-          <View>
-            <Text variant="title" weight="semibold">Vegetarian</Text>
-            <Text variant="caption" color={colors.textSecondary}>Show green dot on the item</Text>
-          </View>
-        </View>
-        <Switch
-          value={isVeg}
-          onValueChange={(v) => { haptic.selection(); setIsVeg(v); }}
-          trackColor={{ false: colors.border, true: colors.success + '80' }}
-          thumbColor={isVeg ? colors.success : colors.textTertiary}
-        />
-      </View>
-
-      {/* In stock toggle */}
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          backgroundColor: colors.surface,
-          borderRadius: 10,
-          borderWidth: 1,
-          borderColor: colors.border,
-          padding: 14,
-          marginBottom: 20,
-        }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <Icon name="package" size={18} color={inStock ? colors.brand[600] : colors.danger} />
-          <View>
-            <Text variant="title" weight="semibold">In Stock</Text>
-            <Text variant="caption" color={colors.textSecondary}>Customers can order this item</Text>
-          </View>
-        </View>
-        <Switch
-          value={inStock}
-          onValueChange={(v) => { haptic.selection(); setInStock(v); }}
-          trackColor={{ false: colors.dangerBg, true: colors.brand[100] }}
-          thumbColor={inStock ? colors.brand[600] : colors.danger}
-        />
-      </View>
-
-      {error ? (
-        <Text variant="bodySm" color={colors.danger} style={{ marginBottom: 12 }}>
-          {error}
-        </Text>
-      ) : null}
-
-      <Button title={isEdit ? 'Save Changes' : 'Add to Menu'} loading={busy} onPress={() => void save()} />
-    </Screen>
-  );
+  const { vendor } = useVendor(); const existing = route.params?.item; const edit = Boolean(existing?.id); const [name, setName] = useState(existing?.name ?? ''); const [description, setDescription] = useState(existing?.description ?? ''); const [price, setPrice] = useState(existing?.price?.toString() ?? ''); const [mrp, setMrp] = useState(existing?.mrp?.toString() ?? ''); const [prep, setPrep] = useState(existing?.prepTime?.toString() ?? '15'); const [brand, setBrand] = useState(existing?.brand ?? ''); const [category, setCategory] = useState(existing?.categoryId ?? ''); const [stockQty, setStockQty] = useState(existing?.stockQty?.toString() ?? ''); const [tags, setTags] = useState(existing?.tags?.join(', ') ?? ''); const [variants, setVariants] = useState(existing?.variants?.map((item) => `${item.label || ''}:${item.priceDelta || 0}`).join('\n') ?? ''); const [addOns, setAddOns] = useState(existing?.addonGroups?.map((item) => item.name || '').join('\n') ?? ''); const [veg, setVeg] = useState(existing?.isVeg !== false); const [available, setAvailable] = useState(existing?.inStock !== false && existing?.isAvailable !== false); const [image, setImage] = useState(imageUri(existing?.image)); const [busy, setBusy] = useState(false); const [error, setError] = useState('');
+  const chooseImage = async () => { const picked = await pickImage(); if (!picked) return; setBusy(true); try { const result = await uploadVendorImage(picked.blob, picked.name); setImage(result.url); } catch (e) { setError(e instanceof Error ? e.message : 'Photo upload failed'); } finally { setBusy(false); } };
+  const save = async () => { if (!name.trim()) return setError('Add an item name.'); if (!price || Number.isNaN(Number(price)) || Number(price) < 0) return setError('Enter a valid selling price.'); setBusy(true); setError(''); const payload = { name: name.trim(), description: description.trim(), price: Number(price), mrp: mrp ? Number(mrp) : Number(price), prepTime: Number(prep) || 15, isVeg: vendor?.module === 'food' ? veg : undefined, inStock: available, isAvailable: available, brand: vendor?.module === 'shop' ? brand.trim() : undefined, categoryId: category.trim() || undefined, categoryIds: category.trim() ? [category.trim()] : undefined, tags: tags.split(',').map((tag) => tag.trim()).filter(Boolean), stockQty: stockQty !== '' ? Number(stockQty) : null, variants: variants.split('\n').map((line) => line.trim()).filter(Boolean).map((line) => { const [label, delta] = line.split(':'); return { label: label?.trim() || line, priceDelta: Number(delta) || 0 }; }), addonGroups: addOns.split('\n').map((line) => line.trim()).filter(Boolean).map((line) => ({ name: line, min: 0, max: 1, options: [] })), image: image ? { kind: 'uri', uri: image } : null }; try { if (edit && existing) await vendorApi.updateItem(existing.id, payload); else await vendorApi.saveItem(payload); haptic.success(); navigation.goBack(); } catch (e) { setError(e instanceof Error ? e.message : 'Could not save item.'); haptic.error(); } finally { setBusy(false); } };
+  return <Screen keyboardAvoiding headerLeft={<BackButton onPress={() => navigation.goBack()} />} title={edit ? 'Edit item' : 'Add menu item'} subtitle={edit ? 'Keep your storefront current' : 'Clear details reduce customer questions'}>
+    <Pressable onPress={() => void chooseImage()} style={styles.photo}>{image ? <Image source={{ uri: image }} style={styles.photoImage} /> : <><View style={styles.photoIcon}><Icon name="camera" size={26} color={colors.brand[600]} /></View><Text variant="title" weight="bold" style={{ marginTop: 10 }}>Add item photo</Text><Text variant="caption" color={colors.textSecondary} style={{ marginTop: 3 }}>Square JPG, PNG or WebP</Text></>}<View style={styles.photoBadge}><Icon name={image ? 'edit' : 'plus'} size={15} color={colors.white} /></View></Pressable>
+    <Input label="Item name *" value={name} onChangeText={setName} placeholder={vendor?.module === 'food' ? 'e.g. Paneer tikka' : 'e.g. Aura running shoes'} leftIcon={vendor?.module === 'food' ? 'utensils' : 'bag'} /><View style={styles.two}><View style={{ flex: 1 }}><Input label="Selling price ₹ *" value={price} onChangeText={setPrice} keyboardType="decimal-pad" leftIcon="rupee" /></View><View style={{ flex: 1 }}><Input label="MRP ₹" value={mrp} onChangeText={setMrp} keyboardType="decimal-pad" /></View></View><Input label="Description" value={description} onChangeText={setDescription} multiline placeholder="What should customers know?" /><View style={styles.two}><View style={{ flex: 1 }}><Input label={vendor?.module === 'food' ? 'Prep time (min)' : 'Delivery time (min)'} value={prep} onChangeText={setPrep} keyboardType="number-pad" leftIcon="timer" /></View><View style={{ flex: 1 }}><Input label="Category ID" value={category} onChangeText={setCategory} placeholder="Optional" /></View></View>{vendor?.module === 'shop' ? <Input label="Stock quantity" value={stockQty} onChangeText={setStockQty} keyboardType="number-pad" placeholder="Optional" leftIcon="package" /> : null}{vendor?.module === 'shop' ? <Input label="Brand" value={brand} onChangeText={setBrand} leftIcon="tag" placeholder="Brand name" /> : <View style={styles.switchRow}><View style={{ flex: 1 }}><Text variant="title" weight="bold">Vegetarian item</Text><Text variant="caption" color={colors.textSecondary}>Show a green marker in the menu</Text></View><Switch value={veg} onValueChange={setVeg} trackColor={{ false: colors.border, true: colors.success }} thumbColor={colors.white} /></View>}<Input label="Tags (comma separated)" value={tags} onChangeText={setTags} placeholder="bestseller, spicy, new" leftIcon="tag" /><Card tone="warm" style={{ marginTop: 3 }}><Text variant="title" weight="bold">Optional item choices</Text><Text variant="caption" color={colors.textSecondary} style={{ marginTop: 4 }}>One per line. For variants use Name:price change.</Text><Input label="Variants" value={variants} onChangeText={setVariants} multiline placeholder={'Regular:0\nLarge:60'} /><Input label="Add-on groups" value={addOns} onChangeText={setAddOns} multiline placeholder={'Extra cheese\nDips'} /></Card><View style={styles.switchRow}><View style={{ flex: 1 }}><Text variant="title" weight="bold">Available to order</Text><Text variant="caption" color={colors.textSecondary}>{available ? 'Customers can see this item' : 'Hidden until you turn it on'}</Text></View><Switch value={available} onValueChange={setAvailable} trackColor={{ false: colors.dangerBg, true: colors.brand[300] }} thumbColor={available ? colors.brand[600] : colors.danger} /></View>{edit && existing?.approvalStatus === 'pending' ? <Badge label="This edit is pending admin approval" color={colors.warning} background={colors.warningBg} /> : null}{error ? <View style={styles.error}><Icon name="circleAlert" size={17} color={colors.danger} /><Text variant="bodySm" color={colors.danger} style={{ flex: 1 }}>{error}</Text></View> : null}<Button title={edit ? 'Save item changes' : 'Add to menu'} loading={busy} onPress={() => void save()} />
+  </Screen>;
 }
+const styles = StyleSheet.create({ photo: { height: 168, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, borderStyle: 'dashed', backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', marginBottom: 18 }, photoIcon: { width: 50, height: 50, borderRadius: 17, backgroundColor: colors.brand[50], alignItems: 'center', justifyContent: 'center' }, photoImage: { width: '100%', height: '100%' }, photoBadge: { position: 'absolute', bottom: 10, right: 10, width: 32, height: 32, borderRadius: 11, backgroundColor: colors.brand[600], alignItems: 'center', justifyContent: 'center' }, two: { flexDirection: 'row', gap: 10 }, switchRow: { minHeight: 64, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: 13, flexDirection: 'row', alignItems: 'center', marginBottom: 14 }, error: { backgroundColor: colors.dangerBg, borderRadius: radius.md, padding: 11, flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 12 } });

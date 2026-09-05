@@ -1,61 +1,76 @@
-import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Icon } from '@/lib/icons';
-import { Text } from './Text';
-import { haptic } from '@/lib/haptics';
-import { colors } from '@/theme/colors';
-import type { IconName } from '@/types';
+import React from "react";
+import { Pressable, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import { Icon } from "@/lib/icons";
+import { Text } from "./Text";
+import { haptic } from "@/lib/haptics";
+import { colors } from "@/theme/colors";
+import type { IconName } from "@/types";
 
 const TABS: { key: string; label: string; icon: IconName }[] = [
-  { key: 'Home',     label: 'Home',     icon: 'home' },
-  { key: 'Tasks',    label: 'Tasks',    icon: 'orders' },
-  { key: 'Earnings', label: 'Earnings', icon: 'rupee' },
-  { key: 'Profile',  label: 'Profile',  icon: 'user' },
+  { key: "Home", label: "Home", icon: "home" },
+  { key: "Tasks", label: "Requests", icon: "orders" },
+  { key: "Earnings", label: "Earnings", icon: "wallet" },
+  { key: "Profile", label: "Profile", icon: "user" },
 ];
 
-const ACTIVE = '#16A34A';   // Green — rider online feel
-const INACTIVE = '#6E7580';
-
-export function RiderTabBar({ state, navigation, descriptors }: BottomTabBarProps): React.ReactElement {
+export function RiderTabBar({
+  state,
+  navigation,
+  descriptors,
+}: BottomTabBarProps): React.ReactElement {
   const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
       {state.routes.map((route, index) => {
-        const def = TABS.find((t) => t.key === route.name);
-        if (!def) return null;
+        const tab = TABS.find((item) => item.key === route.name);
+        if (!tab) return null;
         const focused = state.index === index;
-        const { options } = descriptors[route.key];
-        // @ts-ignore
-        const badge = options.tabBarBadge as number | string | undefined;
-
+        const badge = descriptors[route.key]?.options.tabBarBadge;
         return (
           <Pressable
             key={route.key}
-            onPress={() => { haptic.light(); navigation.navigate(route.name); }}
-            style={styles.tab}
+            accessibilityRole="button"
+            accessibilityState={{ selected: focused }}
+            onPress={() => {
+              haptic.light();
+              navigation.navigate(route.name);
+            }}
+            style={({ pressed }) => [styles.tab, pressed && { opacity: 0.72 }]}
           >
-            <View style={{ position: 'relative' }}>
-              {focused ? (
-                <View style={styles.activeIconBg}>
-                  <Icon name={def.icon} size={20} color={ACTIVE} filled />
-                </View>
-              ) : (
-                <Icon name={def.icon} size={22} color={INACTIVE} />
-              )}
+            <View style={styles.iconWrap}>
+              <View
+                style={[styles.iconPlate, focused && styles.iconPlateActive]}
+              >
+                <Icon
+                  name={tab.icon}
+                  size={21}
+                  color={focused ? colors.brand[600] : colors.textTertiary}
+                  filled={focused}
+                />
+              </View>
               {badge != null && Number(badge) > 0 ? (
                 <View style={styles.badge}>
-                  <Text variant="caption" weight="bold" color="#fff" style={{ fontSize: 10, lineHeight: 14 }}>
-                    {Number(badge) > 9 ? '9+' : badge}
+                  <Text
+                    variant="caption"
+                    weight="bold"
+                    color={colors.white}
+                    style={{ fontSize: 10 }}
+                  >
+                    {Number(badge) > 9 ? "9+" : String(badge)}
                   </Text>
                 </View>
               ) : null}
             </View>
-            <Text variant="caption" weight={focused ? 'bold' : 'medium'} color={focused ? ACTIVE : INACTIVE}>
-              {def.label}
+            <Text
+              variant="caption"
+              weight={focused ? "bold" : "medium"}
+              color={focused ? colors.brand[600] : colors.textSecondary}
+            >
+              {tab.label}
             </Text>
-            {focused ? <View style={styles.dot} /> : <View style={{ height: 3, marginTop: 4 }} />}
+            <View style={[styles.activeLine, !focused && { opacity: 0 }]} />
           </Pressable>
         );
       })}
@@ -65,34 +80,41 @@ export function RiderTabBar({ state, navigation, descriptors }: BottomTabBarProp
 
 const styles = StyleSheet.create({
   bar: {
-    flexDirection: 'row',
-    backgroundColor: '#EAF5EA',   // Soft green tint — rider theme
-    paddingTop: 8,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 8,
+    flexDirection: "row",
+    backgroundColor: colors.surface,
+    paddingTop: 7,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
-  tab: { flex: 1, alignItems: 'center', gap: 2 },
-  activeIconBg: {
-    width: 40,
-    height: 28,
+  tab: { flex: 1, alignItems: "center", gap: 2, minHeight: 58 },
+  iconWrap: { position: "relative" },
+  iconPlate: {
+    width: 42,
+    height: 29,
     borderRadius: 10,
-    backgroundColor: '#16A34A18',
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
-  dot: { width: 14, height: 3, borderRadius: 2, backgroundColor: ACTIVE, marginTop: 4 },
+  iconPlateActive: { backgroundColor: colors.brand[50] },
+  activeLine: {
+    width: 18,
+    height: 3,
+    borderRadius: 4,
+    backgroundColor: colors.brand[600],
+    marginTop: 3,
+  },
   badge: {
-    position: 'absolute', top: -4, right: -8,
-    minWidth: 18, height: 18,
-    borderRadius: 9,
-    backgroundColor: colors.danger,
-    alignItems: 'center', justifyContent: 'center',
+    position: "absolute",
+    right: -7,
+    top: -4,
+    minWidth: 17,
+    height: 17,
     paddingHorizontal: 3,
-    borderWidth: 2, borderColor: '#EAF5EA',
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.danger,
+    borderWidth: 2,
+    borderColor: colors.surface,
   },
 });

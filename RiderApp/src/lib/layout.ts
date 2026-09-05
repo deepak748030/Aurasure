@@ -1,3 +1,4 @@
-// Shared layout constants used across screens and the custom tab bar.
-export const TAB_BAR_HEIGHT = 66;
-export const TAB_BAR_BOTTOM_PADDING = 10; // extra safe-area breathing room
+// Shared measurements. Flat list/map surfaces are intentionally 0 gutter.
+export const SCREEN_GUTTER = 4;
+export const TAB_BAR_HEIGHT = 68;
+export const TAB_BAR_BOTTOM_PADDING = 10;

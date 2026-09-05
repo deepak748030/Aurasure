@@ -1,340 +1,39 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
+import { BackButton } from '@/components/ui/BackButton';
+import { Badge, Card, Divider, IconButton, SectionTitle } from '@/components/ui/VendorUI';
 import { Icon } from '@/lib/icons';
-import { vendorApi, type VendorOrder } from '@/api/vendor';
+import { vendorApi, type OrderStatus, type VendorOrder } from '@/api/vendor';
 import { colors } from '@/theme/colors';
 import { haptic } from '@/lib/haptics';
+import { useVendorModal, type VendorModalAction } from '@/components/ui/VendorModal';
 import type { RootStackParamList } from '@/navigation/types';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'OrderDetail'>;
-
-const STATUS_COLORS: Record<string, string> = {
-  placed: '#2563EB',
-  confirmed: '#0891B2',
-  preparing: '#D97706',
-  out_for_delivery: '#7C3AED',
-  delivered: '#16A34A',
-  cancelled: '#EF4444',
-};
-
-const STATUS_BG: Record<string, string> = {
-  placed: '#EFF6FF',
-  confirmed: '#ECFEFF',
-  preparing: '#FFFBEB',
-  out_for_delivery: '#F5F3FF',
-  delivered: '#F0FDF4',
-  cancelled: '#FEF2F2',
-};
-
-function StatusBadge({ status }: { status: string }) {
-  const label = status === 'out_for_delivery' ? 'Out for delivery' : status.replace(/_/g, ' ');
-  return (
-    <View
-      style={{
-        backgroundColor: STATUS_BG[status] ?? '#F3F4F6',
-        borderRadius: 20,
-        paddingHorizontal: 12,
-        paddingVertical: 4,
-      }}
-    >
-      <Text
-        variant="caption"
-        weight="bold"
-        style={{ color: STATUS_COLORS[status] ?? colors.textSecondary, textTransform: 'capitalize' }}
-      >
-        {label}
-      </Text>
-    </View>
-  );
+type Props = NativeStackScreenProps<RootStackParamList, 'OrderDetail'>; function money(value: number): string { return `₹${Math.round(value).toLocaleString('en-IN')}`; }
+const statusInfo: Record<OrderStatus, { label: string; color: string; bg: string }> = { placed: { label: 'New', color: colors.info, bg: colors.infoBg }, confirmed: { label: 'Accepted', color: colors.brand[700], bg: colors.brand[50] }, preparing: { label: 'Preparing', color: colors.warning, bg: colors.warningBg }, out_for_delivery: { label: 'Ready for pickup', color: colors.success, bg: colors.successBg }, delivered: { label: 'Delivered', color: colors.success, bg: colors.successBg }, cancelled: { label: 'Cancelled', color: colors.danger, bg: colors.dangerBg } };
+function Timeline({ status }: { status: OrderStatus }): React.ReactElement { const states = ['placed', 'confirmed', 'preparing', 'out_for_delivery', 'delivered']; const current = status === 'cancelled' ? 0 : states.indexOf(status); return <View style={styles.timeline}>{states.map((state, index) => <View key={state} style={styles.timelineRow}><View style={styles.timelineRail}><View style={[styles.dot, { backgroundColor: index <= current ? colors.brand[600] : colors.border }]}>{index <= current ? <Icon name="check" size={11} color={colors.white} /> : null}</View>{index < states.length - 1 ? <View style={[styles.rail, { backgroundColor: index < current ? colors.brand[600] : colors.border }]} /> : null}</View><View style={{ paddingBottom: index < states.length - 1 ? 16 : 0 }}><Text variant="title" weight="bold">{state === 'placed' ? 'Order placed' : state === 'confirmed' ? 'Accepted' : state === 'preparing' ? 'Being prepared' : state === 'out_for_delivery' ? 'Ready for pickup' : 'Delivered'}</Text><Text variant="caption" color={colors.textSecondary}>{index === current ? 'Current status' : index < current ? 'Completed' : 'Waiting'}</Text></View></View>)}</View>; }
+export function OrderDetailScreen({ route, navigation }: Props): React.ReactElement { const { showModal } = useVendorModal(); const { orderId } = route.params; const [order, setOrder] = useState<VendorOrder | null>(null); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [acting, setActing] = useState(false); const load = useCallback(async () => { try { const result = await vendorApi.order(orderId); setOrder(result.order); setError(''); } catch (e) { setError(e instanceof Error ? e.message : 'Could not load order'); } finally { setLoading(false); } }, [orderId]); useEffect(() => { void load(); const timer = setInterval(() => void load(), 15000); return () => clearInterval(timer); }, [load]);
+  const act = async (action: () => Promise<{ order: VendorOrder }>) => { setActing(true); try { const result = await action(); setOrder(result.order); haptic.success(); } catch (e) { showModal({ title: 'Could not update order', message: e instanceof Error ? e.message : 'Try again' }); haptic.error(); } finally { setActing(false); } };
+  const reject = () => showModal({ title: 'Reject order?', message: 'The customer will be notified. Why can’t you fulfil it?', actions: [{ label: 'Item unavailable', destructive: true, onPress: () => void act(() => vendorApi.reject(orderId, 'item_unavailable', undefined, order?.status)) }, { label: 'Kitchen is busy', destructive: true, onPress: () => void act(() => vendorApi.reject(orderId, 'kitchen_busy', undefined, order?.status)) }, { label: 'Keep order', secondary: true }] });
+  const partial = () => { const items = (order?.items ?? []).filter((item) => item.id); if (items.length < 2) return showModal({ title: 'Partial accept', message: 'This order does not include enough line IDs. Accept the full order instead.' }); const actions: VendorModalAction[] = items.slice(0, -1).map((item) => ({ label: `Remove ${item.name}`, destructive: true, onPress: () => void act(() => vendorApi.partialAccept(orderId, [item.id as string])) })); actions.push({ label: 'Cancel', secondary: true }); showModal({ title: 'Remove an item and accept', message: 'The customer total will be recalculated.', actions }); };
+  const accept = () => { const actions: VendorModalAction[] = [10, 15, 20, 30].map((mins) => ({ label: `${mins} minutes`, onPress: () => void act(() => vendorApi.accept(orderId, mins, order?.status)) })); actions.push({ label: 'Cancel', secondary: true }); showModal({ title: 'Set prep time', message: 'Tell the customer when this will be ready.', actions }); };
+  const commission = Number(((order?.itemTotal ?? order?.total ?? 0) * .05).toFixed(2)); const net = (order?.itemTotal ?? order?.total ?? 0) - commission;
+  if (loading) return <Screen title="Order details" headerLeft={<BackButton onPress={() => navigation.goBack()} />}><View style={styles.loading}><Text variant="body" color={colors.textSecondary}>Loading ticket…</Text></View></Screen>;
+  if (!order) return <Screen title="Order details" headerLeft={<BackButton onPress={() => navigation.goBack()} />}><View style={styles.loading}><Icon name="circleAlert" size={28} color={colors.danger} /><Text variant="body" color={colors.danger} style={{ marginTop: 10 }}>{error || 'Order not found'}</Text><Button title="Try again" variant="secondary" onPress={() => void load()} style={{ marginTop: 18 }} /></View></Screen>;
+  const info = statusInfo[order.status]; const customer = order.customer || order.user;
+  return <Screen title={`Order #${order.code}`} subtitle={`${customer?.name || 'Customer'} · ${new Date(order.placedAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`} headerLeft={<BackButton onPress={() => navigation.goBack()} />} headerRight={<Badge label={info.label} color={info.color} background={info.bg} />}>
+    <Card style={styles.hero}><View style={{ flex: 1 }}><Text variant="caption" color={colors.textSecondary}>CUSTOMER</Text><Text variant="h3" weight="bold" style={{ marginTop: 4 }}>{customer?.name || 'Aurasure customer'}</Text><Text variant="caption" color={colors.textSecondary} style={{ marginTop: 3 }}>{order.items.reduce((sum, item) => sum + item.qty, 0)} items · {order.payBy?.toUpperCase() || 'COD'}</Text></View>{customer?.phone ? <IconButton icon="phone" color={colors.success} background={colors.successBg} onPress={() => void Linking.openURL(`tel:${customer.phone}`)} /> : null}</Card>
+    <SectionTitle title="Items" /><Card>{order.items.map((item, index) => <React.Fragment key={`${item.name}-${index}`}><View style={styles.item}><View style={styles.qty}><Text variant="caption" weight="bold" color={colors.brand[700]}>{item.qty}×</Text></View><View style={{ flex: 1 }}><Text variant="title" weight="semibold">{item.name}</Text>{item.meta ? <Text variant="caption" color={colors.textSecondary}>{item.meta}</Text> : null}</View><Text variant="title" weight="bold">{money(item.qty * item.unitPrice)}</Text></View>{index < order.items.length - 1 ? <Divider /> : null}</React.Fragment>)}<Divider space={9} /><Bill label="Item total" value={order.itemTotal ?? order.items.reduce((sum, item) => sum + item.qty * item.unitPrice, 0)} /><Bill label="Delivery fee" value={order.deliveryFee ?? 0} /><Bill label="Discount" value={-(order.discount ?? 0)} /><View style={styles.billTotal}><Text variant="title" weight="bold">Customer total</Text><Text variant="h3" weight="bold" color={colors.brand[700]}>{money(order.total)}</Text></View></Card>
+    <SectionTitle title="Your settlement" /><Card tone="warm"><Bill label="Gross item value" value={order.itemTotal ?? order.total} /><Bill label="Platform commission · 5%" value={-commission} /><View style={styles.billTotal}><Text variant="title" weight="bold">Your net</Text><Text variant="h2" weight="bold" color={colors.success}>{money(net)}</Text></View></Card>
+    {order.instructions ? <><SectionTitle title="Customer instructions" /><Card tone="warm"><View style={{ flexDirection: 'row', gap: 8 }}><Icon name="info" size={17} color={colors.warning} /><Text variant="body" color={colors.warning} style={{ flex: 1 }}>{order.instructions}</Text></View></Card></> : null}
+    <SectionTitle title="Delivery" /><Card>{order.address ? <View style={styles.address}><Icon name="mapPin" size={19} color={colors.brand[600]} /><View style={{ flex: 1 }}><Text variant="caption" color={colors.textSecondary}>DELIVERY ADDRESS</Text><Text variant="body" style={{ marginTop: 3 }}>{order.delivery ? order.address : 'Address is shared with the rider after pickup.'}</Text></View></View> : null}{order.delivery ? <><Divider space={12} /><View style={styles.rider}><View style={styles.riderAvatar}><Icon name="bike" size={20} color={colors.brand[700]} /></View><View style={{ flex: 1 }}><Text variant="title" weight="bold">{order.delivery.riderName || 'Rider assigned'}</Text><Text variant="caption" color={colors.textSecondary}>{order.delivery.state.replace(/_/g, ' ')}</Text></View>{order.delivery.riderPhone ? <IconButton icon="phone" color={colors.success} background={colors.successBg} onPress={() => void Linking.openURL(`tel:${order.delivery?.riderPhone}`)} /> : null}</View>{order.delivery.pickupOtp ? <View style={styles.otp}><Text variant="caption" weight="bold" color={colors.brand[700]}>PICKUP OTP</Text><Text variant="h2" weight="extrabold" color={colors.brand[700]} style={{ letterSpacing: 5 }}>{order.delivery.pickupOtp}</Text><Text variant="caption" color={colors.textSecondary}>Share with the rider at handover</Text></View> : null}</> : <Text variant="bodySm" color={colors.textSecondary}>Rider details and pickup OTP appear after the order is ready.</Text>}</Card>
+    <SectionTitle title="Status timeline" /><Card><Timeline status={order.status} /></Card>
+    {order.status === 'placed' ? <><View style={styles.actions}><Button title="Reject" variant="secondary" size="sm" onPress={reject} style={{ flex: 1 }} /><Button title="Accept order" onPress={accept} size="sm" style={{ flex: 1 }} loading={acting} /></View>{order.payBy === 'cod' ? <Button title="Accept with an item removed" variant="ghost" size="sm" onPress={partial} disabled={acting} /> : null}</> : order.status === 'confirmed' || order.status === 'preparing' ? <Button title="Mark ready for pickup" onPress={() => void act(() => vendorApi.ready(orderId, order.status))} loading={acting} /> : null}
+  </Screen>;
 }
-
-function SectionCard({ children, style }: { children: React.ReactNode; style?: object }) {
-  return (
-    <View
-      style={[
-        {
-          backgroundColor: colors.surface,
-          borderRadius: 14,
-          padding: 16,
-          marginBottom: 10,
-          borderWidth: 1,
-          borderColor: colors.border,
-        },
-        style,
-      ]}
-    >
-      {children}
-    </View>
-  );
-}
-
-export function OrderDetailScreen({ route, navigation }: Props): React.ReactElement {
-  const { orderId } = route.params;
-  const [order, setOrder] = useState<VendorOrder | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [acting, setActing] = useState(false);
-  const [error, setError] = useState('');
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const loadOrder = useCallback(async () => {
-    try {
-      const data = await vendorApi.orders();
-      const found = data.orders.find((o) => o.id === orderId);
-      if (found) setOrder(found);
-      setError('');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not load order');
-    } finally {
-      setLoading(false);
-    }
-  }, [orderId]);
-
-  useEffect(() => {
-    void loadOrder();
-    timerRef.current = setInterval(() => void loadOrder(), 12000);
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [loadOrder]);
-
-  const act = async (status: string) => {
-    if (!order) return;
-    setActing(true);
-    try {
-      const data = await vendorApi.advance(order.id, status);
-      setOrder(data.order);
-      haptic.success();
-      if (status === 'cancelled') {
-        navigation.goBack();
-      }
-    } catch (e) {
-      haptic.error();
-      Alert.alert('Error', e instanceof Error ? e.message : 'Action failed');
-    } finally {
-      setActing(false);
-    }
-  };
-
-  const confirmReject = () => {
-    Alert.alert('Reject Order?', 'This will cancel the order and notify the customer.', [
-      { text: 'Keep', style: 'cancel' },
-      { text: 'Reject', style: 'destructive', onPress: () => void act('cancelled') },
-    ]);
-  };
-
-  if (loading) {
-    return (
-      <Screen
-        title={`Order`}
-        headerLeft={
-          <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 8 }}>
-            <Icon name="chevronLeft" size={26} color={colors.text} />
-          </TouchableOpacity>
-        }
-      >
-        <View style={{ alignItems: 'center', paddingTop: 60 }}>
-          <ActivityIndicator color={colors.brand[600]} />
-        </View>
-      </Screen>
-    );
-  }
-
-  if (!order) {
-    return (
-      <Screen
-        title="Order"
-        headerLeft={
-          <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 8 }}>
-            <Icon name="chevronLeft" size={26} color={colors.text} />
-          </TouchableOpacity>
-        }
-      >
-        <Text color={colors.danger}>{error || 'Order not found'}</Text>
-      </Screen>
-    );
-  }
-
-  const placedDate = new Date(order.placedAt);
-  const dateStr = placedDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-  const timeStr = placedDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-
-  return (
-    <Screen
-      title={`Order #${order.code}`}
-      headerLeft={
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 8 }}>
-          <Icon name="chevronLeft" size={26} color={colors.text} />
-        </TouchableOpacity>
-      }
-      headerRight={<StatusBadge status={order.status} />}
-    >
-      {/* Date & Time */}
-      <SectionCard>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Icon name="calendar" size={18} color={colors.brand[600]} />
-            <Text variant="bodySm" color={colors.textSecondary}>{dateStr}</Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Icon name="clock" size={18} color={colors.brand[600]} />
-            <Text variant="bodySm" color={colors.textSecondary}>{timeStr}</Text>
-          </View>
-        </View>
-      </SectionCard>
-
-      {/* Order items */}
-      <SectionCard>
-        <Text variant="title" weight="semibold" style={{ marginBottom: 10 }}>Items Ordered</Text>
-        {order.items.map((item, i) => (
-          <View
-            key={`${item.name}-${i}`}
-            style={[
-              styles.itemRow,
-              i < order.items.length - 1 ? { borderBottomWidth: 1, borderColor: colors.border } : null,
-            ]}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-              <View style={styles.qtyBadge}>
-                <Text variant="caption" weight="bold" color={colors.brand[700]}>{item.qty}×</Text>
-              </View>
-              <Text variant="body" style={{ flex: 1 }}>{item.name}</Text>
-            </View>
-            <Text variant="title" weight="semibold">₹{Math.round(item.qty * item.unitPrice)}</Text>
-          </View>
-        ))}
-        <View style={{ borderTopWidth: 1, borderColor: colors.border, marginTop: 10, paddingTop: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
-          <Text variant="title" weight="bold">Total</Text>
-          <Text variant="title" weight="bold" style={{ color: colors.brand[700] }}>₹{Math.round(order.total)}</Text>
-        </View>
-      </SectionCard>
-
-      {/* Payment */}
-      <SectionCard>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <Icon name="wallet" size={20} color={colors.brand[600]} />
-          <View>
-            <Text variant="caption" color={colors.textSecondary}>Payment Method</Text>
-            <Text variant="title" weight="semibold" style={{ textTransform: 'capitalize' }}>
-              {(order.payBy || 'COD').replace(/_/g, ' ')}
-            </Text>
-          </View>
-        </View>
-      </SectionCard>
-
-      {/* Special instructions */}
-      {order.instructions ? (
-        <SectionCard>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Icon name="info" size={18} color={colors.warning} />
-            <View style={{ flex: 1 }}>
-              <Text variant="caption" weight="semibold" color={colors.warning}>Special Instructions</Text>
-              <Text variant="body" color={colors.textSecondary} style={{ marginTop: 4 }}>{order.instructions}</Text>
-            </View>
-          </View>
-        </SectionCard>
-      ) : null}
-
-      {/* Delivery info */}
-      {order.delivery ? (
-        <SectionCard>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <Icon name="bike" size={20} color={colors.brand[600]} />
-            <Text variant="title" weight="semibold">Delivery</Text>
-          </View>
-          <View style={styles.deliveryRow}>
-            <Text variant="caption" color={colors.textSecondary}>Pickup OTP</Text>
-            <View style={styles.otpBox}>
-              <Text variant="h2" weight="extrabold" style={{ color: colors.brand[700], letterSpacing: 4 }}>
-                {order.delivery.pickupOtp}
-              </Text>
-            </View>
-          </View>
-          {order.delivery.riderName ? (
-            <View style={styles.deliveryRow}>
-              <Icon name="user" size={16} color={colors.textSecondary} />
-              <Text variant="bodySm" color={colors.textSecondary} style={{ marginLeft: 6 }}>
-                {order.delivery.riderName}
-                {order.delivery.riderPhone ? ` · ${order.delivery.riderPhone}` : ''}
-              </Text>
-              <View style={{ marginLeft: 'auto' }}>
-                <Text variant="caption" weight="bold" style={{ color: STATUS_COLORS[order.delivery.state] ?? colors.textSecondary, textTransform: 'capitalize' }}>
-                  {order.delivery.state.replace(/_/g, ' ')}
-                </Text>
-              </View>
-            </View>
-          ) : (
-            <Text variant="bodySm" color={colors.textSecondary}>Waiting for a rider to accept…</Text>
-          )}
-        </SectionCard>
-      ) : null}
-
-      {/* Action buttons */}
-      {acting ? (
-        <View style={{ alignItems: 'center', paddingVertical: 16 }}>
-          <ActivityIndicator color={colors.brand[600]} />
-        </View>
-      ) : (
-        <View style={{ gap: 10, paddingTop: 4, paddingBottom: 12 }}>
-          {order.status === 'placed' ? (
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <View style={{ flex: 1 }}>
-                <Button title="Accept" size="md" onPress={() => void act('confirmed')} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Button title="Reject" size="md" variant="danger" onPress={confirmReject} />
-              </View>
-            </View>
-          ) : null}
-          {order.status === 'confirmed' ? (
-            <Button title="Start Preparing" size="md" leftIcon="chef" onPress={() => void act('preparing')} />
-          ) : null}
-          {order.status === 'preparing' ? (
-            <Button title="Ready for Pickup" size="md" leftIcon="circleCheck" onPress={() => void act('out_for_delivery')} />
-          ) : null}
-        </View>
-      )}
-    </Screen>
-  );
-}
-
-const styles = StyleSheet.create({
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-  },
-  qtyBadge: {
-    backgroundColor: colors.brand[50],
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    minWidth: 32,
-    alignItems: 'center',
-  },
-  deliveryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  otpBox: {
-    backgroundColor: colors.brand[50],
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginLeft: 'auto',
-    borderWidth: 1,
-    borderColor: colors.brand[200],
-  },
-});
+function Bill({ label, value }: { label: string; value: number }): React.ReactElement { return <View style={styles.bill}><Text variant="bodySm" color={colors.textSecondary}>{label}</Text><Text variant="bodySm" color={value < 0 ? colors.danger : colors.text} weight="semibold">{value < 0 ? '−' : ''}{money(Math.abs(value))}</Text></View>; }
+const styles = StyleSheet.create({ hero: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceWarm }, item: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 9 }, qty: { width: 34, height: 28, borderRadius: 8, backgroundColor: colors.brand[50], alignItems: 'center', justifyContent: 'center' }, bill: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 }, billTotal: { borderTopWidth: 1, borderColor: colors.border, marginTop: 8, paddingTop: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, address: { flexDirection: 'row', gap: 9, alignItems: 'flex-start' }, rider: { flexDirection: 'row', alignItems: 'center', gap: 10 }, riderAvatar: { width: 42, height: 42, borderRadius: 14, backgroundColor: colors.brand[50], alignItems: 'center', justifyContent: 'center' }, otp: { alignItems: 'center', backgroundColor: colors.brand[50], borderRadius: 12, padding: 13, marginTop: 14, gap: 3 }, timelineRow: { flexDirection: 'row' }, timelineRail: { width: 30, alignItems: 'center' }, dot: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' }, rail: { width: 2, minHeight: 23, flex: 1 }, timeline: { paddingVertical: 4 }, actions: { flexDirection: 'row', gap: 8 }, loading: { flex: 1, alignItems: 'center', justifyContent: 'center' } });

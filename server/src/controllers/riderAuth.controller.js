@@ -60,6 +60,7 @@ const register = asyncHandler(async (req, res) => {
     phone,
     name,
     vehicleType: vehicleType || '',
+    referralCode: `A${newId('ref').replace(/[^a-z0-9]/gi, '').slice(-11)}`.toUpperCase(),
     documents: emptyDocs(),
     status: 'onboarding',
   });

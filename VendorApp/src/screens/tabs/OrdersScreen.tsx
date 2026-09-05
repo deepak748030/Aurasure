@@ -1,323 +1,47 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
-import { Icon } from '@/lib/icons';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
-import { vendorApi, type VendorOrder } from '@/api/vendor';
+import { Badge, Card, EmptyState, IconButton, SectionTitle } from '@/components/ui/VendorUI';
+import { Icon } from '@/lib/icons';
+import { vendorApi, type OrderStatus, type VendorOrder } from '@/api/vendor';
 import { colors } from '@/theme/colors';
+import { radius, spacing } from '@/theme/tokens';
 import { haptic } from '@/lib/haptics';
+import { useVendorModal, type VendorModalAction } from '@/components/ui/VendorModal';
 import type { RootStackParamList } from '@/navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
-
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  placed: { label: 'New', color: '#2563EB', bg: '#EFF6FF' },
-  confirmed: { label: 'Confirmed', color: '#0891B2', bg: '#ECFEFF' },
-  preparing: { label: 'Preparing', color: '#D97706', bg: '#FFFBEB' },
-  out_for_delivery: { label: 'Out for delivery', color: '#7C3AED', bg: '#F5F3FF' },
-  delivered: { label: 'Delivered', color: '#16A34A', bg: '#F0FDF4' },
-  cancelled: { label: 'Cancelled', color: '#EF4444', bg: '#FEF2F2' },
-};
-
-const RUNNING_STATUSES = ['placed', 'confirmed', 'preparing', 'out_for_delivery'];
-const HISTORY_STATUSES = ['delivered', 'cancelled'];
-
-const FILTER_TABS = [
-  { key: 'running', label: 'Running' },
-  { key: 'history', label: 'History' },
+const TABS: { key: string; label: string; statuses: OrderStatus[] }[] = [
+  { key: 'new', label: 'New', statuses: ['placed'] },
+  { key: 'preparing', label: 'Preparing', statuses: ['confirmed', 'preparing'] },
+  { key: 'ready', label: 'Ready', statuses: ['out_for_delivery'] },
+  { key: 'completed', label: 'Completed', statuses: ['delivered', 'cancelled'] },
 ];
-
-function OrderCard({ order, onPress }: { order: VendorOrder; onPress: () => void }) {
-  const sc = STATUS_CONFIG[order.status];
-  const dateStr = new Date(order.placedAt).toLocaleTimeString('en-IN', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-
-  return (
-    <Pressable
-      onPress={() => { haptic.light(); onPress(); }}
-      style={({ pressed }) => [styles.card, pressed && { opacity: 0.92 }]}
-    >
-      {/* Header row */}
-      <View style={styles.cardHeader}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text variant="title" weight="bold">#{order.code}</Text>
-          <Text variant="caption" color={colors.textTertiary}>· {dateStr}</Text>
-        </View>
-        <View style={[styles.statusBadge, { backgroundColor: sc?.bg ?? colors.surfaceAlt }]}>
-          <Text
-            variant="caption"
-            weight="bold"
-            style={{ color: sc?.color ?? colors.textSecondary, textTransform: 'capitalize' }}
-          >
-            {sc?.label ?? order.status.replace(/_/g, ' ')}
-          </Text>
-        </View>
-      </View>
-
-      {/* Items */}
-      <Text
-        variant="bodySm"
-        color={colors.textSecondary}
-        numberOfLines={2}
-        style={{ marginTop: 6 }}
-      >
-        {order.items.map((i) => `${i.qty}× ${i.name}`).join(' · ')}
-      </Text>
-
-      {/* Footer */}
-      <View style={styles.cardFooter}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Icon name="rupee" size={14} color={colors.textSecondary} />
-          <Text variant="title" weight="bold">₹{Math.round(order.total)}</Text>
-          <Text variant="caption" color={colors.textTertiary}>
-            · {(order.payBy || 'COD').replace(/_/g, ' ')}
-          </Text>
-        </View>
-        <Icon name="chevronRight" size={18} color={colors.textTertiary} />
-      </View>
-
-      {/* Special note */}
-      {order.instructions ? (
-        <View style={styles.noteRow}>
-          <Icon name="info" size={13} color={colors.warning} />
-          <Text variant="caption" color={colors.warning} numberOfLines={1} style={{ flex: 1 }}>
-            {order.instructions}
-          </Text>
-        </View>
-      ) : null}
-
-      {/* Rider OTP pill */}
-      {order.status === 'out_for_delivery' && order.delivery?.pickupOtp ? (
-        <View style={styles.otpRow}>
-          <Icon name="bike" size={14} color={colors.brand[600]} />
-          <Text variant="caption" weight="bold" color={colors.brand[700]} style={{ marginLeft: 6 }}>
-            OTP: {order.delivery.pickupOtp}
-          </Text>
-          {order.delivery.riderName ? (
-            <Text variant="caption" color={colors.textSecondary} style={{ marginLeft: 4 }}>
-              · {order.delivery.riderName}
-            </Text>
-          ) : null}
-        </View>
-      ) : null}
-    </Pressable>
-  );
-}
+const STATUS: Record<OrderStatus, { label: string; color: string; bg: string }> = {
+  placed: { label: 'New', color: colors.info, bg: colors.infoBg }, confirmed: { label: 'Accepted', color: colors.brand[700], bg: colors.brand[50] }, preparing: { label: 'Preparing', color: colors.warning, bg: colors.warningBg }, out_for_delivery: { label: 'Ready', color: colors.success, bg: colors.successBg }, delivered: { label: 'Completed', color: colors.success, bg: colors.successBg }, cancelled: { label: 'Cancelled', color: colors.danger, bg: colors.dangerBg },
+};
+function money(v: number): string { return `₹${Math.round(v).toLocaleString('en-IN')}`; }
+function age(iso: string): string { const minutes = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000)); return minutes < 1 ? 'Just now' : `${minutes}m ago`; }
+function Countdown({ placedAt }: { placedAt: string }): React.ReactElement { const [now, setNow] = useState(Date.now()); useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 30000); return () => clearInterval(timer); }, []); const left = Math.max(0, 15 - Math.floor((now - new Date(placedAt).getTime()) / 60000)); return <View style={styles.countdown}><View style={styles.countRing}><Text variant="caption" weight="bold" color={left < 5 ? colors.danger : colors.info}>{left}m</Text></View><Text variant="caption" weight="bold" color={left < 5 ? colors.danger : colors.info}>to accept</Text></View>; }
+function OrderCard({ order, onOpen, onAccept, onReject, onReady, acting }: { order: VendorOrder; onOpen: () => void; onAccept: () => void; onReject: () => void; onReady: () => void; acting: boolean }): React.ReactElement { const sc = STATUS[order.status]; const isNew = order.status === 'placed'; const items = order.items.map((item) => `${item.qty}× ${item.name}`).join(' · '); return <Card style={[styles.orderCard, isNew && styles.newCard]}><Pressable onPress={onOpen}><View style={styles.orderTop}><View style={styles.code}><View style={[styles.orderIcon, { backgroundColor: sc.bg }]}><Icon name={isNew ? 'zap' : 'receipt'} size={18} color={sc.color} /></View><View><View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}><Text variant="h3" weight="bold">#{order.code}</Text><Badge label={sc.label} color={sc.color} background={sc.bg} /></View><Text variant="caption" color={colors.textSecondary} style={{ marginTop: 3 }}>{order.customer?.name || order.user?.name || 'Customer'} · {age(order.placedAt)}</Text></View></View>{isNew ? <Countdown placedAt={order.placedAt} /> : <IconButton icon="chevronRight" size={34} color={colors.textTertiary} background={colors.surfaceAlt} />}</View><Text variant="body" color={colors.text} style={{ marginTop: 14 }} numberOfLines={2}>{items || 'No item details'}</Text><View style={styles.orderMeta}><View style={styles.meta}><Icon name="package" size={15} color={colors.textSecondary} /><Text variant="caption" color={colors.textSecondary}>{order.items.reduce((sum, item) => sum + item.qty, 0)} items</Text></View><View style={styles.meta}><Icon name="wallet" size={15} color={colors.textSecondary} /><Text variant="caption" color={colors.textSecondary}>{order.payBy?.toUpperCase() || 'COD'}</Text></View><Text variant="title" weight="bold" color={colors.brand[700]}>{money(order.total)}</Text></View>{order.instructions ? <View style={styles.note}><Icon name="info" size={14} color={colors.warning} /><Text variant="caption" color={colors.warning} numberOfLines={1} style={{ flex: 1 }}>{order.instructions}</Text></View> : null}</Pressable>{isNew ? <View style={styles.actions}><Button title="Reject" variant="secondary" size="sm" fullWidth={false} onPress={onReject} disabled={acting} style={{ flex: 1 }} /><Button title={acting ? 'Accepting…' : 'Accept order'} size="sm" onPress={onAccept} disabled={acting} style={{ flex: 1 }} /></View> : order.status === 'preparing' || order.status === 'confirmed' ? <Button title="Mark ready for pickup" size="sm" onPress={onReady} loading={acting} style={{ marginTop: 13 }} /> : order.delivery?.pickupOtp ? <View style={styles.otp}><Icon name="bike" size={16} color={colors.brand[700]} /><Text variant="caption" weight="bold" color={colors.brand[700]}>Pickup OTP {order.delivery.pickupOtp}</Text><Text variant="caption" color={colors.textSecondary} style={{ marginLeft: 'auto' }}>{order.delivery.riderName || 'Waiting for rider'}</Text></View> : null}</Card>; }
 
 export function OrdersScreen(): React.ReactElement {
-  const navigation = useNavigation<Nav>();
-  const [tab, setTab] = useState<'running' | 'history'>('running');
-  const [orders, setOrders] = useState<VendorOrder[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState('');
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const load = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    try {
-      const data = await vendorApi.orders();
-      setOrders(data.orders);
-      setError('');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not load orders');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-    timerRef.current = setInterval(() => void load(true), 15000);
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [load]);
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    void load();
-  };
-
-  const displayed = orders.filter((o) =>
-    tab === 'running'
-      ? RUNNING_STATUSES.includes(o.status)
-      : HISTORY_STATUSES.includes(o.status),
-  );
-
-  const newCount = orders.filter((o) => o.status === 'placed').length;
-
-  return (
-    <Screen
-      title="Orders"
-      subtitle={newCount > 0 ? `${newCount} new ticket${newCount > 1 ? 's' : ''} waiting` : undefined}
-      scroll={false}
-      padded={false}
-    >
-      {/* Filter tab bar */}
-      <View style={styles.tabBar}>
-        {FILTER_TABS.map((t) => {
-          const active = tab === t.key;
-          const count =
-            t.key === 'running'
-              ? orders.filter((o) => RUNNING_STATUSES.includes(o.status)).length
-              : orders.filter((o) => HISTORY_STATUSES.includes(o.status)).length;
-          return (
-            <Pressable
-              key={t.key}
-              onPress={() => { haptic.selection(); setTab(t.key as typeof tab); }}
-              style={[styles.tabItem, active && styles.tabItemActive]}
-            >
-              <Text
-                variant="subtitle"
-                weight={active ? 'bold' : 'medium'}
-                color={active ? colors.white : colors.textSecondary}
-              >
-                {t.label}
-              </Text>
-              {count > 0 ? (
-                <View style={[styles.tabBadge, { backgroundColor: active ? 'rgba(255,255,255,0.30)' : colors.brand[100] }]}>
-                  <Text variant="caption" weight="bold" color={active ? colors.white : colors.brand[700]}>
-                    {count}
-                  </Text>
-                </View>
-              ) : null}
-            </Pressable>
-          );
-        })}
-      </View>
-
-      {error ? (
-        <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-          <Text variant="bodySm" color={colors.danger}>{error}</Text>
-        </View>
-      ) : null}
-
-      {loading ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator color={colors.brand[600]} />
-        </View>
-      ) : (
-        <FlatList
-          data={displayed}
-          keyExtractor={(o) => o.id}
-          contentContainerStyle={[
-            { paddingTop: 0, paddingBottom: 32 },
-            displayed.length === 0 && { flex: 1 },
-          ]}
-          ItemSeparatorComponent={() => <View style={{ height: 0 }} />}
-          onRefresh={handleRefresh}
-          refreshing={refreshing}
-          renderItem={({ item }) => (
-            <OrderCard
-              order={item}
-              onPress={() => navigation.navigate('OrderDetail', { orderId: item.id })}
-            />
-          )}
-          ListEmptyComponent={
-            <EmptyState
-              icon={tab === 'running' ? 'orders' : 'receipt'}
-              title={tab === 'running' ? 'No active tickets' : 'No order history'}
-              subtitle={
-                tab === 'running'
-                  ? 'New orders appear the moment a customer pays.'
-                  : 'Completed and cancelled orders will show here.'
-              }
-            />
-          }
-        />
-      )}
-    </Screen>
-  );
+  const { showModal } = useVendorModal();
+  const navigation = useNavigation<Nav>(); const [tab, setTab] = useState('new'); const [orders, setOrders] = useState<VendorOrder[]>([]); const [loading, setLoading] = useState(true); const [refreshing, setRefreshing] = useState(false); const [error, setError] = useState(''); const [acting, setActing] = useState('');
+  const load = useCallback(async (silent = false) => { if (!silent) setLoading(true); try { const result = await vendorApi.orders(); setOrders(result.orders); setError(''); } catch (e) { setError(e instanceof Error ? e.message : 'Could not load order board'); } finally { setLoading(false); setRefreshing(false); } }, []);
+  useEffect(() => { void load(); const timer = setInterval(() => void load(true), 15000); return () => clearInterval(timer); }, [load]);
+  const tabData = useMemo(() => TABS.find((item) => item.key === tab) ?? TABS[0]!, [tab]); const visible = orders.filter((order) => tabData.statuses.includes(order.status)); const count = (key: string) => { const def = TABS.find((item) => item.key === key); return orders.filter((order) => def?.statuses.includes(order.status)).length; };
+  const run = async (order: VendorOrder, action: () => Promise<unknown>) => { setActing(order.id); try { await action(); await load(true); haptic.success(); } catch (e) { showModal({ title: 'Could not update order', message: e instanceof Error ? e.message : 'Try again' }); haptic.error(); } finally { setActing(''); } };
+  const accept = (order: VendorOrder) => { const choices: VendorModalAction[] = [10, 15, 20, 30].map((minutes) => ({ label: `${minutes} minutes`, onPress: () => void run(order, () => vendorApi.accept(order.id, minutes, order.status)) })); choices.push({ label: 'Cancel', secondary: true }); showModal({ title: 'Set prep time', message: 'How long will this order take?', actions: choices }); };
+  const reject = (order: VendorOrder) => showModal({ title: 'Reject this order?', message: 'The customer will be notified. Choose a reason.', actions: [{ label: 'Item unavailable', destructive: true, onPress: () => void run(order, () => vendorApi.reject(order.id, 'item_unavailable', undefined, order.status)) }, { label: 'Kitchen busy', destructive: true, onPress: () => void run(order, () => vendorApi.reject(order.id, 'kitchen_busy', undefined, order.status)) }, { label: 'Keep order', secondary: true }] });
+  return <Screen title="Order board" subtitle={count('new') ? `${count('new')} new ticket${count('new') > 1 ? 's' : ''} need attention` : 'Keep every ticket moving'} scroll={false} padded={false} headerRight={<IconButton icon="refresh" color={colors.brand[700]} onPress={() => { setRefreshing(true); void load(); }} />}>
+    <View style={styles.tabs}>{TABS.map((item) => { const active = item.key === tab; const n = count(item.key); return <Pressable key={item.key} onPress={() => { setTab(item.key); haptic.selection(); }} style={[styles.tab, active && styles.activeTab]}><Text variant="caption" weight="bold" color={active ? colors.white : colors.textSecondary}>{item.label}</Text>{n > 0 ? <View style={[styles.tabCount, active && { backgroundColor: 'rgba(255,255,255,.22)' }]}><Text variant="caption" weight="bold" color={active ? colors.white : colors.brand[700]}>{n > 99 ? '99+' : n}</Text></View> : null}</Pressable>; })}</View>
+    {error ? <View style={styles.error}><Icon name="wifi" size={16} color={colors.warning} /><Text variant="caption" color={colors.warning} style={{ flex: 1 }}>{error}</Text><Pressable onPress={() => void load()}><Text variant="caption" weight="bold" color={colors.warning}>Retry</Text></Pressable></View> : null}
+    {loading ? <View style={styles.center}><Text variant="body" color={colors.textSecondary}>Loading order board…</Text></View> : <FlatList data={visible} keyExtractor={(item) => item.id} contentContainerStyle={[styles.list, !visible.length && { flex: 1 }]} showsVerticalScrollIndicator={false} onRefresh={() => { setRefreshing(true); void load(); }} refreshing={refreshing} renderItem={({ item }) => <OrderCard order={item} acting={acting === item.id} onOpen={() => navigation.navigate('OrderDetail', { orderId: item.id })} onAccept={() => accept(item)} onReject={() => reject(item)} onReady={() => void run(item, () => vendorApi.ready(item.id, item.status))} />} ListEmptyComponent={<EmptyState icon={tab === 'new' ? 'zap' : tab === 'completed' ? 'receipt' : 'timer'} title={tab === 'new' ? 'No new orders' : `No ${tab} tickets`} body={tab === 'new' ? 'You’re open. We’ll alert you as soon as a customer places an order.' : 'Tickets move here automatically as your team works.'} />} />}
+  </Screen>;
 }
-
-const styles = StyleSheet.create({
-  tabBar: {
-    flexDirection: 'row',
-    marginHorizontal: 16,
-    marginTop: 6,
-    marginBottom: 12,
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: 12,
-    padding: 4,
-    gap: 4,
-  },
-  tabItem: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 9,
-    borderRadius: 9,
-  },
-  tabItemActive: {
-    backgroundColor: colors.brand[600],
-  },
-  tabBadge: {
-    borderRadius: 20,
-    paddingHorizontal: 7,
-    paddingVertical: 1,
-    minWidth: 20,
-    alignItems: 'center',
-  },
-  card: {
-    backgroundColor: colors.surface,
-    marginHorizontal: 16,
-    marginBottom: 10,
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  statusBadge: {
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderColor: colors.border,
-  },
-  noteRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginTop: 6,
-  },
-  otpRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    backgroundColor: colors.brand[50],
-    borderRadius: 8,
-    padding: 8,
-    borderWidth: 1,
-    borderColor: colors.brand[100],
-  },
-});
+const styles = StyleSheet.create({ tabs: { flexDirection: 'row', gap: 5, paddingHorizontal: 4, paddingVertical: 9, backgroundColor: colors.surface, borderBottomWidth: 1, borderColor: colors.border }, tab: { flex: 1, minHeight: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 5 }, activeTab: { backgroundColor: colors.brand[600] }, tabCount: { minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.brand[50] }, list: { paddingHorizontal: 4, paddingTop: 10, paddingBottom: 28 }, orderCard: { marginBottom: 10, padding: 14 }, newCard: { borderColor: colors.info, borderWidth: 1.5 }, orderTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, code: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }, orderIcon: { width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, countdown: { alignItems: 'center', gap: 3 }, countRing: { width: 44, height: 44, borderRadius: 22, borderWidth: 3, borderColor: colors.info, alignItems: 'center', justifyContent: 'center' }, orderMeta: { flexDirection: 'row', alignItems: 'center', gap: 13, marginTop: 13, paddingTop: 11, borderTopWidth: 1, borderColor: colors.border }, meta: { flexDirection: 'row', alignItems: 'center', gap: 4 }, note: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, padding: 9, backgroundColor: colors.warningBg, borderRadius: 8 }, actions: { flexDirection: 'row', gap: 8, marginTop: 13 }, otp: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 13, padding: 10, borderRadius: 9, backgroundColor: colors.brand[50] }, error: { marginHorizontal: 4, marginTop: 8, padding: 10, backgroundColor: colors.warningBg, flexDirection: 'row', gap: 7, alignItems: 'center', borderRadius: 9 }, center: { flex: 1, alignItems: 'center', justifyContent: 'center' } });

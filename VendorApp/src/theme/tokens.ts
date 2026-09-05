@@ -1,56 +1,42 @@
-// Spacing, radius and typography tokens.
-// Flat design language: no drop shadows anywhere and tight side padding, but
-// real radii - CTAs are pills and surfaces round. This scale is the single
-// source of truth, so a bump here lands everywhere at once.
-
 export const spacing = {
-  xs: 4,
+  xxs: 4,
+  xs: 8,
+  sm: 12,
+  md: 16,
+  lg: 20,
+  xl: 24,
+  xxl: 32,
+  section: 28,
+};
+
+export const radius = {
   sm: 8,
   md: 12,
   lg: 16,
-  xl: 20,
-  xxl: 24,
-  xxxl: 32,
-  section: 24,
-};
-
-// Compact, flat radius scale: corners are subtle, not rounded-boxes. CTAs and
-// round icon buttons keep `pill`; everything else (cards, images, sheets)
-// picks from this smaller scale so surfaces read tighter on the phone.
-export const radius = {
-  xs: 3,
-  sm: 6,
-  md: 8,
-  lg: 10,
-  xl: 14,
-  xxl: 18,
+  xl: 22,
   pill: 999,
 };
 
 export type FontWeightKey = 'regular' | 'medium' | 'semibold' | 'bold' | 'extrabold';
 
 export const typography = {
-  display: { fontSize: 30, lineHeight: 36, weight: 'extrabold' as FontWeightKey, letterSpacing: -0.4 },
-  h1: { fontSize: 24, lineHeight: 30, weight: 'bold' as FontWeightKey, letterSpacing: -0.3 },
+  display: { fontSize: 30, lineHeight: 36, weight: 'extrabold' as FontWeightKey, letterSpacing: -0.5 },
+  h1: { fontSize: 25, lineHeight: 31, weight: 'bold' as FontWeightKey, letterSpacing: -0.3 },
   h2: { fontSize: 20, lineHeight: 26, weight: 'bold' as FontWeightKey, letterSpacing: -0.2 },
-  h3: { fontSize: 17, lineHeight: 22, weight: 'semibold' as FontWeightKey, letterSpacing: -0.1 },
-  title: { fontSize: 15, lineHeight: 20, weight: 'semibold' as FontWeightKey, letterSpacing: 0 },
+  h3: { fontSize: 17, lineHeight: 23, weight: 'semibold' as FontWeightKey, letterSpacing: 0 },
+  title: { fontSize: 15, lineHeight: 21, weight: 'semibold' as FontWeightKey, letterSpacing: 0 },
   subtitle: { fontSize: 14, lineHeight: 20, weight: 'medium' as FontWeightKey, letterSpacing: 0 },
   body: { fontSize: 14, lineHeight: 21, weight: 'regular' as FontWeightKey, letterSpacing: 0 },
   bodySm: { fontSize: 13, lineHeight: 18, weight: 'regular' as FontWeightKey, letterSpacing: 0 },
-  caption: { fontSize: 12, lineHeight: 16, weight: 'medium' as FontWeightKey, letterSpacing: 0.2 },
-  overline: { fontSize: 11, lineHeight: 14, weight: 'bold' as FontWeightKey, letterSpacing: 1 },
-  button: { fontSize: 15, lineHeight: 20, weight: 'semibold' as FontWeightKey, letterSpacing: 0.1 },
+  caption: { fontSize: 12, lineHeight: 16, weight: 'medium' as FontWeightKey, letterSpacing: 0.1 },
+  overline: { fontSize: 11, lineHeight: 14, weight: 'bold' as FontWeightKey, letterSpacing: 1.1 },
+  button: { fontSize: 15, lineHeight: 20, weight: 'bold' as FontWeightKey, letterSpacing: 0.1 },
 } as const;
 
 export type TypographyVariant = keyof typeof typography;
 
-// One place to control the left/right gutter of every screen. 6px gives a
-// consistent breathing gap between the app content and the device edges, and
-// lets full-bleed rows (banners) sit flush with the device edge by applying
-// -layout.contentHorizontalPadding (see BannerCard).
 export const layout = {
-  screenMaxWidth: 480,
-  contentHorizontalPadding: 6,
+  screenMaxWidth: 560,
+  contentHorizontalPadding: 4,
   headerHeight: 56,
 };

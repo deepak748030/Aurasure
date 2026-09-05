@@ -9,6 +9,8 @@ const asyncHandler = require('../utils/asyncHandler');
 const { ok, paginate, listMeta } = require('../utils/response');
 const { toAppImage } = require('../utils/imageRef');
 
+const VISIBLE_APPROVAL = { approvalStatus: { $in: ['approved', null] } };
+
 function cleanImages(doc) {
   const json = doc.toJSON();
   if (json.image) json.image = toAppImage(json.image);
@@ -36,7 +38,7 @@ const listVibes = asyncHandler(async (req, res) => {
 const getVibeItems = asyncHandler(async (req, res) => {
   const vibe = await FoodVibe.findOne({ id: req.params.id }).lean();
   if (!vibe) throw ApiError.notFound('Collection not found', 'VIBE_NOT_FOUND');
-  const items = await FoodItem.find({ vibeId: vibe.id }).sort({ rating: -1 });
+  const items = await FoodItem.find({ vibeId: vibe.id, ...VISIBLE_APPROVAL }).sort({ rating: -1 });
   return ok(res, { vibe, items: items.map(cleanImages) });
 });
 
@@ -64,7 +66,7 @@ const listRestaurants = asyncHandler(async (req, res) => {
 const getRestaurant = asyncHandler(async (req, res) => {
   const restaurant = await Restaurant.findOne({ id: req.params.id });
   if (!restaurant) throw ApiError.notFound('Restaurant not found', 'RESTAURANT_NOT_FOUND');
-  const items = await FoodItem.find({ restaurantId: restaurant.id }).sort({ isBestseller: -1, rating: -1 });
+  const items = await FoodItem.find({ restaurantId: restaurant.id, ...VISIBLE_APPROVAL }).sort({ isBestseller: -1, rating: -1 });
   return ok(res, { restaurant: cleanImages(restaurant), items: items.map(cleanImages) });
 });
 
@@ -72,7 +74,7 @@ const getRestaurant = asyncHandler(async (req, res) => {
 const getRestaurantItems = asyncHandler(async (req, res) => {
   const restaurant = await Restaurant.findOne({ id: req.params.id }).lean();
   if (!restaurant) throw ApiError.notFound('Restaurant not found', 'RESTAURANT_NOT_FOUND');
-  const items = await FoodItem.find({ restaurantId: restaurant.id }).sort({ isBestseller: -1, rating: -1 });
+  const items = await FoodItem.find({ restaurantId: restaurant.id, ...VISIBLE_APPROVAL }).sort({ isBestseller: -1, rating: -1 });
   return ok(res, { items: items.map(cleanImages) });
 });
 
@@ -81,7 +83,7 @@ const listItems = asyncHandler(async (req, res) => {
   const { category, popular, special, bestseller, vibeId, q } = req.query;
   const { page, limit, skip } = paginate(req.query, { defaultLimit: 20 });
 
-  const query = {};
+  const query = { ...VISIBLE_APPROVAL };
   if (category) query.categoryIds = category;
   if (popular === 'true') query.isPopular = true;
   if (special === 'true') query.isSpecial = true;
@@ -99,7 +101,7 @@ const listItems = asyncHandler(async (req, res) => {
 
 /** GET /api/v1/food/items/:id */
 const getItem = asyncHandler(async (req, res) => {
-  const item = await FoodItem.findOne({ id: req.params.id });
+  const item = await FoodItem.findOne({ id: req.params.id, ...VISIBLE_APPROVAL });
   if (!item) throw ApiError.notFound('Item not found', 'FOOD_ITEM_NOT_FOUND');
   return ok(res, { item: cleanImages(item) });
 });
@@ -120,8 +122,8 @@ const listNewStores = asyncHandler(async (req, res) => {
 
 async function listItemsByFlag(flag, req, res) {
   const { page, limit, skip } = paginate(req.query, { defaultLimit: 12 });
-  const total = await FoodItem.countDocuments(flag);
-  const items = await FoodItem.find(flag).sort({ rating: -1, reviews: -1 }).skip(skip).limit(limit);
+  const total = await FoodItem.countDocuments({ ...flag, ...VISIBLE_APPROVAL });
+  const items = await FoodItem.find({ ...flag, ...VISIBLE_APPROVAL }).sort({ rating: -1, reviews: -1 }).skip(skip).limit(limit);
   return ok(res, { items: items.map(cleanImages) }, listMeta(total, page, limit));
 }
 

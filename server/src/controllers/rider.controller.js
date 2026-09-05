@@ -11,6 +11,9 @@ const { docsComplete, profileComplete, emptyDocs } = require('../utils/riderDocs
 const { completeDeliveryTask } = require('../utils/delivery');
 const { describeUpload } = require('./upload.controller');
 
+const OFFER_TTL_MS = 30 * 1000;
+const ACTIVE_TASK_STATES = ['accepted', 'at_pickup', 'picked_up', 'at_drop'];
+
 async function loadRider(req) {
   const rider = await DeliveryPartner.findOne({ userId: req.user.id });
   if (!rider) throw ApiError.notFound('Delivery partner profile missing', 'RIDER_MISSING');
@@ -25,6 +28,11 @@ function requireApproved(rider) {
 
 function publicTask(task) {
   const json = task.toJSON ? task.toJSON() : { ...task };
+  // Customer OTPs are entered by the rider after the customer shares them;
+  // never send the secrets in offers, maps, history or active-task payloads.
+  if (json.pickup) json.pickup = { ...json.pickup, otp: '' };
+  if (json.drop) json.drop = { ...json.drop, otp: '' };
+  delete json.rejectedBy;
   return json;
 }
 
@@ -42,7 +50,7 @@ const updateOnboarding = asyncHandler(async (req, res) => {
   }
   const fields = [
     'name', 'email', 'city', 'pincode', 'address', 'vehicleType', 'vehicleNumber',
-    'pan', 'aadhaar', 'drivingLicense', 'rcNumber', 'trainingCompleted',
+    'pan', 'aadhaar', 'drivingLicense', 'rcNumber', 'trainingCompleted', 'quizCompleted',
   ];
   for (const key of fields) {
     if (req.body[key] !== undefined) rider[key] = req.body[key];
@@ -90,6 +98,9 @@ const submit = asyncHandler(async (req, res) => {
   if (!docsComplete(rider)) {
     throw ApiError.badRequest('Upload every required document before submitting', 'DOCS_INCOMPLETE');
   }
+  if (!rider.trainingCompleted || !rider.quizCompleted) {
+    throw ApiError.badRequest('Complete rider training and the safety quiz before submitting', 'TRAINING_INCOMPLETE');
+  }
   rider.status = 'submitted';
   rider.submittedAt = new Date();
   rider.reviewNote = '';
@@ -105,29 +116,47 @@ const setDuty = asyncHandler(async (req, res) => {
   if (!['online', 'offline', 'break'].includes(state)) {
     throw ApiError.badRequest('Invalid duty state', 'INVALID_DUTY_STATE');
   }
+  if (state === 'offline' || state === 'break') {
+    const activeTask = await DeliveryTask.exists({ riderId: rider.id, state: { $in: ACTIVE_TASK_STATES } });
+    if (activeTask || rider.dutyState === 'on_task') {
+      throw ApiError.badRequest('Finish your active delivery before changing duty', 'ACTIVE_TASK_EXISTS');
+    }
+  }
   if (state === 'online' && rider.codInHand >= rider.maxCodLimit) {
     throw ApiError.badRequest(
       `COD in hand ₹${Math.round(rider.codInHand)} has crossed your ₹${Math.round(rider.maxCodLimit)} limit. Deposit cash before going online.`,
       'COD_LIMIT_EXCEEDED',
     );
   }
-  rider.dutyState = state;
+  const update = { $set: { dutyState: state } };
   if (state === 'online') {
     const today = new Date().toISOString().slice(0, 10);
     if (rider.currentDayDate !== today) {
-      rider.currentDayDate = today;
-      rider.currentDayTrips = 0;
-      rider.currentDayEarnings = 0;
+      update.$set.currentDayDate = today;
+      update.$set.currentDayTrips = 0;
+      update.$set.currentDayEarnings = 0;
     }
   }
-  await rider.save();
-  return ok(res, { rider });
+  // Keep the duty transition atomic with the accept lock. A stale device must
+  // never flip an active rider back to offline/break while a delivery runs.
+  const updated = await DeliveryPartner.findOneAndUpdate(
+    { id: rider.id, status: 'approved', dutyState: { $ne: 'on_task' } },
+    update,
+    { new: true },
+  );
+  if (!updated) {
+    throw ApiError.badRequest('Finish your active delivery before changing duty', 'ACTIVE_TASK_EXISTS');
+  }
+  return ok(res, { rider: updated });
 });
 
 /** POST /api/v1/rider/location/batch [{lat,lng,at,accuracy,speed}] */
 const locationBatch = asyncHandler(async (req, res) => {
   const rider = await loadRider(req);
   requireApproved(rider);
+  if (!['online', 'on_task'].includes(rider.dutyState)) {
+    throw ApiError.badRequest('Location updates are accepted only while on duty', 'RIDER_OFFLINE');
+  }
   const points = Array.isArray(req.body) ? req.body : req.body.points;
   if (!Array.isArray(points) || !points.length) {
     throw ApiError.badRequest('Send a points array', 'NO_POINTS');
@@ -146,26 +175,31 @@ const locationBatch = asyncHandler(async (req, res) => {
 const getOffers = asyncHandler(async (req, res) => {
   const rider = await loadRider(req);
   requireApproved(rider);
-  if (rider.dutyState !== 'online') {
-    return ok(res, { offers: [] });
-  }
-
-  // First look at an in-flight task so the home screen can surface it too.
+  // First look at an in-flight task so the home screen can surface it too,
+  // including while the rider is `on_task` (not just while waiting online).
   const activeTask = await DeliveryTask.findOne({
     riderId: rider.id,
     state: { $in: ['accepted', 'at_pickup', 'picked_up', 'at_drop'] },
   }).sort({ createdAt: -1 });
 
+  if (rider.dutyState !== 'online') {
+    return ok(res, { offers: [], activeTask: activeTask ? publicTask(activeTask) : null, dutyState: rider.dutyState, codInHand: rider.codInHand, maxCodLimit: rider.maxCodLimit });
+  }
+
   const offers = await DeliveryTask.find({
     state: 'available',
-    riderId: null,
+    riderId: { $in: [null, ''] },
     rejectedBy: { $ne: rider.id },
+    createdAt: { $gte: new Date(Date.now() - OFFER_TTL_MS) },
   })
     .sort({ createdAt: 1 })
     .limit(30);
 
+  const eligibleOffers = offers.filter(
+    (offer) => Number(rider.codInHand || 0) + Number(offer.codAmount || 0) <= Number(rider.maxCodLimit || 0),
+  );
   return ok(res, {
-    offers: offers.map(publicTask),
+    offers: eligibleOffers.map(publicTask),
     activeTask: activeTask ? publicTask(activeTask) : null,
     dutyState: rider.dutyState,
     codInHand: rider.codInHand,
@@ -177,12 +211,40 @@ const getOffers = asyncHandler(async (req, res) => {
 const acceptTask = asyncHandler(async (req, res) => {
   const rider = await loadRider(req);
   requireApproved(rider);
+  const existingTask = await DeliveryTask.exists({ riderId: rider.id, state: { $in: ['accepted', 'at_pickup', 'picked_up', 'at_drop'] } });
+  if (existingTask) throw ApiError.conflict('Finish your active delivery before accepting another one', 'ACTIVE_TASK_EXISTS');
   const task = await DeliveryTask.findOne({ id: req.params.id });
   if (!task) throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
+  if (task.state === 'available' && Date.now() - new Date(task.createdAt).getTime() > OFFER_TTL_MS) {
+    throw ApiError.badRequest('This delivery offer has expired', 'OFFER_EXPIRED');
+  }
+  if (Number(rider.codInHand || 0) + Number(task.codAmount || 0) > Number(rider.maxCodLimit || 0)) {
+    throw ApiError.badRequest('Deposit COD cash before accepting this delivery', 'COD_LIMIT_EXCEEDED');
+  }
 
-  // Atomic claim - first accept wins. A second device matches nothing.
+  // Claim the rider slot and the task independently. The rider update is an
+  // atomic online → on_task lock, which prevents two devices for the same
+  // partner from accepting two deliveries at the same time.
+  const riderLock = await DeliveryPartner.findOneAndUpdate(
+    { id: rider.id, status: 'approved', dutyState: 'online' },
+    {
+      $set: { dutyState: 'on_task' },
+      $inc: { offerCount: 1, acceptanceCount: 1 },
+    },
+    { new: true },
+  );
+  if (!riderLock) {
+    const current = await DeliveryPartner.findOne({ id: rider.id }).select('dutyState');
+    if (current?.dutyState === 'on_task') {
+      throw ApiError.conflict('Finish your active delivery before accepting another one', 'ACTIVE_TASK_EXISTS');
+    }
+    throw ApiError.badRequest('Go online before accepting a delivery', 'RIDER_OFFLINE');
+  }
+
+  // Atomic task claim - first rider wins. If the offer disappeared after the
+  // rider lock, release the lock so the rider can continue receiving offers.
   const claimed = await DeliveryTask.findOneAndUpdate(
-    { id: req.params.id, state: 'available', riderId: null },
+    { id: req.params.id, state: 'available', riderId: { $in: [null, ''] } },
     {
       $set: {
         state: 'accepted',
@@ -195,12 +257,12 @@ const acceptTask = asyncHandler(async (req, res) => {
     { new: true },
   );
   if (!claimed) {
+    await DeliveryPartner.updateOne(
+      { id: rider.id, dutyState: 'on_task' },
+      { $set: { dutyState: 'online' }, $inc: { offerCount: -1, acceptanceCount: -1 } },
+    );
     throw ApiError.conflict('This delivery was taken by another partner', 'ORDER_TAKEN');
   }
-  rider.offerCount = Number(rider.offerCount || 0) + 1;
-  rider.acceptanceCount = Number(rider.acceptanceCount || 0) + 1;
-  rider.dutyState = 'on_task';
-  await rider.save();
   return ok(res, { task: publicTask(claimed) });
 });
 
@@ -216,6 +278,18 @@ const rejectTask = asyncHandler(async (req, res) => {
   rider.offerCount = Number(rider.offerCount || 0) + 1;
   await rider.save();
   return ok(res, { rejected: true });
+});
+
+/** GET /api/v1/rider/tasks/:id - task detail for the map preview and active flow. */
+const getTask = asyncHandler(async (req, res) => {
+  const rider = await loadRider(req);
+  requireApproved(rider);
+  const task = await DeliveryTask.findOne({
+    id: req.params.id,
+    $or: [{ riderId: rider.id }, { state: 'available', riderId: { $in: [null, ''] } }],
+  });
+  if (!task) throw ApiError.notFound('Task not found or no longer available', 'TASK_NOT_FOUND');
+  return ok(res, { task: publicTask(task) });
 });
 
 /** GET /api/v1/rider/tasks/active */
@@ -284,6 +358,10 @@ const deliver = asyncHandler(async (req, res) => {
   if (String(task.drop?.otp || '') !== String(otp || '').trim()) {
     throw ApiError.badRequest('Invalid drop OTP from the customer', 'OTP_INVALID');
   }
+  const requiresPod = Number(task.total || 0) >= 2000 || String(task.note || '').toLowerCase().includes('leave at door');
+  if (requiresPod && !String(podUrl).trim()) {
+    throw ApiError.badRequest('Add a proof-of-delivery photo for this order', 'POD_REQUIRED');
+  }
 
   const codAmount = Number(task.codAmount) || 0;
   if (codAmount > 0 && rider.codInHand + codAmount > rider.maxCodLimit) {
@@ -319,7 +397,11 @@ const listTasks = asyncHandler(async (req, res) => {
   const { status } = req.query;
   const { page, limit, skip } = paginate(req.query, { defaultLimit: 30, maxLimit: 80 });
   const query = { riderId: rider.id, state: { $ne: 'available' } };
-  if (status) query.state = status;
+  if (status === 'running') {
+    query.state = { $in: ['accepted', 'at_pickup', 'picked_up', 'at_drop'] };
+  } else if (['delivered', 'failed', 'cancelled', 'accepted', 'at_pickup', 'picked_up', 'at_drop'].includes(status)) {
+    query.state = status;
+  }
   const total = await DeliveryTask.countDocuments(query);
   const tasks = await DeliveryTask.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit);
   return ok(res, { tasks: tasks.map(publicTask) }, listMeta(total, page, limit));
@@ -372,6 +454,34 @@ function computeIncentives(trips) {
   if (trips >= 15) rows.push({ id: 'trips_15', title: '15 trips completed', points: 0, amount: 150 });
   return rows;
 }
+
+/** GET /api/v1/rider/leaderboard */
+const leaderboard = asyncHandler(async (req, res) => {
+  const rider = await loadRider(req);
+  requireApproved(rider);
+  const [leaders, ahead] = await Promise.all([
+    DeliveryPartner.find({ status: 'approved' }).sort({ totalTrips: -1, rating: -1, totalEarnings: -1 }).limit(20).select('id name totalTrips rating ratingCount'),
+    DeliveryPartner.countDocuments({
+      status: 'approved',
+      $or: [
+        { totalTrips: { $gt: Number(rider.totalTrips || 0) } },
+        {
+          totalTrips: Number(rider.totalTrips || 0),
+          rating: { $gt: Number(rider.rating || 0) },
+        },
+        {
+          totalTrips: Number(rider.totalTrips || 0),
+          rating: Number(rider.rating || 0),
+          totalEarnings: { $gt: Number(rider.totalEarnings || 0) },
+        },
+      ],
+    }),
+  ]);
+  return ok(res, {
+    rank: ahead + 1,
+    riders: leaders.map((item) => ({ id: item.id, name: item.name, trips: item.totalTrips, rating: item.rating, ratingCount: item.ratingCount })),
+  });
+});
 
 /** GET /api/v1/rider/payouts */
 const payouts = asyncHandler(async (req, res) => {
@@ -483,6 +593,7 @@ module.exports = {
   setDuty,
   locationBatch,
   getOffers,
+  getTask,
   acceptTask,
   rejectTask,
   getActiveTask,
@@ -493,6 +604,7 @@ module.exports = {
   failTask,
   listTasks,
   earnings,
+  leaderboard,
   payouts,
   codDeposit,
   incentives,

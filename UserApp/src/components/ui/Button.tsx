@@ -163,7 +163,11 @@ export function IconButton({
   const c = useColors();
   const bg =
     tone === 'primary' ? c.primary : tone === 'danger' ? c.dangerBg : tone === 'surface' ? c.surface : tone === 'translucent' ? `${c.white}CC` : 'transparent';
-  const fg = tone === 'primary' || tone === 'danger' ? (tone === 'danger' ? c.danger : c.onPrimary) : c.text;
+  const fg = tone === 'primary' || tone === 'danger'
+    ? (tone === 'danger' ? c.danger : c.onPrimary)
+    : tone === 'translucent' && c.isDark
+      ? c.primaryDeep
+      : c.text;
 
   return (
     <Pressable

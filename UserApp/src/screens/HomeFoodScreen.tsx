@@ -7,6 +7,7 @@ import { Rail } from '@/components/ui/Rail';
 import { EmptyState, SectionHeader } from '@/components/ui/Primitives';
 import { CategoryTile, ItemCard, SpecialOfferCard, StoreCard, VibeCard } from '@/components/cards/Cards';
 import { SkeletonCard, SkeletonHero, SkeletonList, SkeletonRail } from '@/components/ui/Skeleton';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { Text } from '@/components/ui/Text';
 import { Icon } from '@/lib/icons';
 import { useQuery } from '@/hooks/useQuery';
@@ -175,7 +176,13 @@ export function HomeFoodScreen({ navigation }: { navigation: Nav }): React.React
       ) : null}
 
       <View style={{ marginTop: spacing.sm }}>
-        {loading ? <SkeletonHero height={168} /> : <BannerCarousel banners={data?.banners ?? []} onPress={onBanner} />}
+        {loading ? (
+          <SkeletonHero height={168} />
+        ) : home.error && !data ? (
+          <ErrorState message={home.error.message} onRetry={home.refetch} />
+        ) : (
+          <BannerCarousel banners={data?.banners ?? []} onPress={onBanner} />
+        )}
       </View>
 
       {loading ? (

@@ -123,7 +123,7 @@ export async function mockAdvanceOrder(orderId: string, status: Order['status'])
 }
 
 /** Offline ledger reversal - mirrors server `applyOrderCancellation`. */
-export async function mockCancelOrderById(orderId: string): Promise<Order> {
+export async function mockCancelOrderById(orderId: string, cancelReason?: string): Promise<Order> {
   const list = await ensureDemoOrders();
   const order = list.find((o) => o.id === orderId);
   if (!order) throw new ApiError(404, 'ORDER_NOT_FOUND', 'Order not found');
@@ -168,6 +168,7 @@ export async function mockCancelOrderById(orderId: string): Promise<Order> {
   }
 
   order.status = 'cancelled';
+  order.cancelReason = (cancelReason ?? '').trim();
   return cloneOrder(order);
 }
 
@@ -303,12 +304,17 @@ export async function fetchOrder(orderId: string): Promise<Order | undefined> {
 }
 
 /** PATCH /orders/:id/status - cancel a live order (server / offline ledger). */
-export async function cancelOrder(orderId: string): Promise<Order> {
+export async function cancelOrder(orderId: string, cancelReason?: string): Promise<Order> {
+  const reason = (cancelReason ?? '').trim();
   if (!isApiEnabled) {
     await mockDelay(800);
-    return mockCancelOrderById(orderId);
+    return mockCancelOrderById(orderId, reason);
   }
-  const data = await apiPatch<{ order: Order }>(`/orders/${encodeURIComponent(orderId)}/status`, { status: 'cancelled' }, { auth: true });
+  const data = await apiPatch<{ order: Order }>(
+    `/orders/${encodeURIComponent(orderId)}/status`,
+    { status: 'cancelled', cancelReason: reason || undefined },
+    { auth: true },
+  );
   return data.order;
 }
 

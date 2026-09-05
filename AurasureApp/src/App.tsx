@@ -9,6 +9,10 @@ import { AppProvider } from './context/AppContext';
 import { SystemBarHost } from './components/ui/SystemBarHost';
 import { loadAppFonts } from './lib/fonts';
 import { colors } from './theme/colors';
+// Side-effect import: registers the API token provider (setTokenProvider) so
+// authenticated requests (profile, orders, checkout) attach the Bearer token.
+// Without this, the server rejects them with "Authentication token missing".
+import './api/session';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 

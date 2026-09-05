@@ -248,11 +248,14 @@ const getOrder = asyncHandler(async (req, res) => {
 
 /** PATCH /api/v1/orders/:id/status (auth) - lets a user cancel a live order */
 const updateStatus = asyncHandler(async (req, res) => {
-  const { status } = req.body;
+  const { status, cancelReason } = req.body;
 
   if (status !== 'cancelled') {
     throw ApiError.forbidden('Only the kitchen can update this status', 'STATUS_READONLY');
   }
+
+  // Normalise the (optional) cancellation reason the customer picked / typed.
+  const reason = typeof cancelReason === 'string' ? cancelReason.trim().slice(0, 300) : '';
 
   // Atomic claim: only the first request flips placed/confirmed → cancelled.
   // A second cancel (double tap, retry, a concurrent admin action) matches
@@ -260,7 +263,7 @@ const updateStatus = asyncHandler(async (req, res) => {
   // can never be refunded twice or loyalty reversed twice.
   const order = await Order.findOneAndUpdate(
     { id: req.params.id, user: req.user._id, status: { $in: ['placed', 'confirmed'] } },
-    { $set: { status: 'cancelled' } },
+    { $set: { status: 'cancelled', cancelReason: reason } },
     { new: true },
   );
 

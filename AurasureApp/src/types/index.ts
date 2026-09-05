@@ -179,6 +179,8 @@ export interface Order {
   /** Coupon redeemed on this order (server stores it for cancel restores). */
   couponId?: string | null;
   couponCode?: string | null;
+  /** Reason the customer gave when cancelling (empty for active orders). */
+  cancelReason?: string;
   /** Customer instruction (e.g. "if any product is not available → call me"). */
   instructions?: string;
   /** Delivery partner / rider task info - filled once an order is on the way. */

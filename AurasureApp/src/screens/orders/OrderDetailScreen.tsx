@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 import { Screen } from '../../components/ui/Screen';
 import { BackButton } from '../../components/ui/BackButton';
 import { Text } from '../../components/ui/Text';
@@ -7,6 +7,7 @@ import { Icon } from '@/lib/icons';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { Chip } from '../../components/ui/Chip';
 import { SmartImage } from '../../components/ui/SmartImage';
 import { BottomSheet } from '../../components/ui/BottomSheet';
 import { Skeleton } from '../../components/ui/Skeleton';
@@ -34,6 +35,16 @@ const STEP_LABEL: Record<string, string> = {
   delivered: 'Delivered',
 };
 
+// Default reasons offered in the cancel sheet. "Other" reveals a free-text box.
+const CANCEL_REASONS = [
+  'Ordered by mistake',
+  'Delivery taking too long',
+  'Found a better price',
+  'Changed my mind',
+  'Wrong item / address',
+  'Other',
+] as const;
+
 export function OrderDetailScreen({ route, navigation }: Props): React.ReactElement {
   const { orderId } = route.params;
   const { data, loading, refreshing, refresh } = useAppQuery<Order | undefined>(
@@ -47,6 +58,13 @@ export function OrderDetailScreen({ route, navigation }: Props): React.ReactElem
   const [confirming, setConfirming] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [reason, setReason] = useState<string | null>(null);
+  const [otherReason, setOtherReason] = useState('');
+
+  // The final reason string sent to the API: the free-text when "Other" is
+  // picked, otherwise the selected chip label.
+  const finalReason = reason === 'Other' ? otherReason.trim() : (reason ?? '');
+  const reasonValid = reason !== null && (reason !== 'Other' || otherReason.trim().length > 0);
 
   const raw = data;
   const order: Order | undefined =
@@ -62,10 +80,14 @@ export function OrderDetailScreen({ route, navigation }: Props): React.ReactElem
   }, [data]);
 
   const doCancel = async (): Promise<void> => {
+    if (!reasonValid) {
+      setCancelError('Please choose a reason for cancelling.');
+      return;
+    }
     setCancelling(true);
     setCancelError(null);
     try {
-      const updated = await cancelOrder(orderId);
+      const updated = await cancelOrder(orderId, finalReason);
       haptic.success();
       setCancelledIds((prev) => (prev.includes(orderId) ? prev : [...prev, orderId]));
       setConfirming(false);
@@ -191,6 +213,11 @@ export function OrderDetailScreen({ route, navigation }: Props): React.ReactElem
                 <Text variant="body" color={colors.danger}>
                   This order was cancelled.
                 </Text>
+                {order.cancelReason ? (
+                  <Text variant="caption" color={colors.textSecondary} style={{ marginTop: 6 }}>
+                    Reason: {order.cancelReason}
+                  </Text>
+                ) : null}
                 {(order.walletPaid ?? 0) > 0 ? (
                   <Text variant="caption" color={colors.success} style={{ marginTop: 6 }}>
                     {formatINR(order.walletPaid ?? 0)} was refunded to your wallet.
@@ -300,6 +327,8 @@ export function OrderDetailScreen({ route, navigation }: Props): React.ReactElem
                 onPress={() => {
                   haptic.medium();
                   setCancelError(null);
+                  setReason(null);
+                  setOtherReason('');
                   setConfirming(true);
                 }}
               />
@@ -332,17 +361,52 @@ export function OrderDetailScreen({ route, navigation }: Props): React.ReactElem
 
       <BottomSheet visible={confirming} onClose={() => setConfirming(false)} title="Cancel this order?">
         <View>
-          <View style={styles.warnIcon}>
-            <Icon name="circleAlert" size={30} color={colors.warning} />
-          </View>
-          <Text variant="body" color={colors.textSecondary} style={{ textAlign: 'center', marginTop: 8, lineHeight: 21 }}>
+          <Text variant="body" color={colors.textSecondary} style={{ marginTop: 2, lineHeight: 21 }}>
             Cancelling is instant and cannot be undone. Wallet-paid orders get their money refunded automatically.
           </Text>
+
+          <Text variant="subtitle" weight="bold" color={colors.text} style={{ marginTop: 18, marginBottom: 10 }}>
+            Why are you cancelling?
+          </Text>
+          <View style={styles.reasonWrap}>
+            {CANCEL_REASONS.map((r) => (
+              <Chip
+                key={r}
+                label={r}
+                active={reason === r}
+                activeColor={colors.danger}
+                onPress={() => {
+                  setReason(r);
+                  setCancelError(null);
+                }}
+                style={styles.reasonChip}
+              />
+            ))}
+          </View>
+
+          {reason === 'Other' ? (
+            <TextInput
+              value={otherReason}
+              onChangeText={setOtherReason}
+              placeholder="Tell us a bit more…"
+              placeholderTextColor={colors.textTertiary}
+              multiline
+              style={styles.reasonInput}
+            />
+          ) : null}
+
+          {cancelError ? (
+            <Text variant="caption" color={colors.danger} style={{ marginTop: 12 }}>
+              {cancelError}
+            </Text>
+          ) : null}
+
           <Button
             title={cancelling ? 'Cancelling…' : 'Yes, cancel order'}
             variant="danger"
             size="lg"
             loading={cancelling}
+            disabled={!reasonValid}
             fullWidth
             style={{ marginTop: 18 }}
             onPress={() => void doCancel()}
@@ -389,13 +453,25 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 10,
   },
-  warnIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.warningBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
+  reasonWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  reasonChip: {
+    marginBottom: 2,
+  },
+  reasonInput: {
+    marginTop: 12,
+    minHeight: 72,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 12,
+    fontSize: 15,
+    color: colors.text,
+    textAlignVertical: 'top',
   },
 });

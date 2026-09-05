@@ -44,13 +44,6 @@ const SECTIONS: MenuSection[] = [
     rows: [
       { label: 'Edit Profile', icon: 'user', tint: '#E4F1FC', color: '#2E87D6', route: 'editProfile' },
       { label: 'My Address', icon: 'mapPin', tint: '#FDE9DE', color: '#E07B3B', route: 'myAddress' },
-      { label: 'Settings', icon: 'settings', tint: '#EEEEF0', color: '#6D6D7A', route: 'settings' },
-    ],
-  },
-  {
-    title: 'Manage',
-    rows: [
-      { label: 'Admin Console', icon: 'gauge', tint: '#EDE9FE', color: '#5B4BC4', route: 'admin' },
     ],
   },
   {
@@ -179,7 +172,7 @@ export function MenuScreen(): React.ReactElement {
             </Text>
             <Pressable onPress={isLoggedIn ? doLogout : goAuth} style={styles.loginBtn}>
               <Text variant="caption" weight="bold" color="#8B0057">
-                {isLoggedIn ? 'Log out' : 'Log in/ Sign up'}
+                {isLoggedIn ? 'Log out' : 'Log in'}
               </Text>
               <Icon name={isLoggedIn ? 'logout' : 'arrowRight'} size={14} color="#8B0057" style={{ marginLeft: 4 }} />
             </Pressable>
@@ -241,12 +234,12 @@ export function MenuScreen(): React.ReactElement {
 
         <View style={styles.content}>
           {SECTIONS.map((section) => (
-            <View key={section.title}>
+            <View key={section.title} style={styles.section}>
+              {/* Section label sits above the card, grouped-list style. */}
+              <Text variant="overline" color="#A9A2AD" weight="bold" style={styles.sectionTitle}>
+                {section.title.toUpperCase()}
+              </Text>
               <View style={styles.card}>
-                {/* Section label lives inside the card, grouped-list style. */}
-                <Text variant="overline" color="#A9A2AD" style={styles.cardTitle}>
-                  {section.title.toUpperCase()}
-                </Text>
                 {section.rows.map((row, i) => (
                   <Pressable
                     key={row.label}
@@ -256,17 +249,18 @@ export function MenuScreen(): React.ReactElement {
                     }}
                     style={({ pressed }) => [
                       styles.row,
-                      { opacity: pressed ? 0.92 : 1, backgroundColor: pressed ? '#FBF5FA' : 'transparent' },
-                      i > 0 ? styles.rowTop : null,
+                      { backgroundColor: pressed ? '#FBF5FA' : 'transparent' },
                     ]}
                   >
                     <View style={[styles.rowIcon, { backgroundColor: row.tint }]}>
-                      <Icon name={row.icon} size={20} color={row.color} filled />
+                      <Icon name={row.icon} size={19} color={row.color} filled />
                     </View>
-                    <Text variant="subtitle" weight="semibold" color={colors.text} style={{ flex: 1, marginLeft: 12 }}>
-                      {row.label}
-                    </Text>
-                    <Icon name="chevronRight" size={20} color="#B5A8B5" />
+                    <View style={[styles.rowBody, i > 0 ? styles.rowDivider : null]}>
+                      <Text variant="subtitle" weight="semibold" color={colors.text} style={{ flex: 1 }}>
+                        {row.label}
+                      </Text>
+                      <Icon name="chevronRight" size={20} color="#C3B4C3" />
+                    </View>
                   </Pressable>
                 ))}
               </View>
@@ -402,26 +396,33 @@ const styles = StyleSheet.create({
   // The 10px gutter belongs to the content column only - the hero above it is
   // full bleed, so the cards span the content width and stay a touch narrower
   // than the rest of the app.
-  content: { paddingHorizontal: 10, marginTop: 10 },
-  cardTitle: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 2 },
+  content: { paddingHorizontal: 12, marginTop: 8 },
+  section: { marginTop: 18 },
+  sectionTitle: { paddingHorizontal: 8, paddingBottom: 8, letterSpacing: 0.8 },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 26,
-    paddingVertical: 6,
+    borderRadius: 22,
+    paddingHorizontal: 12,
+    overflow: 'hidden',
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 13,
-    paddingHorizontal: 14,
-    minHeight: 62,
-    borderRadius: 22,
   },
-  rowTop: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#F0EAF0' },
+  // The divider lives on the row body (right of the icon), so the hairline is
+  // inset and never cuts under the coloured icon tile - clean grouped-list feel.
+  rowBody: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 60,
+    marginLeft: 12,
+  },
+  rowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#F0EAF0' },
   rowIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
+    width: 42,
+    height: 42,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
   },

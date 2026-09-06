@@ -11,7 +11,7 @@ const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { ok, created, paginate, listMeta } = require('../utils/response');
 const { newId } = require('../utils/id');
-const { docsComplete, profileComplete, emptyDocs } = require('../utils/vendorDocs');
+const { docsComplete, profileComplete, emptyDocs, missingProfileFields, missingDocumentLabels } = require('../utils/vendorDocs');
 const { describeUpload } = require('./upload.controller');
 const { applyOrderCancellation } = require('./order.controller');
 const { createDeliveryTaskForOrder } = require('../utils/delivery');
@@ -172,11 +172,20 @@ const submit = asyncHandler(async (req, res) => {
   const vendor = await loadVendor(req);
   if (vendor.status === 'approved') return ok(res, { vendor });
   if (vendor.status === 'suspended') throw ApiError.forbidden('Account suspended', 'SUSPENDED');
-  if (!profileComplete(vendor)) {
-    throw ApiError.badRequest('Fill outlet, KYC and bank details before submitting', 'PROFILE_INCOMPLETE');
+  // `ownerName` has no field on the onboarding form — it is captured at
+  // registration. Backfill it from the account name so a legacy or partially
+  // seeded vendor is not permanently blocked from submitting.
+  if (!String(vendor.ownerName || '').trim() && String(vendor.name || '').trim()) {
+    vendor.ownerName = vendor.name;
   }
-  if (!docsComplete(vendor)) {
-    throw ApiError.badRequest('Upload every required document before submitting', 'DOCS_INCOMPLETE');
+
+  const missingFields = missingProfileFields(vendor);
+  if (missingFields.length) {
+    throw ApiError.badRequest(`Still needed: ${missingFields.join(', ')}`, 'PROFILE_INCOMPLETE');
+  }
+  const missingDocs = missingDocumentLabels(vendor);
+  if (missingDocs.length) {
+    throw ApiError.badRequest(`Upload these documents first: ${missingDocs.join(', ')}`, 'DOCS_INCOMPLETE');
   }
   vendor.status = 'submitted';
   vendor.submittedAt = new Date();

@@ -7,7 +7,7 @@ const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { ok, created, paginate, listMeta } = require('../utils/response');
 const { newId } = require('../utils/id');
-const { docsComplete, profileComplete, emptyDocs } = require('../utils/riderDocs');
+const { docsComplete, profileComplete, emptyDocs, missingProfileFields, missingDocumentLabels } = require('../utils/riderDocs');
 const { completeDeliveryTask } = require('../utils/delivery');
 const { notifyVendorRiderAssigned } = require('../utils/vendorNotify');
 const { describeUpload } = require('./upload.controller');
@@ -93,11 +93,13 @@ const submit = asyncHandler(async (req, res) => {
   const rider = await loadRider(req);
   if (rider.status === 'approved') return ok(res, { rider });
   if (rider.status === 'suspended') throw ApiError.forbidden('Account suspended', 'SUSPENDED');
-  if (!profileComplete(rider)) {
-    throw ApiError.badRequest('Fill personal, vehicle and bank details before submitting', 'PROFILE_INCOMPLETE');
+  const missingFields = missingProfileFields(rider);
+  if (missingFields.length) {
+    throw ApiError.badRequest(`Still needed: ${missingFields.join(', ')}`, 'PROFILE_INCOMPLETE');
   }
-  if (!docsComplete(rider)) {
-    throw ApiError.badRequest('Upload every required document before submitting', 'DOCS_INCOMPLETE');
+  const missingDocs = missingDocumentLabels(rider);
+  if (missingDocs.length) {
+    throw ApiError.badRequest(`Upload these documents first: ${missingDocs.join(', ')}`, 'DOCS_INCOMPLETE');
   }
   if (!rider.trainingCompleted || !rider.quizCompleted) {
     throw ApiError.badRequest('Complete rider training and the safety quiz before submitting', 'TRAINING_INCOMPLETE');

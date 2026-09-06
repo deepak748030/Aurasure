@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import MapView, { Marker, Polyline, type Region } from "react-native-maps";
 import { colors } from "@/theme/colors";
@@ -42,10 +42,42 @@ export function MapSurface({
   showLabels = true,
 }: MapSurfaceProps): React.ReactElement {
   const mapRef = useRef<MapView | null>(null);
-  const coordinates = stops.map(({ latitude, longitude }) => ({
-    latitude,
-    longitude,
-  }));
+  const [routePoints, setRoutePoints] = useState<Coordinate[]>([]);
+
+  const stopsWithCoord = stops.filter(
+    (s) => s.latitude != null && s.longitude != null,
+  );
+  const coordinatesFromStops = stopsWithCoord.map(
+    ({ latitude, longitude }) => ({ latitude, longitude }),
+  );
+
+  // Fetch real road route from OSRM demo when we have 2+ points
+  useEffect(() => {
+    if (stopsWithCoord.length < 2) {
+      setRoutePoints([]);
+      return;
+    }
+    const coordsStr = stopsWithCoord
+      .map((s) => `${s.longitude},${s.latitude}`)
+      .join(";");
+    const url = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`;
+    fetch(url)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.routes?.[0]?.geometry?.coordinates) {
+          const pts: Coordinate[] = data.routes[0].geometry.coordinates.map(
+            (c: number[]) => ({ latitude: c[1], longitude: c[0] }),
+          );
+          setRoutePoints(pts);
+        } else {
+          setRoutePoints([]);
+        }
+      })
+      .catch(() => setRoutePoints([]));
+  }, [stops.length]);
+
+  const coordinates =
+    routePoints.length > 0 ? routePoints : coordinatesFromStops;
   const first = coordinates[0];
   const region: Region = first
     ? {

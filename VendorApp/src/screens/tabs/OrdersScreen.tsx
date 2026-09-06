@@ -12,6 +12,7 @@ import { colors } from '@/theme/colors';
 import { radius, spacing } from '@/theme/tokens';
 import { haptic } from '@/lib/haptics';
 import { useVendorModal, type VendorModalAction } from '@/components/ui/VendorModal';
+import { usePush } from '@/context/PushContext';
 import type { RootStackParamList } from '@/navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -31,9 +32,15 @@ function OrderCard({ order, onOpen, onAccept, onReject, onReady, acting }: { ord
 
 export function OrdersScreen(): React.ReactElement {
   const { showModal } = useVendorModal();
+  const { onOrderEvent, pendingOrderId, clearPendingOrder } = usePush();
   const navigation = useNavigation<Nav>(); const [tab, setTab] = useState('new'); const [orders, setOrders] = useState<VendorOrder[]>([]); const [loading, setLoading] = useState(true); const [refreshing, setRefreshing] = useState(false); const [error, setError] = useState(''); const [acting, setActing] = useState('');
   const load = useCallback(async (silent = false) => { if (!silent) setLoading(true); try { const result = await vendorApi.orders(); setOrders(result.orders); setError(''); } catch (e) { setError(e instanceof Error ? e.message : 'Could not load order board'); } finally { setLoading(false); setRefreshing(false); } }, []);
   useEffect(() => { void load(); const timer = setInterval(() => void load(true), 15000); return () => clearInterval(timer); }, [load]);
+  // A push beats the 15s poll: refresh the board the moment an order lands and
+  // jump the vendor to the "New" tab so the ticket is impossible to miss.
+  useEffect(() => onOrderEvent((data) => { if (data.type === 'order.new') setTab('new'); void load(true); }), [onOrderEvent, load]);
+  // Tapping the notification opens that order straight away.
+  useEffect(() => { if (!pendingOrderId) return; const id = pendingOrderId; clearPendingOrder(); navigation.navigate('OrderDetail', { orderId: id }); }, [pendingOrderId, clearPendingOrder, navigation]);
   const tabData = useMemo(() => TABS.find((item) => item.key === tab) ?? TABS[0]!, [tab]); const visible = orders.filter((order) => tabData.statuses.includes(order.status)); const count = (key: string) => { const def = TABS.find((item) => item.key === key); return orders.filter((order) => def?.statuses.includes(order.status)).length; };
   const run = async (order: VendorOrder, action: () => Promise<unknown>) => { setActing(order.id); try { await action(); await load(true); haptic.success(); } catch (e) { showModal({ title: 'Could not update order', message: e instanceof Error ? e.message : 'Try again' }); haptic.error(); } finally { setActing(''); } };
   const accept = (order: VendorOrder) => { const choices: VendorModalAction[] = [10, 15, 20, 30].map((minutes) => ({ label: `${minutes} minutes`, onPress: () => void run(order, () => vendorApi.accept(order.id, minutes, order.status)) })); choices.push({ label: 'Cancel', secondary: true }); showModal({ title: 'Set prep time', message: 'How long will this order take?', actions: choices }); };

@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import { AppNavigator } from './navigation/AppNavigator';
 import { RiderProvider } from './context/RiderContext';
+import { PushProvider } from './context/PushContext';
 import { SystemBarHost } from './components/ui/SystemBarHost';
 import { loadAppFonts } from './lib/fonts';
 import { colors } from './theme/colors';
@@ -21,10 +22,12 @@ export default function App(): React.ReactElement {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <RiderProvider>
-          <View style={{ flex: 1, backgroundColor: colors.background }}>
-            <SystemBarHost />
-            <AppNavigator />
-          </View>
+          <PushProvider>
+            <View style={{ flex: 1, backgroundColor: colors.background }}>
+              <SystemBarHost />
+              <AppNavigator />
+            </View>
+          </PushProvider>
         </RiderProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

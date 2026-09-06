@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/RiderUI";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { riderApi, type DeliveryTask } from "@/api/rider";
+import { usePush } from "@/context/PushContext";
 import { colors } from "@/theme/colors";
 import { formatINR } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
@@ -152,6 +153,7 @@ function TaskCard({
 export function TasksScreen(): React.ReactElement {
   const navigation = useNavigation<Nav>();
   const focused = useIsFocused();
+  const { onTaskEvent } = usePush();
   const [filter, setFilter] = useState("running");
   const [tasks, setTasks] = useState<DeliveryTask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -169,6 +171,8 @@ export function TasksScreen(): React.ReactElement {
   useEffect(() => {
     if (focused) void load();
   }, [focused, load]);
+  // Keep the trip list in sync the moment dispatch pushes an update.
+  useEffect(() => onTaskEvent(() => void load()), [onTaskEvent, load]);
   const filtered = tasks.filter((task) =>
     filter === "running"
       ? RUNNING.includes(task.state)

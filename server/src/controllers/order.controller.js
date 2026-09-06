@@ -14,6 +14,7 @@ const { newId } = require('../utils/id');
 const { walletTx, loyaltyTx } = require('../utils/ledger');
 const { discountForCoupon, findUsableCoupon } = require('../utils/coupons');
 const { getAppSettings } = require('../utils/settings');
+const { notifyVendorNewOrder, notifyVendorOrderCancelled } = require('../utils/vendorNotify');
 
 const VISIBLE_APPROVAL = { approvalStatus: { $in: ['approved', null] } };
 
@@ -262,6 +263,10 @@ const createOrder = asyncHandler(async (req, res) => {
     instructions: instructions && String(instructions).trim() ? String(instructions).trim().slice(0, 200) : '',
   });
 
+  // Ring the outlet. Deliberately not awaited: the customer's confirmation
+  // must not wait on (or fail because of) Expo's push service.
+  void notifyVendorNewOrder(order);
+
   return created(res, { order, wallet: user.wallet, loyaltyPoints: user.loyaltyPoints });
 });
 
@@ -339,6 +344,8 @@ const updateStatus = asyncHandler(async (req, res) => {
   }
 
   await applyOrderCancellation(order);
+  // Tell the outlet to stop cooking. Fire-and-forget, same as the new-order ping.
+  void notifyVendorOrderCancelled(order, reason);
   return ok(res, { order });
 });
 

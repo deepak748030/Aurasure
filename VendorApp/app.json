@@ -16,7 +16,12 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.aurasure.vendor"
+      "bundleIdentifier": "com.aurasure.vendor",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
+      }
     },
     "android": {
       "package": "com.aurasure.vendor",
@@ -24,13 +29,20 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#B5165F"
       },
-      "navigationBarColor": "#F8F6F3"
+      "navigationBarColor": "#F8F6F3",
+      "permissions": [
+        "POST_NOTIFICATIONS",
+        "VIBRATE",
+        "WAKE_LOCK"
+      ]
     },
     "web": {
       "bundler": "metro",
       "favicon": "./assets/images/favicon.png"
     },
-    "experiments": { "tsconfigPaths": true },
+    "experiments": {
+      "tsconfigPaths": true
+    },
     "plugins": [
       [
         "expo-splash-screen",
@@ -46,8 +58,23 @@
         {
           "photosPermission": "Allow Aurasure Vendor to add outlet and menu photos."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#B5165F",
+          "defaultChannel": "orders",
+          "enableBackgroundRemoteNotifications": true
+        }
       ]
     ],
-    "backgroundColor": "#F8F6F3"
+    "backgroundColor": "#F8F6F3",
+    "notification": {
+      "icon": "./assets/images/notification-icon.png",
+      "color": "#B5165F",
+      "androidMode": "default",
+      "iosDisplayInForeground": true
+    }
   }
 }

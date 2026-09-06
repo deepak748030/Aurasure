@@ -7,6 +7,7 @@ const DeliveryTask = require('../models/DeliveryTask');
 const DeliveryPartner = require('../models/DeliveryPartner');
 const { newId } = require('./id');
 const { creditVendorPayout } = require('./payout');
+const { notifyRidersNewTask } = require('./riderNotify');
 
 const makeOtp = () => String(Math.floor(1000 + Math.random() * 9000));
 
@@ -75,6 +76,12 @@ async function createDeliveryTaskForOrder(order) {
 
   order.deliveryTaskId = task.id;
   await order.save();
+
+  // Broadcast the offer to online riders. The offer window is only 30s, so a
+  // rider who is not staring at the feed would otherwise never see it.
+  // Fire-and-forget: a push outage must not fail marking an order ready.
+  void notifyRidersNewTask(task);
+
   return task;
 }
 

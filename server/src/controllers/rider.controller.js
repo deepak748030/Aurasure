@@ -9,6 +9,7 @@ const { ok, created, paginate, listMeta } = require('../utils/response');
 const { newId } = require('../utils/id');
 const { docsComplete, profileComplete, emptyDocs } = require('../utils/riderDocs');
 const { completeDeliveryTask } = require('../utils/delivery');
+const { notifyVendorRiderAssigned } = require('../utils/vendorNotify');
 const { describeUpload } = require('./upload.controller');
 
 const OFFER_TTL_MS = 30 * 1000;
@@ -263,6 +264,11 @@ const acceptTask = asyncHandler(async (req, res) => {
     );
     throw ApiError.conflict('This delivery was taken by another partner', 'ORDER_TAKEN');
   }
+  // Let the outlet know who is coming for the handover. Fire-and-forget.
+  void notifyVendorRiderAssigned(
+    { id: claimed.orderId, vendorId: claimed.vendorId, code: claimed.orderCode },
+    claimed.riderName,
+  );
   return ok(res, { task: publicTask(claimed) });
 });
 

@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import { AppNavigator } from './navigation/AppNavigator';
 import { VendorProvider } from './context/VendorContext';
+import { PushProvider } from './context/PushContext';
 import { SystemBarHost } from './components/ui/SystemBarHost';
 import { VendorModalProvider } from './components/ui/VendorModal';
 import { loadAppFonts } from './lib/fonts';
@@ -22,12 +23,14 @@ export default function App(): React.ReactElement {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <VendorProvider>
-          <VendorModalProvider>
-            <View style={{ flex: 1, backgroundColor: colors.background }}>
-              <SystemBarHost />
-              <AppNavigator />
-            </View>
-          </VendorModalProvider>
+          <PushProvider>
+            <VendorModalProvider>
+              <View style={{ flex: 1, backgroundColor: colors.background }}>
+                <SystemBarHost />
+                <AppNavigator />
+              </View>
+            </VendorModalProvider>
+          </PushProvider>
         </VendorProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

@@ -159,19 +159,36 @@ export function ProgressBar({
   value,
   color = colors.brand[600],
   track = colors.brand[100],
+  steps = 1,
 }: {
   value: number;
   color?: string;
   track?: string;
+  steps?: number;
 }): React.ReactElement {
+  const stepValue =
+    steps > 1
+      ? Math.round(value * steps) / steps
+      : Math.max(0, Math.min(1, value));
   return (
-    <View style={[styles.progressTrack, { backgroundColor: track }]}>
+    <View
+      style={[
+        styles.progressTrack,
+        {
+          backgroundColor: track,
+          borderRadius: 14,
+          height: 10,
+          overflow: "hidden",
+        },
+      ]}
+    >
       <View
         style={[
           styles.progressFill,
           {
-            width: `${Math.max(0, Math.min(1, value)) * 100}%`,
+            width: `${stepValue * 100}%`,
             backgroundColor: color,
+            borderRadius: 14,
           },
         ]}
       />
@@ -323,8 +340,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   rule: { height: 1, backgroundColor: colors.border },
-  progressTrack: { height: 7, borderRadius: 7, overflow: "hidden" },
-  progressFill: { height: "100%", borderRadius: 7 },
+  progressTrack: { height: 10, borderRadius: 14, overflow: "hidden" },
+  progressFill: { height: "100%", borderRadius: 14 },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",

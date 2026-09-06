@@ -92,5 +92,6 @@ export const vendorApi = {
   addStaff: (body: { name: string; phone: string }) => apiPost<{ staff: Staff }>('/vendor/staff', body, { auth: true }),
   removeStaff: (id: string) => apiDelete<{ deleted: string }>(`/vendor/staff/${id}`, { auth: true }),
   issue: (title: string, body: string) => apiPost<{ vendor: Vendor }>('/vendor/issues', { title, body }, { auth: true }),
+  categories: (food = true) => apiGet<{ categories: Array<{ id: string; name: string; image?: unknown; sortOrder?: number }> }>((food ? '/food/categories' : '/shop/categories') as string, { auth: false }),
   pushToken: (token: string, platform: string) => apiPost<{ saved: boolean }>('/vendor/push-token', { token, platform }, { auth: true }),
 };

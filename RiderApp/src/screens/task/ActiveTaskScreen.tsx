@@ -711,6 +711,7 @@ const styles = StyleSheet.create({
   stepRow: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     width: "100%",
   },
   stepDot: {
@@ -723,7 +724,7 @@ const styles = StyleSheet.create({
   },
   stepLine: {
     height: 3,
-    flex: 1,
+    width: 36,
     borderRadius: 2,
   },
   progressLabels: {

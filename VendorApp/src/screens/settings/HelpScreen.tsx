@@ -20,7 +20,7 @@ const SUPPORT_PHONE = '+919000000000';
 const SUPPORT_EMAIL = 'partners@aurasure.app';
 
 interface Faq { q: string; a: string; topic: string }
-const FAQS: Faq[] = [
+const FAQS_FOOD: Faq[] = [
   { topic: 'Orders', q: 'How long do I have to accept an order?', a: 'You get two minutes. If nobody accepts, the order is released back to the customer and it counts against your acceptance rate. Set a realistic prep time when you accept — the customer sees it live.' },
   { topic: 'Orders', q: 'A dish is out of stock mid-order. What now?', a: 'Open the order and use partial accept to drop that line. The customer is refunded for it automatically and the rest of the order continues to the kitchen.' },
   { topic: 'Orders', q: 'When should I mark an order ready?', a: 'Only once it is packed and on the counter. Marking ready publishes the pickup task to nearby riders, so doing it early leaves a rider waiting.' },
@@ -35,6 +35,21 @@ const FAQS: Faq[] = [
   { topic: 'Account', q: 'How do I update my bank or KYC details?', a: 'Bank and KYC changes need a review. Raise an issue with what has changed and our team will unlock the relevant step for you.' },
 ];
 
+const FAQS_SHOP: Faq[] = [
+  { topic: 'Orders', q: 'Is there a time limit to confirm an order?', a: 'No — there is no accept timer and no prep time to set. Confirm the order, pack it and mark the parcel as dispatched. A delivery partner is assigned only after you mark it dispatched.' },
+  { topic: 'Orders', q: 'A product is out of stock mid-order. What now?', a: 'Open the order and use partial confirm to drop that line. The customer is refunded for it automatically and the rest of the order continues without that product.' },
+  { topic: 'Orders', q: 'When should I mark an order dispatched?', a: 'Only once the parcel is packed and sealed. Marking it dispatched publishes the pickup task to nearby delivery partners, so doing it early leaves a partner waiting.' },
+  { topic: 'Orders', q: 'Can I cancel after confirming?', a: 'Reject before confirming where possible. After confirming, raise an issue from More so our team can cancel and inform the customer — repeated late cancellations affect your rating.' },
+  { topic: 'Catalogue', q: 'Why is my new product marked pending?', a: 'New products and price rises above 20% go to our catalogue team for a quick check. It usually clears within a few hours, and the product stays hidden from customers until then.' },
+  { topic: 'Catalogue', q: 'How do I pause a product for the day?', a: 'Open Catalogue, tap the product and turn off availability. It disappears from the storefront instantly and you can turn it back on any time.' },
+  { topic: 'Payouts', q: 'When do settlements reach my bank?', a: 'Delivered orders settle after the platform commission of 5% on the item total. Settled amounts are shown in Business & payouts against each order code.' },
+  { topic: 'Payouts', q: 'A payout looks wrong. What do I do?', a: 'Open Business & payouts, tap the order to read its statement, then raise an issue with that order code. Our finance team replies on your account.' },
+  { topic: 'Outlet', q: 'How do I pause my outlet temporarily?', a: 'Use the open / paused switch on Home. Pausing stops new orders immediately but never cancels orders you already confirmed.' },
+  { topic: 'Outlet', q: 'My map pin is in the wrong place.', a: 'Go to More, then Outlet map pin, tap Use my location while standing at the outlet, and save. Delivery partners navigate using this pin, so an accurate one means fewer pickup calls.' },
+  { topic: 'Account', q: 'Can my staff use their own login?', a: 'Yes. Add them under More, then Staff access. They can run the order board but cannot see payouts or edit KYC.' },
+  { topic: 'Account', q: 'How do I update my bank or KYC details?', a: 'Bank and KYC changes need a review. Raise an issue with what has changed and our team will unlock the relevant step for you.' },
+];
+
 const CHANNELS: { key: 'phone' | 'wa' | 'email'; icon: IconName; label: string; hint: string }[] = [
   { key: 'phone', icon: 'phone', label: 'Call us', hint: '9 AM – 11 PM' },
   { key: 'wa', icon: 'message', label: 'WhatsApp', hint: 'Fast replies' },
@@ -45,14 +60,16 @@ const CHANNELS: { key: 'phone' | 'wa' | 'email'; icon: IconName; label: string; 
 export function HelpScreen({ navigation }: Props): React.ReactElement {
   const { showModal } = useVendorModal();
   const { vendor } = useVendor();
+  const food = vendor?.module === 'food';
   const [term, setTerm] = useState('');
   const [open, setOpen] = useState<string | null>(null);
+  const FAQS = food ? FAQS_FOOD : FAQS_SHOP;
 
   const rows = useMemo(() => {
     const needle = term.trim().toLowerCase();
     if (needle.length < 2) return FAQS;
     return FAQS.filter((faq) => `${faq.q} ${faq.a} ${faq.topic}`.toLowerCase().includes(needle));
-  }, [term]);
+  }, [term, FAQS]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, Faq[]>();
@@ -77,7 +94,7 @@ export function HelpScreen({ navigation }: Props): React.ReactElement {
 
   return (
     <Screen title="Help centre" subtitle={`${rows.length} answer${rows.length === 1 ? '' : 's'} for outlet operations`} headerLeft={<BackButton onPress={() => navigation.goBack()} />}>
-      <Input value={term} onChangeText={setTerm} placeholder="Search: payout, prep time, pending item…" leftIcon="search" containerStyle={{ marginTop: 4 }} />
+      <Input value={term} onChangeText={setTerm} placeholder={food ? 'Search: payout, prep time, pending item…' : 'Search: payout, dispatch, pending product…'} leftIcon="search" containerStyle={{ marginTop: 4 }} />
 
       <View style={styles.channels}>
         {CHANNELS.map((channel) => (

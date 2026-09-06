@@ -17,7 +17,6 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.aurasure.vendor",
-      "deploymentTarget": "16.4",
       "infoPlist": {
         "UIBackgroundModes": [
           "remote-notification"
@@ -79,12 +78,6 @@
         }
       ]
     ],
-    "backgroundColor": "#F8F6F3",
-    "notification": {
-      "icon": "./assets/images/notification-icon.png",
-      "color": "#B5165F",
-      "androidMode": "default",
-      "iosDisplayInForeground": true
-    }
+    "backgroundColor": "#F8F6F3"
   }
 }

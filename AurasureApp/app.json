@@ -19,7 +19,6 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.aurasure.order",
-      "deploymentTarget": "16.4",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Aurasure uses your location to show nearby kitchens, stores and honest delivery times.",
         "ITSAppUsesNonExemptEncryption": false
@@ -34,10 +33,6 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "monochromeImage": "./assets/images/adaptive-icon-monochrome.png",
         "backgroundColor": "#67014B"
-      },
-      "notification": {
-        "icon": "./assets/images/notification-icon.png",
-        "color": "#67014B"
       },
       "permissions": [
         "ACCESS_FINE_LOCATION",

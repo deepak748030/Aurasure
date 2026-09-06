@@ -1,7 +1,7 @@
 {
   "cli": {
-    "version": ">= 5.9.0",
-    "appVersionSource": "remote"
+    "version": ">= 16.20.4",
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
@@ -17,19 +17,17 @@
       "ios": {
         "simulator": false
       },
-      "channel": "preview",
-      "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.aurasure.app"
-      }
+      "channel": "preview"
     },
     "production": {
-      "autoIncrement": true,
+      "distribution": "store",
+      "credentialsSource": "remote",
       "channel": "production",
+      "android": {
+        "buildType": "apk"
+      },
       "ios": {
         "resourceClass": "m-medium"
-      },
-      "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.aurasure.app"
       }
     }
   },

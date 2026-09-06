@@ -138,9 +138,9 @@ npm run build:ios          # eas build --platform ios --profile production
 
 - Takes ~15–25 minutes. You can close the terminal; progress is on expo.dev.
 - Produces a signed `.ipa`.
-- `"autoIncrement": true` bumps the build number for you, and
-  `"appVersionSource": "remote"` means EAS is the source of truth — do **not**
-  hand-edit `buildNumber` in `app.json`.
+- The repo now uses `"appVersionSource": "local"` in all three `eas.json`
+  files, so EAS reads `buildNumber` / `versionCode` from `app.json`. Bump
+  `buildNumber` yourself before each store release.
 
 ---
 

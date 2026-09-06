@@ -16,6 +16,8 @@
     "export:web": "expo export --platform web",
     "contract": "node scripts/api-contract-check.mjs",
     "probe": "node scripts/payload-probe.mjs",
+    "build:android": "eas build --platform android --profile production",
+    "build:android:preview": "eas build --platform android --profile preview",
     "build:ios": "eas build --platform ios --profile production",
     "build:ios:preview": "eas build --platform ios --profile preview",
     "submit:ios": "eas submit --platform ios --profile production --latest"

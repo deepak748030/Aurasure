@@ -17,7 +17,6 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.aurasure.rider",
-      "deploymentTarget": "16.4",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Aurasure Rider uses your location while you are online or completing a delivery to show routes and keep operations updated.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Aurasure Rider shares your location only during an online shift or active delivery so customers and operations can follow the delivery safely.",
@@ -89,12 +88,6 @@
         }
       ]
     ],
-    "backgroundColor": "#FFFFFF",
-    "notification": {
-      "icon": "./assets/images/notification-icon.png",
-      "color": "#67014B",
-      "androidMode": "default",
-      "iosDisplayInForeground": true
-    }
+    "backgroundColor": "#FFFFFF"
   }
 }

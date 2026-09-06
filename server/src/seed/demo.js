@@ -78,9 +78,9 @@ async function seedExtraCustomers() {
  * Second vendor: a shop, so the non-food vendor journey is testable
  * ------------------------------------------------------------------ */
 
-/** Shop vendor login: 7777777788 / vendor@123 — approved, with a live store. */
+/** Shop vendor login: 7777777771 / vendor@123 — approved, with a live store. */
 async function seedShopVendor() {
-  const phone = process.env.SEED_SHOP_VENDOR_PHONE || '7777777788';
+  const phone = process.env.SEED_SHOP_VENDOR_PHONE || '7777777771';
   const password = process.env.SEED_SHOP_VENDOR_PASSWORD || 'vendor@123';
 
   let user = await User.findOne({ phone });
@@ -227,6 +227,14 @@ async function seedShopVendorOrders(vendor, customers) {
     { code: 'AUR-VS-50004', status: 'delivered', placedAt: daysAgo(2), payBy: 'upi', items: [line('vp4', 'Aura Demo Smartphone 5G', 15999, 1)], address: '402, Aurora Heights, Civil Lines, Raipur 492001', deliveredAt: daysAgo(2), payoutCredited: true },
     { code: 'AUR-VS-50005', status: 'delivered', placedAt: daysAgo(5), payBy: 'cod', items: [line('vp5', 'Aura Demo Fast Charger 65W', 1299, 2)], address: '21, Pandri, Raipur 492004', deliveredAt: daysAgo(5), payoutCredited: true },
     { code: 'AUR-VS-50006', status: 'cancelled', placedAt: daysAgo(6), payBy: 'cod', items: [line('vp6', 'Aura Demo Power Bank 20000mAh', 1799, 1)], address: '3, Byron Bazar, Raipur 492001', cancelReason: 'Item out of stock at the store' },
+    // A second fresh ticket plus a `preparing` one so every board tab on the
+    // shop vendor has something to act on, exactly like the food vendor.
+    { code: 'AUR-VS-50007', status: 'placed', placedAt: minsAgo(2), payBy: 'cod', items: [line('vp5', 'Aura Demo Fast Charger 65W', 1299, 1), line('vp2', 'Aura Demo Wireless Earbuds', 1999, 1)], address: '77, Devendra Nagar, Raipur 492001', instructions: 'Gift wrap if possible.' },
+    { code: 'AUR-VS-50008', status: 'preparing', placedAt: minsAgo(55), payBy: 'upi', items: [line('vp1', 'Aura Demo ANC Headphones', 4999, 1)], address: '12, Amlidih, Raipur 492006' },
+    { code: 'AUR-VS-50009', status: 'preparing', placedAt: minsAgo(70), payBy: 'wallet', items: [line('vp3', 'Aura Demo Bluetooth Speaker', 2499, 2)], address: 'Flat 4C, VIP Road, Raipur 492001', instructions: 'Leave with security.' },
+    { code: 'AUR-VS-50010', status: 'out_for_delivery', placedAt: minsAgo(120), payBy: 'cod', items: [line('vp4', 'Aura Demo Smartphone 5G', 15999, 1), line('vp5', 'Aura Demo Fast Charger 65W', 1299, 1)], address: '5, Samta Colony, Raipur 492001' },
+    { code: 'AUR-VS-50011', status: 'delivered', placedAt: daysAgo(1), payBy: 'wallet', items: [line('vp2', 'Aura Demo Wireless Earbuds', 1999, 2)], address: '31, Kota, Raipur 492010', deliveredAt: daysAgo(1), payoutCredited: true },
+    { code: 'AUR-VS-50012', status: 'delivered', placedAt: daysAgo(8), payBy: 'upi', items: [line('vp3', 'Aura Demo Bluetooth Speaker', 2499, 1), line('vp6', 'Aura Demo Power Bank 20000mAh', 1799, 1)], address: '18, Mowa, Raipur 492001', deliveredAt: daysAgo(8), payoutCredited: true },
   ];
 
   let written = 0;

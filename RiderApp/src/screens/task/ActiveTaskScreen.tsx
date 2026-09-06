@@ -414,9 +414,10 @@ export function ActiveTaskScreen(): React.ReactElement {
                         style={{
                           marginTop: 6,
                           textAlign: "center",
-                          maxWidth: 64,
+                          minWidth: 55,
+                          maxWidth: 85,
+                          fontSize: 9,
                         }}
-                        numberOfLines={1}
                       >
                         {label}
                       </Text>

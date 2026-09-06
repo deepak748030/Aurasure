@@ -7,7 +7,6 @@
     "scheme": "aurasurevendor",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "entryPoint": "index.js",
     "icon": "./assets/images/icon.png",
     "splash": {
       "image": "./assets/images/splash-icon.png",
@@ -17,7 +16,6 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.aurasure.vendor",
-      "deploymentTarget": "16.4",
       "infoPlist": {
         "UIBackgroundModes": [
           "remote-notification"
@@ -33,7 +31,6 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#B5165F"
       },
-      "navigationBarColor": "#F8F6F3",
       "permissions": [
         "POST_NOTIFICATIONS",
         "VIBRATE",
@@ -79,12 +76,6 @@
         }
       ]
     ],
-    "backgroundColor": "#F8F6F3",
-    "notification": {
-      "icon": "./assets/images/notification-icon.png",
-      "color": "#B5165F",
-      "androidMode": "default",
-      "iosDisplayInForeground": true
-    }
+    "backgroundColor": "#F8F6F3"
   }
 }

@@ -32,6 +32,25 @@ npx expo run:ios
 
 The server must be running and MongoDB must be connected for authenticated screens. The server's rider endpoints are in `server/src/routes/rider.routes.js`; this app uses the server envelope and bearer-token session already used by the repository.
 
+## Android production APK (installable)
+
+```bash
+npm install
+cp .env.example .env                # set EXPO_PUBLIC_API_URL
+npm run build:android               # eas build --platform android --profile production
+```
+
+The `production` profile builds a signed **APK** (`android.buildType: apk`) that
+can be installed directly on an Android device, while still using `local`
+version codes from `app.json`.
+
+> EAS cloud builds do **not** upload your local `.env` file. If you build with
+> cloud `eas build` and you do not want the server URL inside `eas.json`, set
+> `EXPO_PUBLIC_API_URL` in Expo dashboard → Environment variables/secrets
+> instead.
+
+---
+
 ## In-app updates (Google Play)
 
 On every launch (Android release builds only) the app asks the Play Store whether a

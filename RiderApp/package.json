@@ -9,7 +9,10 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "doctor": "expo-doctor",
-    "export": "expo export --platform ios"
+    "export": "expo export --platform ios",
+    "build:ios": "eas build --platform ios --profile production",
+    "build:ios:preview": "eas build --platform ios --profile preview",
+    "submit:ios": "eas submit --platform ios --profile production --latest"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",

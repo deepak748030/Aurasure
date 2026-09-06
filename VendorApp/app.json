@@ -20,7 +20,9 @@
       "infoPlist": {
         "UIBackgroundModes": [
           "remote-notification"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "Aurasure Vendor uses your location only to drop your outlet's pickup pin on the map so delivery partners can find you."
       }
     },
     "android": {
@@ -51,6 +53,12 @@
           "imageWidth": 240,
           "resizeMode": "contain",
           "backgroundColor": "#FFFFFF"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Aurasure Vendor uses your location only to set your outlet's pickup pin."
         }
       ],
       [

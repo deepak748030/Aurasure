@@ -23,7 +23,9 @@
         "UIBackgroundModes": [
           "remote-notification",
           "location"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryUsageDescription": "Aurasure Rider needs your photo library to upload your profile photo, verification documents and proof of delivery."
       }
     },
     "android": {
@@ -76,6 +78,12 @@
           "color": "#67014B",
           "defaultChannel": "offers",
           "enableBackgroundRemoteNotifications": true
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Aurasure Rider to upload your profile photo, documents and proof of delivery."
         }
       ]
     ],

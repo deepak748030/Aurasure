@@ -15,7 +15,10 @@
     "seed": "npm --prefix ../server run seed",
     "export:web": "expo export --platform web",
     "contract": "node scripts/api-contract-check.mjs",
-    "probe": "node scripts/payload-probe.mjs"
+    "probe": "node scripts/payload-probe.mjs",
+    "build:ios": "eas build --platform ios --profile production",
+    "build:ios:preview": "eas build --platform ios --profile preview",
+    "submit:ios": "eas submit --platform ios --profile production --latest"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",

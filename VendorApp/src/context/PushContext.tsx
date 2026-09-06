@@ -3,7 +3,7 @@ import { AppState, Platform } from 'react-native';
 import { vendorApi } from '@/api/vendor';
 import { useVendor } from '@/context/VendorContext';
 import { haptic } from '@/lib/haptics';
-import { clearBadge, consumeInitialPush, registerForPush, subscribeToPush, type OrderPushData } from '@/lib/push';
+import { clearBadge, consumeInitialPush, ensurePushPermission, registerForPush, subscribeToPush, type OrderPushData, type PushPermission } from '@/lib/push';
 
 type OrderListener = (data: OrderPushData) => void;
 
@@ -19,6 +19,10 @@ interface Ctx {
   /** Order the vendor tapped a notification for; cleared once handled. */
   pendingOrderId: string | null;
   clearPendingOrder: () => void;
+  /** Latest notification permission state for this device. */
+  permission: PushPermission;
+  /** Re-runs the permission request (no-op once the OS has blocked it). */
+  requestPermission: () => Promise<PushPermission>;
 }
 
 const C = createContext<Ctx | null>(null);
@@ -27,6 +31,7 @@ export function PushProvider({ children }: { children: React.ReactNode }): React
   const { vendor } = useVendor();
   const [token, setToken] = useState<string | null>(null);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
+  const [permission, setPermission] = useState<PushPermission>('unsupported');
   const listeners = useRef(new Set<OrderListener>());
   // Tokens are re-sent only when the vendor or the token actually changes.
   const syncedFor = useRef<string>('');
@@ -42,7 +47,38 @@ export function PushProvider({ children }: { children: React.ReactNode }): React
     });
   }, []);
 
-  // Ask for permission once the vendor is signed in — never on the login screen.
+  // Ask on launch: a kitchen that misses the prompt misses every order.
+  useEffect(() => {
+    let alive = true;
+    void ensurePushPermission().then((state) => {
+      if (alive) setPermission(state);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const requestPermission = useCallback(async () => {
+    const state = await ensurePushPermission();
+    setPermission(state);
+    if (state === 'granted') {
+      const value = await registerForPush();
+      setToken(value);
+    }
+    return state;
+  }, []);
+
+  // Re-check whenever the app comes back — the vendor may have just flipped
+  // the switch in system settings.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
+      void ensurePushPermission().then(setPermission);
+    });
+    return () => sub.remove();
+  }, []);
+
+  // Mint the token once the vendor is signed in.
   useEffect(() => {
     if (!vendor) {
       setToken(null);
@@ -104,8 +140,8 @@ export function PushProvider({ children }: { children: React.ReactNode }): React
   const clearPendingOrder = useCallback(() => setPendingOrderId(null), []);
 
   const value = useMemo(
-    () => ({ token, onOrderEvent, pendingOrderId, clearPendingOrder }),
-    [token, onOrderEvent, pendingOrderId, clearPendingOrder],
+    () => ({ token, onOrderEvent, pendingOrderId, clearPendingOrder, permission, requestPermission }),
+    [token, onOrderEvent, pendingOrderId, clearPendingOrder, permission, requestPermission],
   );
   return <C.Provider value={value}>{children}</C.Provider>;
 }

@@ -71,6 +71,36 @@ function projectId(): string | undefined {
  * Asks for permission and resolves the Expo push token for this device.
  * @returns the `ExponentPushToken[...]` string, or `null` when unavailable.
  */
+export type PushPermission = 'granted' | 'denied' | 'blocked' | 'unsupported';
+
+/**
+ * Asks for notification permission on its own, without minting a token.
+ *
+ * Called once when the app opens so the vendor sees the system prompt up
+ * front instead of discovering later that their phone was silent.
+ *
+ * @returns `blocked` when the OS will not show the prompt again (the vendor
+ *   must go into system settings), `unsupported` on web / simulators.
+ */
+export async function ensurePushPermission(): Promise<PushPermission> {
+  if (Platform.OS === 'web' || !Device.isDevice) return 'unsupported';
+  try {
+    await ensureAndroidChannels();
+    const existing = await Notifications.getPermissionsAsync();
+    const isGranted = (value: Notifications.NotificationPermissionsStatus): boolean =>
+      value.granted || value.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL;
+    if (isGranted(existing)) return 'granted';
+    if (existing.canAskAgain === false) return 'blocked';
+    const asked = await Notifications.requestPermissionsAsync({
+      ios: { allowAlert: true, allowBadge: true, allowSound: true },
+    });
+    if (isGranted(asked)) return 'granted';
+    return asked.canAskAgain === false ? 'blocked' : 'denied';
+  } catch {
+    return 'unsupported';
+  }
+}
+
 export async function registerForPush(): Promise<string | null> {
   if (Platform.OS === 'web') return null;
   // Push tokens are not issued to simulators.

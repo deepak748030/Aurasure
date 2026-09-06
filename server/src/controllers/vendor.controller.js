@@ -138,7 +138,7 @@ const updateProfile = asyncHandler(async (req, res) => {
     }
     if (req.body.cover !== undefined) vendor.cover = req.body.cover;
   } else {
-    const live = ['description', 'minOrder', 'deliveryFee', 'deliveryMins', 'hours', 'cover', 'isVeg', 'priceForTwo'];
+    const live = ['description', 'minOrder', 'deliveryFee', 'deliveryMins', 'hours', 'cover', 'isVeg', 'priceForTwo', 'geo'];
     for (const key of live) {
       if (req.body[key] !== undefined) vendor[key] = req.body[key];
     }
@@ -556,6 +556,12 @@ const updateOutlet = asyncHandler(async (req, res) => {
     if (req.body.deliveryMins !== undefined) outletUpdate[vendor.module === 'food' ? 'deliveryTime' : 'deliveryMins'] = vendor.deliveryMins;
     for (const key of ['deliveryFee', 'minOrder', 'cover', 'isVeg', 'priceForTwo']) {
       if (req.body[key] !== undefined) outletUpdate[key] = vendor[key];
+    }
+    // The map pin lives on the storefront document too — without this the
+    // customer app and rider dispatch keep navigating to the old coordinates.
+    if (req.body.geo !== undefined) {
+      if (vendor.geo?.lat != null) outletUpdate.lat = vendor.geo.lat;
+      if (vendor.geo?.lng != null) outletUpdate.lng = vendor.geo.lng;
     }
     if (Object.keys(outletUpdate).length) await Model.updateOne({ id: vendor.outletId }, { $set: outletUpdate });
   }

@@ -17,12 +17,14 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.aurasure.order",
+      "deploymentTarget": "16.4",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Aurasure uses your location to show nearby kitchens, stores and honest delivery times."
       }
     },
     "android": {
       "package": "com.aurasure.order",
+      "versionCode": 1,
       "edgeToEdgeEnabled": true,
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {

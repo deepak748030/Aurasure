@@ -138,7 +138,7 @@ const updateProfile = asyncHandler(async (req, res) => {
     }
     if (req.body.cover !== undefined) vendor.cover = req.body.cover;
   } else {
-    const live = ['description', 'minOrder', 'deliveryFee', 'deliveryMins', 'hours', 'cover', 'isVeg', 'priceForTwo', 'geo'];
+    const live = ['description', 'minOrder', 'deliveryFee', 'deliveryMins', 'hours', 'cover', 'isVeg', 'priceForTwo', 'geo', 'address', 'landmark', 'city', 'pin'];
     for (const key of live) {
       if (req.body[key] !== undefined) vendor[key] = req.body[key];
     }
@@ -545,7 +545,9 @@ const updateOutlet = asyncHandler(async (req, res) => {
   const vendor = await loadVendor(req);
   requireApproved(vendor);
   if (vendor.outletId && req.params.id !== vendor.outletId) throw ApiError.forbidden('Outlet is outside your vendor scope', 'SCOPE_DENIED');
-  const allowed = ['hours', 'geo', 'deliveryMins', 'deliveryFee', 'minOrder', 'description', 'cover', 'isVeg', 'priceForTwo'];
+  // `address` / `landmark` / `city` / `pin` ride along with the map pin: moving
+  // the pin without updating the printed address leaves riders with stale text.
+  const allowed = ['hours', 'geo', 'deliveryMins', 'deliveryFee', 'minOrder', 'description', 'cover', 'isVeg', 'priceForTwo', 'address', 'landmark', 'city', 'pin'];
   for (const key of allowed) {
     if (req.body[key] !== undefined) vendor[key] = ['hours', 'geo'].includes(key) ? { ...(vendor[key]?.toObject?.() || vendor[key] || {}), ...req.body[key] } : req.body[key];
   }
@@ -563,6 +565,9 @@ const updateOutlet = asyncHandler(async (req, res) => {
       if (vendor.geo?.lat != null) outletUpdate.lat = vendor.geo.lat;
       if (vendor.geo?.lng != null) outletUpdate.lng = vendor.geo.lng;
     }
+    if (req.body.address !== undefined) outletUpdate[vendor.module === 'food' ? 'line' : 'road'] = vendor.address;
+    if (req.body.city !== undefined) outletUpdate.city = vendor.city;
+    if (req.body.pin !== undefined && vendor.module !== 'food') outletUpdate.pin = vendor.pin;
     if (Object.keys(outletUpdate).length) await Model.updateOne({ id: vendor.outletId }, { $set: outletUpdate });
   }
   return ok(res, { outlet: { id: vendor.outletId, name: vendor.outletName, hours: vendor.hours, geo: vendor.geo, isOpen: vendor.isOpen }, vendor });

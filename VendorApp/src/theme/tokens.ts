@@ -37,6 +37,6 @@ export type TypographyVariant = keyof typeof typography;
 
 export const layout = {
   screenMaxWidth: 560,
-  contentHorizontalPadding: 18,
+  contentHorizontalPadding: 4,
   headerHeight: 56,
 };

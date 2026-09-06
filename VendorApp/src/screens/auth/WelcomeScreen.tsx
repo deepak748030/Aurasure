@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
   logo: { width: 122, height: 32, alignSelf: 'flex-start' },
   heroPills: { flexDirection: 'row', gap: 8, marginTop: 24 },
   pill: { borderRadius: radius.pill, backgroundColor: 'rgba(255,255,255,0.13)', paddingHorizontal: 10, paddingVertical: 7, flexDirection: 'row', alignItems: 'center', gap: 5 },
-  content: { paddingHorizontal: 20, paddingTop: 26, paddingBottom: 28 },
+  content: { paddingHorizontal: 4, paddingTop: 26, paddingBottom: 28 },
   feature: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginTop: 18 },
   featureIcon: { width: 44, height: 44, borderRadius: 14, backgroundColor: colors.brand[50], alignItems: 'center', justifyContent: 'center' },
   actions: { marginTop: 30 },

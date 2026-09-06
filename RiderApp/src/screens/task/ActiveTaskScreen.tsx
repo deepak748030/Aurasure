@@ -362,77 +362,63 @@ export function ActiveTaskScreen(): React.ReactElement {
                 </Text>
               </View>
               <View style={styles.stepProgress}>
-                {FLOW.map((stateName, idx) => {
-                  const completed = step > idx;
-                  const current = step === idx;
-                  const future = step < idx;
-                  const label =
-                    idx === 0
-                      ? "To pickup"
-                      : idx === 1
-                        ? "Pickup"
-                        : idx === 2
-                          ? "To drop"
-                          : "Deliver";
-                  return (
-                    <View key={stateName} style={styles.stepItem}>
-                      <View style={styles.stepRow}>
+                <View style={styles.stepRowSimple}>
+                  {[0, 1, 2, 3].map((idx) => {
+                    const completed = step > idx;
+                    const current = step === idx;
+                    return (
+                      <View key={idx} style={styles.stepSegment}>
                         <View
                           style={[
-                            styles.stepDot,
-                            completed || current
+                            styles.stepCircle,
+                            completed
                               ? { backgroundColor: colors.success }
-                              : { backgroundColor: colors.textTertiary },
-                            current
-                              ? {
-                                  width: 20,
-                                  height: 20,
-                                  borderColor: colors.success,
-                                  borderWidth: 2,
-                                }
-                              : {},
+                              : current
+                                ? { backgroundColor: colors.brand[600] }
+                                : { backgroundColor: colors.border },
                           ]}
                         >
                           {completed ? (
-                            <Icon name="check" size={10} color={colors.white} />
-                          ) : null}
+                            <Icon name="check" size={12} color={colors.white} />
+                          ) : (
+                            <Text
+                              variant="caption"
+                              weight="bold"
+                              color={
+                                current ? colors.white : colors.textTertiary
+                              }
+                            >
+                              {idx + 1}
+                            </Text>
+                          )}
                         </View>
-                        {idx < FLOW.length - 1 ? (
-                          <View
-                            style={[
-                              styles.stepLine,
-                              completed
-                                ? { backgroundColor: colors.success }
-                                : { backgroundColor: colors.border },
-                            ]}
-                          />
-                        ) : null}
+                        <Text
+                          variant="caption"
+                          weight={current || completed ? "bold" : "semibold"}
+                          color={
+                            current || completed
+                              ? colors.success
+                              : colors.textSecondary
+                          }
+                          style={{ marginTop: 6, textAlign: "center" }}
+                          numberOfLines={1}
+                        >
+                          {idx === 0
+                            ? "Pickup"
+                            : idx === 1
+                              ? "Confirm"
+                              : idx === 2
+                                ? "Drop"
+                                : "Done"}
+                        </Text>
                       </View>
-                      <Text
-                        variant="caption"
-                        weight={current ? "bold" : "semibold"}
-                        color={
-                          completed || current
-                            ? colors.success
-                            : colors.textTertiary
-                        }
-                        style={{
-                          marginTop: 6,
-                          textAlign: "center",
-                          minWidth: 55,
-                          maxWidth: 85,
-                          fontSize: 9,
-                        }}
-                      >
-                        {label}
-                      </Text>
-                    </View>
-                  );
-                })}
+                    );
+                  })}
+                </View>
               </View>
               <View style={styles.progressTop}>
                 <Text variant="caption" weight="bold" color={colors.success}>
-                  {step + 1} of 4 completed
+                  Step {step + 1} of 4
                 </Text>
               </View>
             </Card>
@@ -702,35 +688,29 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 9,
   },
-  stepProgress: {
+  stepRowSimple: {
     flexDirection: "row",
-    alignItems: "flex-start",
     justifyContent: "space-between",
-    marginBottom: 10,
+    alignItems: "flex-start",
+    marginBottom: 6,
   },
-  stepItem: {
+  stepSegment: {
     flex: 1,
     alignItems: "center",
     gap: 4,
   },
-  stepRow: {
-    flexDirection: "row",
+  stepCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    width: "100%",
+    borderWidth: 2,
+    borderColor: colors.border,
   },
-  stepDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 2,
-  },
-  stepLine: {
-    height: 3,
-    width: 36,
-    borderRadius: 2,
+  stepProgress: {
+    marginBottom: 10,
+    paddingVertical: 4,
   },
   progressLabels: {
     flexDirection: "row",

@@ -11,7 +11,7 @@ const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { ok, created, paginate, listMeta } = require('../utils/response');
 const { newId } = require('../utils/id');
-const { docsComplete, profileComplete, emptyDocs } = require('../utils/vendorDocs');
+const { docsComplete, profileComplete, emptyDocs, missingProfileFields, missingDocumentLabels } = require('../utils/vendorDocs');
 const { describeUpload } = require('./upload.controller');
 const { applyOrderCancellation } = require('./order.controller');
 const { createDeliveryTaskForOrder } = require('../utils/delivery');
@@ -138,7 +138,7 @@ const updateProfile = asyncHandler(async (req, res) => {
     }
     if (req.body.cover !== undefined) vendor.cover = req.body.cover;
   } else {
-    const live = ['description', 'minOrder', 'deliveryFee', 'deliveryMins', 'hours', 'cover', 'isVeg', 'priceForTwo'];
+    const live = ['description', 'minOrder', 'deliveryFee', 'deliveryMins', 'hours', 'cover', 'isVeg', 'priceForTwo', 'geo', 'address', 'landmark', 'city', 'pin'];
     for (const key of live) {
       if (req.body[key] !== undefined) vendor[key] = req.body[key];
     }
@@ -172,11 +172,20 @@ const submit = asyncHandler(async (req, res) => {
   const vendor = await loadVendor(req);
   if (vendor.status === 'approved') return ok(res, { vendor });
   if (vendor.status === 'suspended') throw ApiError.forbidden('Account suspended', 'SUSPENDED');
-  if (!profileComplete(vendor)) {
-    throw ApiError.badRequest('Fill outlet, KYC and bank details before submitting', 'PROFILE_INCOMPLETE');
+  // `ownerName` has no field on the onboarding form — it is captured at
+  // registration. Backfill it from the account name so a legacy or partially
+  // seeded vendor is not permanently blocked from submitting.
+  if (!String(vendor.ownerName || '').trim() && String(vendor.name || '').trim()) {
+    vendor.ownerName = vendor.name;
   }
-  if (!docsComplete(vendor)) {
-    throw ApiError.badRequest('Upload every required document before submitting', 'DOCS_INCOMPLETE');
+
+  const missingFields = missingProfileFields(vendor);
+  if (missingFields.length) {
+    throw ApiError.badRequest(`Still needed: ${missingFields.join(', ')}`, 'PROFILE_INCOMPLETE');
+  }
+  const missingDocs = missingDocumentLabels(vendor);
+  if (missingDocs.length) {
+    throw ApiError.badRequest(`Upload these documents first: ${missingDocs.join(', ')}`, 'DOCS_INCOMPLETE');
   }
   vendor.status = 'submitted';
   vendor.submittedAt = new Date();
@@ -536,7 +545,9 @@ const updateOutlet = asyncHandler(async (req, res) => {
   const vendor = await loadVendor(req);
   requireApproved(vendor);
   if (vendor.outletId && req.params.id !== vendor.outletId) throw ApiError.forbidden('Outlet is outside your vendor scope', 'SCOPE_DENIED');
-  const allowed = ['hours', 'geo', 'deliveryMins', 'deliveryFee', 'minOrder', 'description', 'cover', 'isVeg', 'priceForTwo'];
+  // `address` / `landmark` / `city` / `pin` ride along with the map pin: moving
+  // the pin without updating the printed address leaves riders with stale text.
+  const allowed = ['hours', 'geo', 'deliveryMins', 'deliveryFee', 'minOrder', 'description', 'cover', 'isVeg', 'priceForTwo', 'address', 'landmark', 'city', 'pin'];
   for (const key of allowed) {
     if (req.body[key] !== undefined) vendor[key] = ['hours', 'geo'].includes(key) ? { ...(vendor[key]?.toObject?.() || vendor[key] || {}), ...req.body[key] } : req.body[key];
   }
@@ -548,6 +559,15 @@ const updateOutlet = asyncHandler(async (req, res) => {
     for (const key of ['deliveryFee', 'minOrder', 'cover', 'isVeg', 'priceForTwo']) {
       if (req.body[key] !== undefined) outletUpdate[key] = vendor[key];
     }
+    // The map pin lives on the storefront document too — without this the
+    // customer app and rider dispatch keep navigating to the old coordinates.
+    if (req.body.geo !== undefined) {
+      if (vendor.geo?.lat != null) outletUpdate.lat = vendor.geo.lat;
+      if (vendor.geo?.lng != null) outletUpdate.lng = vendor.geo.lng;
+    }
+    if (req.body.address !== undefined) outletUpdate[vendor.module === 'food' ? 'line' : 'road'] = vendor.address;
+    if (req.body.city !== undefined) outletUpdate.city = vendor.city;
+    if (req.body.pin !== undefined && vendor.module !== 'food') outletUpdate.pin = vendor.pin;
     if (Object.keys(outletUpdate).length) await Model.updateOne({ id: vendor.outletId }, { $set: outletUpdate });
   }
   return ok(res, { outlet: { id: vendor.outletId, name: vendor.outletName, hours: vendor.hours, geo: vendor.geo, isOpen: vendor.isOpen }, vendor });

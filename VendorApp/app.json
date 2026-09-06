@@ -17,7 +17,14 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.aurasure.vendor",
-      "deploymentTarget": "16.4"
+      "deploymentTarget": "16.4",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "remote-notification"
+        ],
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "Aurasure Vendor uses your location only to drop your outlet's pickup pin on the map so delivery partners can find you."
+      }
     },
     "android": {
       "package": "com.aurasure.vendor",
@@ -26,13 +33,20 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#B5165F"
       },
-      "navigationBarColor": "#F8F6F3"
+      "navigationBarColor": "#F8F6F3",
+      "permissions": [
+        "POST_NOTIFICATIONS",
+        "VIBRATE",
+        "WAKE_LOCK"
+      ]
     },
     "web": {
       "bundler": "metro",
       "favicon": "./assets/images/favicon.png"
     },
-    "experiments": { "tsconfigPaths": true },
+    "experiments": {
+      "tsconfigPaths": true
+    },
     "plugins": [
       [
         "expo-splash-screen",
@@ -44,12 +58,33 @@
         }
       ],
       [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Aurasure Vendor uses your location only to set your outlet's pickup pin."
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "Allow Aurasure Vendor to add outlet and menu photos."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#B5165F",
+          "defaultChannel": "orders",
+          "enableBackgroundRemoteNotifications": true
+        }
       ]
     ],
-    "backgroundColor": "#F8F6F3"
+    "backgroundColor": "#F8F6F3",
+    "notification": {
+      "icon": "./assets/images/notification-icon.png",
+      "color": "#B5165F",
+      "androidMode": "default",
+      "iosDisplayInForeground": true
+    }
   }
 }

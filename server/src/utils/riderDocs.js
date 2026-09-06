@@ -61,28 +61,40 @@ function docsComplete(rider) {
   return REQUIRED.every((d) => documentState(rider, d.key) !== 'missing');
 }
 
+/**
+ * Which required profile fields are still empty, as human labels, so the
+ * submit endpoint can say exactly what is blocking instead of a vague
+ * "fill personal, vehicle and bank details".
+ */
+function missingProfileFields(rider) {
+  const missing = [];
+  if (!rider) return ['Profile'];
+  const has = (value) => String(value ?? '').trim().length > 0;
+  if (!has(rider.name)) missing.push('Full name');
+  if (!has(rider.phone)) missing.push('Phone number');
+  if (!has(rider.city)) missing.push('City');
+  if (!/^\d{6}$/.test(String(rider.pincode ?? ''))) missing.push('6-digit PIN code');
+  if (!has(rider.address)) missing.push('Home address');
+  if (!has(rider.vehicleType)) missing.push('Vehicle type');
+  if (!has(rider.vehicleNumber)) missing.push('Registration number');
+  if (!has(rider.pan)) missing.push('PAN');
+  if (!has(rider.aadhaar)) missing.push('Aadhaar');
+  if (!has(rider.drivingLicense)) missing.push('Driving licence');
+  if (!has(rider.rcNumber)) missing.push('RC number');
+  if (!has(rider.bank?.accountName)) missing.push('Bank account holder');
+  if (!has(rider.bank?.accountNumber)) missing.push('Bank account number');
+  if (!has(rider.bank?.ifsc)) missing.push('IFSC');
+  if (!has(rider.bank?.bankName)) missing.push('Bank name');
+  return missing;
+}
+
 function profileComplete(rider) {
-  if (!rider || !rider.name || !rider.phone) return false;
-  if (!rider.city || !rider.pincode || !/^\d{6}$/.test(String(rider.pincode))) return false;
-  if (!rider.address) return false;
-  if (
-    !rider.vehicleType ||
-    !rider.vehicleNumber ||
-    !rider.pan ||
-    !rider.aadhaar ||
-    !rider.drivingLicense ||
-    !rider.rcNumber
-  ) return false;
-  if (
-    !rider.bank ||
-    !rider.bank.accountName ||
-    !rider.bank.accountNumber ||
-    !rider.bank.ifsc ||
-    !rider.bank.bankName
-  ) {
-    return false;
-  }
-  return true;
+  return missingProfileFields(rider).length === 0;
+}
+
+/** Labels of required document slots with no upload yet. */
+function missingDocumentLabels(rider) {
+  return REQUIRED.filter((d) => documentState(rider, d.key) === 'missing').map((d) => d.label);
 }
 
 function onboardingProgress(rider) {
@@ -117,6 +129,8 @@ module.exports = {
   docsComplete,
   allDocsVerified,
   missingDocuments,
+  missingDocumentLabels,
+  missingProfileFields,
   profileComplete,
   onboardingProgress,
 };

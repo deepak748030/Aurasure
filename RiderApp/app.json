@@ -20,7 +20,13 @@
       "deploymentTarget": "16.4",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Aurasure Rider uses your location while you are online or completing a delivery to show routes and keep operations updated.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "Aurasure Rider shares your location only during an online shift or active delivery so customers and operations can follow the delivery safely."
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Aurasure Rider shares your location only during an online shift or active delivery so customers and operations can follow the delivery safely.",
+        "UIBackgroundModes": [
+          "remote-notification",
+          "location"
+        ],
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryUsageDescription": "Aurasure Rider needs your photo library to upload your profile photo, verification documents and proof of delivery."
       }
     },
     "android": {
@@ -31,13 +37,24 @@
         "backgroundColor": "#67014B"
       },
       "navigationBarColor": "#FFFFFF",
-      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION", "ACCESS_BACKGROUND_LOCATION", "FOREGROUND_SERVICE", "FOREGROUND_SERVICE_LOCATION"]
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION",
+        "POST_NOTIFICATIONS",
+        "VIBRATE",
+        "WAKE_LOCK"
+      ]
     },
     "web": {
       "bundler": "metro",
       "favicon": "./assets/images/favicon.png"
     },
-    "experiments": { "tsconfigPaths": true },
+    "experiments": {
+      "tsconfigPaths": true
+    },
     "plugins": [
       [
         "expo-splash-screen",
@@ -55,8 +72,29 @@
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#67014B",
+          "defaultChannel": "offers",
+          "enableBackgroundRemoteNotifications": true
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Aurasure Rider to upload your profile photo, documents and proof of delivery."
+        }
       ]
     ],
-    "backgroundColor": "#FFFFFF"
+    "backgroundColor": "#FFFFFF",
+    "notification": {
+      "icon": "./assets/images/notification-icon.png",
+      "color": "#67014B",
+      "androidMode": "default",
+      "iosDisplayInForeground": true
+    }
   }
 }

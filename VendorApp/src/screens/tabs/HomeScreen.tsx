@@ -10,6 +10,7 @@ import { Badge, Card, IconButton, SectionTitle } from '@/components/ui/VendorUI'
 import { Icon } from '@/lib/icons';
 import { useVendor } from '@/context/VendorContext';
 import { vendorApi, type DashboardStats, type VendorOrder } from '@/api/vendor';
+import { usePush } from '@/context/PushContext';
 import { colors } from '@/theme/colors';
 import { spacing, radius } from '@/theme/tokens';
 import { haptic } from '@/lib/haptics';
@@ -23,11 +24,14 @@ function Stat({ icon, label, value, accent }: { icon: 'orders' | 'rupee' | 'time
 function LiveRow({ order, onPress }: { order: VendorOrder; onPress: () => void }): React.ReactElement { const color = order.status === 'placed' ? colors.info : order.status === 'preparing' ? colors.warning : colors.brand[600]; return <Pressable onPress={onPress} style={({ pressed }) => [styles.liveRow, pressed && { opacity: .7 }]}><View style={[styles.liveNumber, { backgroundColor: `${color}16` }]}><Text variant="caption" weight="bold" color={color}>#{order.code.slice(-3)}</Text></View><View style={{ flex: 1 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Text variant="title" weight="bold">{order.code}</Text><Badge label={order.status === 'placed' ? 'NEW' : order.status.replace('_', ' ').toUpperCase()} color={color} background={`${color}16`} /></View><Text variant="caption" color={colors.textSecondary} numberOfLines={1} style={{ marginTop: 3 }}>{order.items.map((item) => `${item.qty}× ${item.name}`).join(' · ')}</Text></View><View style={{ alignItems: 'flex-end' }}><Text variant="title" weight="bold">{money(order.total)}</Text><Icon name="chevronRight" size={18} color={colors.textTertiary} /></View></Pressable>; }
 
 export function HomeScreen(): React.ReactElement {
+  const { onOrderEvent } = usePush();
   const { showModal } = useVendorModal();
   const { vendor, setVendor } = useVendor(); const tabs = useNavigation<TabNav>(); const root = useNavigation<RootNav>();
   const [stats, setStats] = useState(EMPTY); const [live, setLive] = useState<VendorOrder[]>([]); const [refreshing, setRefreshing] = useState(false); const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [lastSync, setLastSync] = useState<Date | null>(null);
   const load = useCallback(async () => { try { const data = await vendorApi.dashboard(); setVendor(data.vendor); setStats(data.stats); setLive(data.live ?? []); setError(''); setLastSync(new Date()); } catch (e) { setError(e instanceof Error ? e.message : 'Showing your last synced data'); } }, [setVendor]);
   useEffect(() => { void load(); const timer = setInterval(() => void load(), 15000); return () => clearInterval(timer); }, [load]);
+  // Refresh the dashboard immediately on any order push instead of waiting 15s.
+  useEffect(() => onOrderEvent(() => { void load(); }), [onOrderEvent, load]);
   const refresh = () => { setRefreshing(true); void load().finally(() => setRefreshing(false)); };
   const setOpen = async (open: boolean) => { setBusy(true); try { const data = await vendorApi.setOpen(open); setVendor(data.vendor); haptic.success(); } catch (e) { showModal({ title: 'Could not update outlet', message: e instanceof Error ? e.message : 'Try again' }); haptic.error(); } finally { setBusy(false); } };
   const pause = () => showModal({ title: 'Pause new orders', message: 'Live orders will continue. How long should new orders stay paused?', actions: [{ label: '15 minutes', onPress: () => void doPause(15) }, { label: '30 minutes', onPress: () => void doPause(30) }, { label: '60 minutes', onPress: () => void doPause(60) }, { label: 'Cancel', secondary: true }] });

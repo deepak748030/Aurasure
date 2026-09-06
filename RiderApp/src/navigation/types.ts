@@ -11,6 +11,7 @@ export type UtilityKind =
   | "settings";
 
 export type RootStackParamList = {
+  Intro: undefined;
   Welcome: undefined;
   Login: undefined;
   Register: undefined;

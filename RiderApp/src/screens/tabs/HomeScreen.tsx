@@ -31,6 +31,7 @@ import {
   RoutePoint,
 } from "@/components/ui/RiderUI";
 import { riderApi, type DeliveryTask, type OfferResponse } from "@/api/rider";
+import { usePush } from "@/context/PushContext";
 import { useRider } from "@/context/RiderContext";
 import { colors } from "@/theme/colors";
 import { formatINR } from "@/lib/format";
@@ -248,6 +249,7 @@ export function HomeScreen(): React.ReactElement {
   const { rider, setRider, refresh } = useRider();
   const navigation = useNavigation<Nav>();
   const focused = useIsFocused();
+  const { onTaskEvent } = usePush();
   const [data, setData] = useState<OfferResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [dutyBusy, setDutyBusy] = useState(false);
@@ -277,6 +279,10 @@ export function HomeScreen(): React.ReactElement {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [focused, pull]);
+
+  // An offer is only open for ~30s, so a push refreshes the feed immediately
+  // rather than waiting up to 15s for the next poll.
+  useEffect(() => onTaskEvent(() => void pull(true)), [onTaskEvent, pull]);
 
   const getLocationPoint = async () => {
     const Location = await import("expo-location");

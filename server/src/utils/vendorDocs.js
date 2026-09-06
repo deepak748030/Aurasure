@@ -43,20 +43,57 @@ function allDocsVerified(vendor) {
   return needed.every((slot) => byKey.get(slot.key)?.verified === true);
 }
 
-function profileComplete(vendor) {
-  const base =
-    vendor.ownerName &&
-    vendor.outletName &&
-    vendor.address &&
-    vendor.city &&
-    vendor.pin &&
-    vendor.pan &&
-    vendor.bank?.accountNumber &&
-    vendor.bank?.ifsc &&
-    vendor.bank?.accountName;
-  if (!base) return false;
-  if (vendor.module === 'food') return Boolean(vendor.fssai);
-  return Boolean(vendor.gstin || vendor.tradeLicense);
+const has = (value) => String(value ?? '').trim().length > 0;
+
+/**
+ * Which required profile fields are still empty.
+ *
+ * Returned as labels so `submit` can tell the vendor exactly what to fix
+ * instead of a blanket "fill outlet, KYC and bank details", which left them
+ * tapping a button that silently did nothing.
+ */
+function missingProfileFields(vendor) {
+  const missing = [];
+  // `ownerName` is set at registration and has no field on the onboarding
+  // form, so fall back to the account name rather than blocking submission.
+  if (!has(vendor.ownerName) && !has(vendor.name)) missing.push('Owner name');
+  if (!has(vendor.outletName)) missing.push('Outlet name');
+  if (!has(vendor.address)) missing.push('Street address');
+  if (!has(vendor.city)) missing.push('City');
+  if (!has(vendor.pin)) missing.push('PIN code');
+  if (!has(vendor.pan)) missing.push('PAN');
+  if (!has(vendor.bank?.accountName)) missing.push('Bank account holder');
+  if (!has(vendor.bank?.accountNumber)) missing.push('Bank account number');
+  if (!has(vendor.bank?.ifsc)) missing.push('IFSC');
+  if (vendor.module === 'food') {
+    if (!has(vendor.fssai)) missing.push('FSSAI license number');
+  } else if (!has(vendor.gstin) && !has(vendor.tradeLicense)) {
+    missing.push('GSTIN or trade license');
+  }
+  return missing;
 }
 
-module.exports = { requiredDocuments, emptyDocs, docsComplete, allDocsVerified, profileComplete };
+function profileComplete(vendor) {
+  return missingProfileFields(vendor).length === 0;
+}
+
+/** Labels of the required document slots that have no upload yet. */
+function missingDocumentLabels(vendor) {
+  const byKey = new Map((vendor.documents || []).map((d) => [d.key, d]));
+  return requiredDocuments(vendor.module)
+    .filter((slot) => {
+      const doc = byKey.get(slot.key);
+      return !doc || String(doc.uri || '').trim().length <= 8;
+    })
+    .map((slot) => slot.label);
+}
+
+module.exports = {
+  requiredDocuments,
+  emptyDocs,
+  docsComplete,
+  allDocsVerified,
+  profileComplete,
+  missingProfileFields,
+  missingDocumentLabels,
+};

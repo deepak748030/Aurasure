@@ -94,6 +94,7 @@ const registry = {
   sort: ['sort', 'sort'],
   sliders: ['tune-variant', 'tune-variant'],
   refresh: ['refresh', 'refresh'],
+  download: ['download', 'download-outline'],
   trash: ['trash-can-outline', 'trash-can'],
   edit: ['pencil-outline', 'pencil'],
   copy: ['content-copy', 'content-copy'],

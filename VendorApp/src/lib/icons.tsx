@@ -71,6 +71,7 @@ const registry = {
   trash: ['trash-can', 'trash-can-outline'],
   edit: ['pencil', 'pencil-outline'],
   refresh: ['refresh', 'refresh'],
+  download: ['download', 'download-outline'],
   frown: ['emoticon-sad', 'emoticon-sad-outline'],
   bag: ['bag-personal', 'bag-personal-outline'],
   coffee: ['coffee', 'coffee-outline'],

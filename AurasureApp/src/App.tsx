@@ -7,6 +7,7 @@ import { SheetProvider } from '@/components/sheet/SheetProvider';
 import { SessionProvider } from '@/context/SessionContext';
 import { CartProvider } from '@/context/CartContext';
 import { RootNavigator } from '@/navigation/RootNavigator';
+import { InAppUpdateGate } from '@/components/InAppUpdateGate';
 
 /**
  * Provider order matters:
@@ -23,6 +24,8 @@ function Shell(): React.ReactElement {
       {/* Status bar follows the resolved palette so the notch area never flashes white in dark mode. */}
       <StatusBar style={resolved === 'dark' ? 'light' : 'dark'} translucent backgroundColor="transparent" />
       <RootNavigator />
+      {/* Play Store in-app update gate — checks on launch and prompts inside the app. */}
+      <InAppUpdateGate />
     </>
   );
 }

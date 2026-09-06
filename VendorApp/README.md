@@ -33,3 +33,33 @@ Demo seed:
 - password `vendor@123`
 - module `food`
 - status `submitted` (approve the vendor and verify each document in Admin → Vendors KYC before opening the live board)
+
+## In-app updates (Google Play)
+
+On every launch (Android release builds only) the app asks the Play Store whether a
+newer build was published. If yes, it shows **its own in-app prompt**
+(`Update now` / `Later`) and the new build downloads and installs **inside the
+app** — the vendor never leaves for the Play Store.
+
+- Backed by `expo-in-app-updates` (official Google Play Core `app-update` API).
+- Update type follows the Play Console **priority**: `4`+ → full-screen
+  immediate flow; below `4` → flexible (background download + restart prompt).
+- `Later` is remembered per published `versionCode`, so the prompt appears once
+  per release rather than on every open.
+- Works for Play-Store-installed builds (including internal/closed testing
+  tracks, or closed-track production releases). It cannot work in Expo Go or
+  `adb`-installed debug builds — set `EXPO_PUBLIC_IN_APP_UPDATE_DEBUG=1` to force
+  the check in a debug build installed from Play. iOS has no in-app update API
+  (Apple), so the gate only runs on Android.
+
+### Release checklist
+
+1. Bump `android.versionCode` in `app.json` **and** the Expo `version` on every
+   Play release. Play compares `versionCode`, so no update ever appears unless
+   the uploaded AAB has a higher value.
+2. For an urgent/forced update, set the release **priority to 4 or higher** in
+   the Play Console (`Production → release → In-app updates priority`).
+3. Upload the new AAB with the same package (`com.aurasure.vendor`) and the same
+   signing keystore as the previous build.
+4. Test on the internal testing track: install release N from Play, upload
+   N+1, reopen the app — the in-app update prompt should appear.

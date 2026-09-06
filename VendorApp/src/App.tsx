@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import { AppNavigator } from './navigation/AppNavigator';
 import { VendorProvider } from './context/VendorContext';
+import { InAppUpdateGate } from './components/InAppUpdateGate';
 import { SystemBarHost } from './components/ui/SystemBarHost';
 import { VendorModalProvider } from './components/ui/VendorModal';
 import { loadAppFonts } from './lib/fonts';
@@ -26,6 +27,8 @@ export default function App(): React.ReactElement {
             <View style={{ flex: 1, backgroundColor: colors.background }}>
               <SystemBarHost />
               <AppNavigator />
+              {/* Play Store in-app update gate — checks on launch and prompts inside the app. */}
+              <InAppUpdateGate />
             </View>
           </VendorModalProvider>
         </VendorProvider>

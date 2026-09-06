@@ -233,23 +233,37 @@ async function seedDemoVendor() {
   } else if (user.role !== 'vendor') {
     return null;
   }
-  const existing = await Vendor.findOne({ phone });
-  if (existing) return existing;
-
   const docs = emptyVendorDocs('food').map((doc) => ({
     key: doc.key,
     label: doc.label,
     uri: `https://picsum.photos/seed/aur-${doc.key}/640/640`,
-    verified: false,
+    verified: true,
     note: '',
   }));
+
+  const existing = await Vendor.findOne({ phone });
+  if (existing) {
+    // Older seeds left the demo vendor stuck on `submitted`, so the vendor app
+    // could only ever show the pending screen. Promote it so orders, menu,
+    // business and staff are all reachable for the demo login.
+    if (existing.status !== 'approved') {
+      existing.status = 'approved';
+      existing.documents = docs;
+      existing.isOpen = true;
+      existing.acceptingOrders = true;
+      existing.reviewedAt = new Date();
+      existing.reviewedBy = 'seeder';
+      await existing.save();
+    }
+    return existing;
+  }
 
   return Vendor.create({
     id: newId('vnd'),
     userId: user.id,
     phone,
     module: 'food',
-    status: 'submitted',
+    status: 'approved',
     ownerName: user.name,
     email: 'demo.kitchen@example.com',
     outletName: 'Aura Demo Kitchen',
@@ -280,7 +294,177 @@ async function seedDemoVendor() {
     cover: { kind: 'uri', uri: 'https://picsum.photos/seed/aur-vendor/800/560' },
     documents: docs,
     submittedAt: new Date(),
+    reviewedAt: new Date(),
+    reviewedBy: 'seeder',
+    isOpen: true,
+    acceptingOrders: true,
+    payoutBalance: 4820,
   });
+}
+
+/**
+ * Gives the demo vendor a real storefront + menu so the Vendor app's Menu tab,
+ * catalogue editing and item toggles all operate on live rows.
+ */
+async function seedDemoVendorOutlet(vendor) {
+  if (!vendor) return null;
+  let outletId = vendor.outletId;
+  if (!outletId) {
+    const existing = await Restaurant.findOne({ vendorId: vendor.id });
+    outletId = existing ? existing.id : newId('rst');
+  }
+  await Restaurant.updateOne(
+    { id: outletId },
+    {
+      $set: {
+        id: outletId,
+        name: vendor.outletName,
+        cuisines: vendor.cuisines,
+        deliveryTime: vendor.deliveryMins || 30,
+        deliveryFee: vendor.deliveryFee || 25,
+        minOrder: vendor.minOrder || 150,
+        priceForTwo: vendor.priceForTwo || 500,
+        isVeg: false,
+        isClosed: false,
+        isNewlyJoined: true,
+        rating: 4.5,
+        reviews: 212,
+        line: vendor.address,
+        city: vendor.city || 'Raipur',
+        lat: 21.2514,
+        lng: 81.6296,
+        cover: vendor.cover,
+        tags: vendor.cuisines,
+        categoryIds: vendor.categoryIds,
+        vendorId: vendor.id,
+      },
+    },
+    { upsert: true },
+  );
+  if (vendor.outletId !== outletId) {
+    vendor.outletId = outletId;
+    await vendor.save();
+  }
+
+  const menu = [
+    { id: 'vf1', name: 'Demo Kitchen Butter Chicken', description: 'Tomato cashew gravy, tandoor chicken, cream', price: 349, mrp: 420, prepTime: 24, isVeg: false, isBestseller: true, categoryIds: ['cat_biryani'] },
+    { id: 'vf2', name: 'Demo Kitchen Chicken Biryani', description: 'Long grain dum biryani, boiled egg, raita', price: 279, mrp: 340, prepTime: 28, isVeg: false, isPopular: true, categoryIds: ['cat_biryani'] },
+    { id: 'vf3', name: 'Demo Kitchen Paneer Tikka', description: 'Char-grilled paneer, capsicum, mint chutney', price: 249, mrp: 299, prepTime: 18, isVeg: true, isPopular: true, categoryIds: ['cat_biryani'] },
+    { id: 'vf4', name: 'Demo Kitchen Veg Burger', description: 'Crisp patty, aged cheddar, house sauce', price: 159, mrp: 199, prepTime: 12, isVeg: true, categoryIds: ['cat_burgers'] },
+    { id: 'vf5', name: 'Demo Kitchen Farmhouse Pizza', description: 'Wood-fired base, onion, capsicum, corn', price: 329, mrp: 399, prepTime: 22, isVeg: true, categoryIds: ['cat_pizza'] },
+    { id: 'vf6', name: 'Demo Kitchen Garlic Naan', description: 'Tandoor naan, roasted garlic, butter', price: 69, mrp: 89, prepTime: 8, isVeg: true, categoryIds: ['cat_biryani'] },
+    { id: 'vf7', name: 'Demo Kitchen Masala Chowmein', description: 'Wok tossed noodles, veggies, schezwan', price: 149, mrp: 189, prepTime: 14, isVeg: true, categoryIds: ['cat_chowmein'] },
+    { id: 'vf8', name: 'Demo Kitchen Masala Dosa', description: 'Crisp dosa, potato masala, sambar, chutney', price: 129, mrp: 159, prepTime: 15, isVeg: true, categoryIds: ['cat_breakfast'] },
+  ];
+  for (const item of menu) {
+    await FoodItem.updateOne(
+      { id: item.id },
+      {
+        $set: {
+          ...item,
+          restaurantId: outletId,
+          image: { kind: 'uri', uri: `https://picsum.photos/seed/${item.id}/640/480` },
+          isAvailable: true,
+          approvalStatus: 'approved',
+          rating: 4.4,
+          reviews: 80,
+        },
+      },
+      { upsert: true },
+    );
+  }
+  return { outletId, items: menu.length };
+}
+
+/**
+ * Live order board for the demo vendor: one order sitting in every stage so
+ * accept / reject / mark-ready / hand-over can all be exercised end to end.
+ */
+async function seedDemoVendorOrders(vendor, userId) {
+  if (!vendor || !vendor.outletId) return 0;
+  const minsAgo = (m) => new Date(Date.now() - m * 60 * 1000);
+  const daysAgo = (d) => new Date(Date.now() - d * 24 * 60 * 60 * 1000);
+  const line = (refId, name, unitPrice, qty, meta = '') => ({ id: newId('lin'), refId, kind: 'food', name, meta, unitPrice, qty, image: null });
+
+  const board = [
+    {
+      code: 'AUR-VD-40001', status: 'placed', placedAt: minsAgo(3), etaMinutes: 0, payBy: 'cod',
+      items: [line('vf1', 'Demo Kitchen Butter Chicken', 349, 1), line('vf6', 'Demo Kitchen Garlic Naan', 69, 3)],
+      address: '402, Aurora Heights, Civil Lines, Raipur 492001',
+      instructions: 'Less spicy please, ring the bell twice.',
+    },
+    {
+      code: 'AUR-VD-40002', status: 'placed', placedAt: minsAgo(7), etaMinutes: 0, payBy: 'wallet',
+      items: [line('vf5', 'Demo Kitchen Farmhouse Pizza', 329, 1), line('vf7', 'Demo Kitchen Masala Chowmein', 149, 1)],
+      address: 'Flat 9B, Lake View Apartments, Telibandha, Raipur 492006',
+      instructions: '',
+    },
+    {
+      code: 'AUR-VD-40003', status: 'confirmed', placedAt: minsAgo(14), etaMinutes: 20, payBy: 'upi',
+      items: [line('vf2', 'Demo Kitchen Chicken Biryani', 279, 2)],
+      address: 'Tech Park, 5th Floor, GE Road, Raipur 492001',
+      instructions: 'Add extra raita.',
+    },
+    {
+      code: 'AUR-VD-40004', status: 'preparing', placedAt: minsAgo(22), etaMinutes: 12, payBy: 'cod',
+      items: [line('vf3', 'Demo Kitchen Paneer Tikka', 249, 1), line('vf4', 'Demo Kitchen Veg Burger', 159, 2)],
+      address: 'Shop 14, Shankar Nagar Main Road, Raipur 492007',
+      instructions: '',
+    },
+    {
+      code: 'AUR-VD-40005', status: 'out_for_delivery', placedAt: minsAgo(38), etaMinutes: 8, payBy: 'wallet',
+      items: [line('vf8', 'Demo Kitchen Masala Dosa', 129, 2), line('vf7', 'Demo Kitchen Masala Chowmein', 149, 1)],
+      address: 'House 21, Pandri, Raipur 492004',
+      instructions: 'Call on arrival.',
+    },
+    {
+      code: 'AUR-VD-40006', status: 'delivered', placedAt: daysAgo(1), etaMinutes: 0, payBy: 'upi',
+      items: [line('vf1', 'Demo Kitchen Butter Chicken', 349, 2), line('vf6', 'Demo Kitchen Garlic Naan', 69, 2)],
+      address: '77, Devendra Nagar, Raipur 492001',
+      instructions: '',
+      deliveredAt: daysAgo(1),
+      payoutCredited: true,
+    },
+    {
+      code: 'AUR-VD-40007', status: 'delivered', placedAt: daysAgo(2), etaMinutes: 0, payBy: 'cod',
+      items: [line('vf5', 'Demo Kitchen Farmhouse Pizza', 329, 1)],
+      address: '12, Amlidih, Raipur 492006',
+      instructions: '',
+      deliveredAt: daysAgo(2),
+      payoutCredited: true,
+    },
+    {
+      code: 'AUR-VD-40008', status: 'cancelled', placedAt: daysAgo(3), etaMinutes: 0, payBy: 'cod',
+      items: [line('vf2', 'Demo Kitchen Chicken Biryani', 279, 1)],
+      address: '5, Byron Bazar, Raipur 492001',
+      instructions: '',
+      cancelReason: 'Customer changed their mind',
+    },
+  ];
+
+  let written = 0;
+  for (const entry of board) {
+    const existing = await Order.findOne({ code: entry.code });
+    if (existing) continue;
+    const itemTotal = entry.items.reduce((sum, it) => sum + it.unitPrice * it.qty, 0);
+    const deliveryFee = entry.payBy === 'wallet' ? 0 : 25;
+    await Order.create({
+      id: newId('ord'),
+      user: userId,
+      module: 'food',
+      vendorId: vendor.id,
+      outletId: vendor.outletId,
+      itemTotal,
+      deliveryFee,
+      discount: 0,
+      total: itemTotal + deliveryFee,
+      walletPaid: entry.payBy === 'wallet' ? itemTotal + deliveryFee : 0,
+      loyaltyEarned: Math.round(itemTotal / 20),
+      ...entry,
+    });
+    written += 1;
+  }
+  return written;
 }
 
 /** Demo delivery partner for the rider app (phone 9999999991 / rider@123). */
@@ -466,6 +650,8 @@ async function main() {
   const adminUser = await seedAdminUser();
   const partnerApplicants = await seedPartnerApplicants();
   const demoVendor = await seedDemoVendor();
+  const demoOutlet = await seedDemoVendorOutlet(demoVendor);
+  const demoVendorOrders = await seedDemoVendorOrders(demoVendor, demoUser._id);
   const demoRider = await seedDemoRider();
   const demoDelivery = await seedDemoDelivery(demoUser._id);
   const seededOrders = await seedDemoOrders(demoUser._id);
@@ -474,7 +660,9 @@ async function main() {
   console.log('[seed] done ✓');
   console.log('  admin user      → phone ' + adminUser.phone + ' / role ' + adminUser.role);
   if (partnerApplicants.length) console.log('  partner apps    ', partnerApplicants);
-  if (demoVendor) console.log('  demo vendor     → phone', demoVendor.phone, '/ password vendor@123 / food');
+  if (demoVendor) console.log('  demo vendor     → phone', demoVendor.phone, '/ password vendor@123 / food / status', demoVendor.status);
+  if (demoOutlet) console.log('  demo outlet     →', demoOutlet.outletId, 'with', demoOutlet.items, 'menu items');
+  if (demoVendorOrders) console.log('  vendor orders   ', demoVendorOrders, 'seeded on the vendor board');
   if (demoRider) console.log('  demo rider      → phone', demoRider.phone, '/ password rider@123 / approved');
   if (demoDelivery) console.log('  demo delivery   → ready task', demoDelivery.code, '/ pickup 1234 / drop 4321');
   if (seededOrders) console.log('  demo orders     ', seededOrders);

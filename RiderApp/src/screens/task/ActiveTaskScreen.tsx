@@ -361,36 +361,72 @@ export function ActiveTaskScreen(): React.ReactElement {
                   {step + 1} of 4
                 </Text>
               </View>
-              <ProgressBar
-                value={(step + 1) / 4}
-                steps={4}
-                color={colors.success}
-                track={colors.successBg}
-              />
-              <View style={styles.progressLabels}>
-                <Text
-                  variant="caption"
-                  color={step >= 0 ? colors.success : colors.textTertiary}
-                >
-                  Accepted
-                </Text>
-                <Text
-                  variant="caption"
-                  color={step >= 1 ? colors.success : colors.textTertiary}
-                >
-                  Pickup
-                </Text>
-                <Text
-                  variant="caption"
-                  color={step >= 2 ? colors.success : colors.textTertiary}
-                >
-                  On the way
-                </Text>
-                <Text
-                  variant="caption"
-                  color={step >= 3 ? colors.success : colors.textTertiary}
-                >
-                  Delivered
+              <View style={styles.stepProgress}>
+                {FLOW.map((stateName, idx) => {
+                  const completed = step > idx;
+                  const current = step === idx;
+                  const future = step < idx;
+                  const label =
+                    STATE_COPY[stateName] || stateName.replace(/_/g, " ");
+                  return (
+                    <View key={stateName} style={styles.stepItem}>
+                      <View style={styles.stepRow}>
+                        <View
+                          style={[
+                            styles.stepDot,
+                            completed || current
+                              ? { backgroundColor: colors.success }
+                              : { backgroundColor: colors.textTertiary },
+                            current
+                              ? {
+                                  borderColor: colors.success,
+                                  borderWidth: 3,
+                                  backgroundColor: colors.successBg,
+                                  width: 22,
+                                  height: 22,
+                                }
+                              : {},
+                          ]}
+                        >
+                          {completed ? (
+                            <Icon name="check" size={10} color={colors.white} />
+                          ) : null}
+                        </View>
+                        {idx < FLOW.length - 1 ? (
+                          <View
+                            style={[
+                              styles.stepLine,
+                              completed
+                                ? { backgroundColor: colors.success }
+                                : { backgroundColor: colors.border },
+                            ]}
+                          />
+                        ) : null}
+                      </View>
+                      <Text
+                        variant="caption"
+                        weight={current ? "bold" : "semibold"}
+                        color={
+                          completed || current
+                            ? colors.success
+                            : colors.textTertiary
+                        }
+                        style={{
+                          marginTop: 6,
+                          textAlign: "center",
+                          maxWidth: 64,
+                        }}
+                        numberOfLines={1}
+                      >
+                        {label}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+              <View style={styles.progressTop}>
+                <Text variant="caption" weight="bold" color={colors.success}>
+                  {step + 1} of 4 completed
                 </Text>
               </View>
             </Card>
@@ -659,6 +695,35 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 9,
+  },
+  stepProgress: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  stepItem: {
+    flex: 1,
+    alignItems: "center",
+    gap: 4,
+  },
+  stepRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+  },
+  stepDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 2,
+  },
+  stepLine: {
+    height: 3,
+    flex: 1,
+    borderRadius: 2,
   },
   progressLabels: {
     flexDirection: "row",

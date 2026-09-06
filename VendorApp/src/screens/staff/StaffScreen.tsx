@@ -96,7 +96,7 @@ export function StaffScreen({ navigation }: Props): React.ReactElement {
         <View style={{ flex: 1 }}>
           <Text variant="title" weight="bold">Orders-only access</Text>
           <Text variant="bodySm" color={colors.textSecondary} style={{ marginTop: 4 }}>
-            Staff can accept orders, set prep times and mark food ready. They cannot see payouts, edit KYC or remove people.
+            {vendor?.module === 'food' ? 'Staff can accept orders, set prep times and mark food ready. They cannot see payouts, edit KYC or remove people.' : 'Staff can confirm orders, pack them and mark parcels dispatched. They cannot see payouts, edit KYC or remove people.'}
           </Text>
         </View>
       </Card>

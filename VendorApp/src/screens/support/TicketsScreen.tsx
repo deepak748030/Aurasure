@@ -18,11 +18,19 @@ import type { RootStackParamList } from '@/navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Tickets'>;
 
-const TOPICS: { key: string; label: string; icon: IconName; hint: string }[] = [
+const TOPICS_FOOD: { key: string; label: string; icon: IconName; hint: string }[] = [
   { key: 'Payout', label: 'Payout', icon: 'wallet', hint: 'Settlement missing or amount looks wrong' },
   { key: 'Rider', label: 'Rider', icon: 'bike', hint: 'Pickup delay, no rider assigned' },
   { key: 'Order', label: 'Order', icon: 'orders', hint: 'Cancel, refund or a stuck order' },
   { key: 'Menu', label: 'Menu', icon: 'utensils', hint: 'Item pending approval or wrong price' },
+  { key: 'Account', label: 'Account', icon: 'user', hint: 'KYC, bank details or login' },
+  { key: 'Other', label: 'Other', icon: 'helpCircle', hint: 'Anything else' },
+];
+const TOPICS_SHOP: { key: string; label: string; icon: IconName; hint: string }[] = [
+  { key: 'Payout', label: 'Payout', icon: 'wallet', hint: 'Settlement missing or amount looks wrong' },
+  { key: 'Rider', label: 'Rider', icon: 'bike', hint: 'Pickup delay, no delivery partner assigned' },
+  { key: 'Order', label: 'Order', icon: 'orders', hint: 'Cancel, refund or a stuck order' },
+  { key: 'Catalogue', label: 'Catalogue', icon: 'package', hint: 'Product pending approval or wrong price' },
   { key: 'Account', label: 'Account', icon: 'user', hint: 'KYC, bank details or login' },
   { key: 'Other', label: 'Other', icon: 'helpCircle', hint: 'Anything else' },
 ];
@@ -43,6 +51,7 @@ export function TicketsScreen({ navigation }: Props): React.ReactElement {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
+  const TOPICS = vendor?.module === 'food' ? TOPICS_FOOD : TOPICS_SHOP;
   const tickets = useMemo(() => vendor?.issues ?? [], [vendor?.issues]);
   const open = tickets.filter((ticket) => ticket.status !== 'resolved');
   const resolved = tickets.filter((ticket) => ticket.status === 'resolved');

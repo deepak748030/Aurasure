@@ -367,7 +367,13 @@ export function ActiveTaskScreen(): React.ReactElement {
                   const current = step === idx;
                   const future = step < idx;
                   const label =
-                    STATE_COPY[stateName] || stateName.replace(/_/g, " ");
+                    idx === 0
+                      ? "To pickup"
+                      : idx === 1
+                        ? "Pickup"
+                        : idx === 2
+                          ? "To drop"
+                          : "Deliver";
                   return (
                     <View key={stateName} style={styles.stepItem}>
                       <View style={styles.stepRow}>
@@ -379,11 +385,10 @@ export function ActiveTaskScreen(): React.ReactElement {
                               : { backgroundColor: colors.textTertiary },
                             current
                               ? {
+                                  width: 20,
+                                  height: 20,
                                   borderColor: colors.success,
-                                  borderWidth: 3,
-                                  backgroundColor: colors.successBg,
-                                  width: 22,
-                                  height: 22,
+                                  borderWidth: 2,
                                 }
                               : {},
                           ]}

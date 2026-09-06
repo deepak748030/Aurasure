@@ -1,14 +1,16 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useRider } from "@/context/RiderContext";
+import { readIntroSeen } from "@/lib/intro";
 import { colors } from "@/theme/colors";
 import { RiderTabBar } from "@/components/ui/RiderTabBar";
 import { WelcomeScreen } from "@/screens/auth/WelcomeScreen";
 import { LoginScreen } from "@/screens/auth/LoginScreen";
 import { RegisterScreen } from "@/screens/auth/RegisterScreen";
+import { IntroScreen } from "@/screens/onboarding/IntroScreen";
 import { OnboardingScreen } from "@/screens/onboarding/OnboardingScreen";
 import { PendingScreen } from "@/screens/onboarding/PendingScreen";
 import { HomeScreen } from "@/screens/tabs/HomeScreen";
@@ -38,7 +40,13 @@ function MainTabs(): React.ReactElement {
 }
 export function AppNavigator(): React.ReactElement {
   const { rider, ready } = useRider();
-  if (!ready)
+  const [introSeen, setIntroSeen] = useState<boolean | null>(null);
+  useEffect(() => {
+    void readIntroSeen()
+      .then((seen) => setIntroSeen(seen))
+      .catch(() => setIntroSeen(true));
+  }, []);
+  if (!ready || introSeen === null)
     return (
       <View style={styles.loading}>
         <ActivityIndicator color={colors.brand[600]} size="large" />
@@ -56,6 +64,9 @@ export function AppNavigator(): React.ReactElement {
       >
         {!authed ? (
           <>
+            {!introSeen ? (
+              <Stack.Screen name="Intro" component={IntroScreen} />
+            ) : null}
             <Stack.Screen name="Welcome" component={WelcomeScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />

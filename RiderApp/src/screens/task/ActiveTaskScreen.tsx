@@ -28,7 +28,7 @@ import { riderApi, uploadRiderFile, type DeliveryTask } from "@/api/rider";
 import { pickImage } from "@/lib/pickImage";
 import { useRider } from "@/context/RiderContext";
 import { colors } from "@/theme/colors";
-import { formatINR } from "@/lib/format";
+import { formatINR, formatDistance } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
 import type { RootStackParamList } from "@/navigation/types";
 
@@ -99,9 +99,8 @@ export function ActiveTaskScreen(): React.ReactElement {
     setBusy(true);
     try {
       setPod(
-        (
-          await uploadRiderFile(image.blob, image.name, image.uri, image.mime)
-        ).url,
+        (await uploadRiderFile(image.blob, image.name, image.uri, image.mime))
+          .url,
       );
     } catch (err) {
       setError(
@@ -170,7 +169,11 @@ export function ActiveTaskScreen(): React.ReactElement {
           variant: "secondary" as const,
           onPress: () => void reportFailure(reason),
         })),
-        { label: "Cancel", variant: "ghost" as const, onPress: () => undefined },
+        {
+          label: "Cancel",
+          variant: "ghost" as const,
+          onPress: () => undefined,
+        },
       ],
     });
   };
@@ -196,12 +199,17 @@ export function ActiveTaskScreen(): React.ReactElement {
   const sos = () => {
     setDialog({
       title: "Send SOS?",
-      message: "This will notify Aurasure operations with your delivery context.",
+      message:
+        "This will notify Aurasure operations with your delivery context.",
       icon: "circleAlert",
       iconColor: colors.danger,
       actions: [
         { label: "Cancel", variant: "secondary", onPress: () => undefined },
-        { label: "Send SOS", variant: "danger", onPress: () => void sendSosRequest() },
+        {
+          label: "Send SOS",
+          variant: "danger",
+          onPress: () => void sendSosRequest(),
+        },
       ],
     });
   };
@@ -211,12 +219,17 @@ export function ActiveTaskScreen(): React.ReactElement {
       message,
       icon: "circleAlert",
       iconColor: colors.warning,
-      actions: [{ label: "Got it", variant: "secondary", onPress: () => undefined }],
+      actions: [
+        { label: "Got it", variant: "secondary", onPress: () => undefined },
+      ],
     });
   };
   const call = (phone: string, label: string) => {
     if (!phone) {
-      showCallError(label, "This contact is not available. Use Help & support instead.");
+      showCallError(
+        label,
+        "This contact is not available. Use Help & support instead.",
+      );
       return;
     }
     Linking.openURL(`tel:${phone}`).catch(() =>
@@ -287,321 +300,331 @@ export function ActiveTaskScreen(): React.ReactElement {
     <>
       <Screen
         title={task.orderCode}
-      subtitle={STATE_COPY[task.state] || task.state.replace(/_/g, " ")}
-      headerLeft={
-        <IconButton icon="chevronLeft" onPress={() => navigation.goBack()} />
-      }
-      headerRight={
-        <IconButton
-          icon="shield"
-          color={colors.danger}
-          background={colors.dangerBg}
-          onPress={sos}
-        />
-      }
-      scroll={false}
-      padded={false}
-    >
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 38 }}
-      >
-        <MapSurface
-          height={238}
-          stops={stops}
-          onMapPress={() =>
-            navigation.navigate("OrderMap", { taskId: task.id })
-          }
-        />
-        <View style={styles.mapTools}>
-          <StatusPill
-            label={STATE_COPY[task.state] || task.state}
-            color={
-              task.state === "at_drop" || task.state === "at_pickup"
-                ? colors.warning
-                : colors.brand[600]
-            }
-            background={
-              task.state === "at_drop" || task.state === "at_pickup"
-                ? colors.warningBg
-                : colors.brand[50]
-            }
-            icon="navigation"
+        subtitle={STATE_COPY[task.state] || task.state.replace(/_/g, " ")}
+        headerLeft={
+          <IconButton icon="chevronLeft" onPress={() => navigation.goBack()} />
+        }
+        headerRight={
+          <IconButton
+            icon="shield"
+            color={colors.danger}
+            background={colors.dangerBg}
+            onPress={sos}
           />
-          <Pressable
-            onPress={() => navigation.navigate("OrderMap", { taskId: task.id })}
-          >
-            <Text variant="caption" weight="bold" color={colors.brand[600]}>
-              Expand map
-            </Text>
-          </Pressable>
-        </View>
-        <View style={styles.content}>
-          <Card style={styles.progressCard}>
-            <View style={styles.progressTop}>
-              <Text variant="title" weight="bold">
-                Delivery progress
-              </Text>
-              <Text variant="caption" color={colors.textSecondary}>
-                {step + 1} of 4
-              </Text>
-            </View>
-            <ProgressBar
-              value={(step + 1) / 4}
-              color={colors.success}
-              track={colors.successBg}
+        }
+        scroll={false}
+        padded={false}
+      >
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 38 }}
+        >
+          <MapSurface
+            height={238}
+            stops={stops}
+            onMapPress={() =>
+              navigation.navigate("OrderMap", { taskId: task.id })
+            }
+          />
+          <View style={styles.mapTools}>
+            <StatusPill
+              label={STATE_COPY[task.state] || task.state}
+              color={
+                task.state === "at_drop" || task.state === "at_pickup"
+                  ? colors.warning
+                  : colors.brand[600]
+              }
+              background={
+                task.state === "at_drop" || task.state === "at_pickup"
+                  ? colors.warningBg
+                  : colors.brand[50]
+              }
+              icon="navigation"
             />
-            <View style={styles.progressLabels}>
-              <Text
-                variant="caption"
-                color={step >= 0 ? colors.success : colors.textTertiary}
-              >
-                Accepted
-              </Text>
-              <Text
-                variant="caption"
-                color={step >= 1 ? colors.success : colors.textTertiary}
-              >
-                Pickup
-              </Text>
-              <Text
-                variant="caption"
-                color={step >= 2 ? colors.success : colors.textTertiary}
-              >
-                On the way
-              </Text>
-              <Text
-                variant="caption"
-                color={step >= 3 ? colors.success : colors.textTertiary}
-              >
-                Delivered
-              </Text>
-            </View>
-          </Card>
-          <Card>
-            <RoutePoint
-              type="pickup"
-              title={task.vendorName || "Pickup point"}
-              address={task.pickup.address}
-            />
-            <RoutePoint
-              type="drop"
-              title={task.drop.name || "Customer"}
-              address={task.drop.address}
-              last
-            />
-          </Card>
-          <View style={styles.contacts}>
             <Pressable
-              onPress={() => call(task.vendorPhone, "Outlet")}
-              style={styles.contact}
+              onPress={() =>
+                navigation.navigate("OrderMap", { taskId: task.id })
+              }
             >
-              <View
-                style={[
-                  styles.contactIcon,
-                  { backgroundColor: colors.warningBg },
-                ]}
-              >
-                <Icon name="store" size={18} color={colors.warning} />
-              </View>
-              <Text variant="caption" weight="bold">
-                Call outlet
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => call(task.drop.phone, "Customer")}
-              style={styles.contact}
-            >
-              <View
-                style={[styles.contactIcon, { backgroundColor: colors.infoBg }]}
-              >
-                <Icon name="phone" size={18} color={colors.info} />
-              </View>
-              <Text variant="caption" weight="bold">
-                Call customer
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => navigation.navigate("Utility", { kind: "help" })}
-              style={styles.contact}
-            >
-              <View
-                style={[
-                  styles.contactIcon,
-                  { backgroundColor: colors.brand[50] },
-                ]}
-              >
-                <Icon name="headset" size={18} color={colors.brand[600]} />
-              </View>
-              <Text variant="caption" weight="bold">
-                Need help
+              <Text variant="caption" weight="bold" color={colors.brand[600]}>
+                Expand map
               </Text>
             </Pressable>
           </View>
-          <Card>
-            <SectionTitle title="Order details" />
-            <View style={{ gap: 7 }}>
-              {task.items.map((item, index) => (
-                <View key={`${item.name}-${index}`} style={styles.item}>
-                  <Text variant="bodySm" style={{ flex: 1 }}>
-                    {item.qty} × {item.name}
-                  </Text>
-                  <Text variant="bodySm" weight="semibold">
-                    {formatINR(item.price * item.qty)}
-                  </Text>
-                </View>
-              ))}
-            </View>
-            <View style={styles.total}>
-              <Text variant="bodySm" color={colors.textSecondary}>
-                Order total
-              </Text>
-              <Text variant="title" weight="bold">
-                {formatINR(task.total)}
-              </Text>
-            </View>
-            <View style={styles.cashLine}>
-              <Icon
-                name={task.codAmount > 0 ? "cash" : "circleCheck"}
-                size={16}
-                color={task.codAmount > 0 ? colors.warning : colors.success}
+          <View style={styles.content}>
+            <Card style={styles.progressCard}>
+              <View style={styles.progressTop}>
+                <Text variant="title" weight="bold">
+                  Delivery progress
+                </Text>
+                <Text variant="caption" color={colors.textSecondary}>
+                  {step + 1} of 4
+                </Text>
+              </View>
+              <ProgressBar
+                value={(step + 1) / 4}
+                steps={4}
+                color={colors.success}
+                track={colors.successBg}
               />
-              <Text
-                variant="caption"
-                weight="bold"
-                color={task.codAmount > 0 ? colors.warning : colors.success}
-              >
-                {task.codAmount > 0
-                  ? `Collect ${formatINR(task.codAmount)} cash`
-                  : "Prepaid · no cash to collect"}
-              </Text>
-            </View>
-          </Card>
-          {error ? (
-            <View style={styles.error}>
-              <Icon name="circleAlert" size={16} color={colors.danger} />
-              <Text variant="caption" color={colors.danger} style={{ flex: 1 }}>
-                {error}
-              </Text>
-            </View>
-          ) : null}
-          {task.state === "accepted" ? (
-            <Button
-              title="I have arrived at pickup"
-              loading={busy}
-              onPress={() => void run(() => riderApi.arrivedPickup(task.id))}
-            />
-          ) : null}
-          {isPickup ? (
-            <Card tone="tint" style={styles.actionCard}>
-              <Text variant="title" weight="bold">
-                Verify pickup
-              </Text>
-              <Text
-                variant="caption"
-                color={colors.textSecondary}
-                style={{ marginBottom: 9 }}
-              >
-                Ask the outlet for the pickup OTP.
-              </Text>
-              <Input
-                label="Pickup OTP"
-                value={pickupOtp}
-                onChangeText={(value) =>
-                  setPickupOtp(value.replace(/\D/g, "").slice(0, 4))
-                }
-                keyboardType="number-pad"
-                placeholder="4 digits"
+              <View style={styles.progressLabels}>
+                <Text
+                  variant="caption"
+                  color={step >= 0 ? colors.success : colors.textTertiary}
+                >
+                  Accepted
+                </Text>
+                <Text
+                  variant="caption"
+                  color={step >= 1 ? colors.success : colors.textTertiary}
+                >
+                  Pickup
+                </Text>
+                <Text
+                  variant="caption"
+                  color={step >= 2 ? colors.success : colors.textTertiary}
+                >
+                  On the way
+                </Text>
+                <Text
+                  variant="caption"
+                  color={step >= 3 ? colors.success : colors.textTertiary}
+                >
+                  Delivered
+                </Text>
+              </View>
+            </Card>
+            <Card>
+              <RoutePoint
+                type="pickup"
+                title={task.vendorName || "Pickup point"}
+                address={task.pickup.address}
               />
-              <Button
-                title="Confirm pickup"
-                variant="success"
-                loading={busy}
-                disabled={pickupOtp.length !== 4}
-                onPress={() =>
-                  void run(() => riderApi.pickup(task.id, pickupOtp))
-                }
+              <RoutePoint
+                type="drop"
+                title={task.drop.name || "Customer"}
+                address={task.drop.address}
+                last
               />
             </Card>
-          ) : null}
-          {task.state === "picked_up" ? (
-            <Button
-              title="I have arrived at drop-off"
-              loading={busy}
-              onPress={() => void run(() => riderApi.arrivedDrop(task.id))}
-            />
-          ) : null}
-          {isDrop ? (
-            <Card tone="tint" style={styles.actionCard}>
-              <Text variant="title" weight="bold">
-                Complete delivery
-              </Text>
-              <Text
-                variant="caption"
-                color={colors.textSecondary}
-                style={{ marginBottom: 9 }}
+            <View style={styles.contacts}>
+              <Pressable
+                onPress={() => call(task.vendorPhone, "Outlet")}
+                style={styles.contact}
               >
-                Ask the customer for the OTP. Do not share your OTP.
-              </Text>
-              <Input
-                label="Customer OTP"
-                value={dropOtp}
-                onChangeText={(value) =>
-                  setDropOtp(value.replace(/\D/g, "").slice(0, 4))
-                }
-                keyboardType="number-pad"
-                placeholder="4 digits"
-              />
-              <Pressable onPress={() => void uploadPod()} style={styles.pod}>
-                <View style={styles.podIcon}>
-                  {pod ? (
-                    <Image source={{ uri: pod }} style={styles.podImage} />
-                  ) : (
-                    <Icon name="camera" size={20} color={colors.brand[600]} />
-                  )}
+                <View
+                  style={[
+                    styles.contactIcon,
+                    { backgroundColor: colors.warningBg },
+                  ]}
+                >
+                  <Icon name="store" size={18} color={colors.warning} />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text variant="title" weight="semibold">
-                    Proof of delivery
-                  </Text>
-                  <Text variant="caption" color={colors.textSecondary}>
-                    {pod
-                      ? "Photo attached · tap to replace"
-                      : task.total >= 2000
-                        ? "Required for high-value order"
-                        : "Add a photo if you leave it at the door"}
-                  </Text>
-                </View>
-                <Icon
-                  name="chevronRight"
-                  size={18}
-                  color={colors.textTertiary}
-                />
+                <Text variant="caption" weight="bold">
+                  Call outlet
+                </Text>
               </Pressable>
-              <Input
-                label="Delivery note (optional)"
-                value={note}
-                onChangeText={setNote}
-                multiline
-                placeholder="Left with security…"
-              />
-              <Button
-                title="Mark as delivered"
-                variant="success"
-                loading={busy}
-                disabled={dropOtp.length !== 4}
-                onPress={() => void complete()}
-              />
+              <Pressable
+                onPress={() => call(task.drop.phone, "Customer")}
+                style={styles.contact}
+              >
+                <View
+                  style={[
+                    styles.contactIcon,
+                    { backgroundColor: colors.infoBg },
+                  ]}
+                >
+                  <Icon name="phone" size={18} color={colors.info} />
+                </View>
+                <Text variant="caption" weight="bold">
+                  Call customer
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => navigation.navigate("Utility", { kind: "help" })}
+                style={styles.contact}
+              >
+                <View
+                  style={[
+                    styles.contactIcon,
+                    { backgroundColor: colors.brand[50] },
+                  ]}
+                >
+                  <Icon name="headset" size={18} color={colors.brand[600]} />
+                </View>
+                <Text variant="caption" weight="bold">
+                  Need help
+                </Text>
+              </Pressable>
+            </View>
+            <Card>
+              <SectionTitle title="Order details" />
+              <View style={{ gap: 7 }}>
+                {task.items.map((item, index) => (
+                  <View key={`${item.name}-${index}`} style={styles.item}>
+                    <Text variant="bodySm" style={{ flex: 1 }}>
+                      {item.qty} × {item.name}
+                    </Text>
+                    <Text variant="bodySm" weight="semibold">
+                      {formatINR(item.price * item.qty)}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+              <View style={styles.total}>
+                <Text variant="bodySm" color={colors.textSecondary}>
+                  Order total
+                </Text>
+                <Text variant="title" weight="bold">
+                  {formatINR(task.total)}
+                </Text>
+              </View>
+              <View style={styles.cashLine}>
+                <Icon
+                  name={task.codAmount > 0 ? "cash" : "circleCheck"}
+                  size={16}
+                  color={task.codAmount > 0 ? colors.warning : colors.success}
+                />
+                <Text
+                  variant="caption"
+                  weight="bold"
+                  color={task.codAmount > 0 ? colors.warning : colors.success}
+                >
+                  {task.codAmount > 0
+                    ? `Collect ${formatINR(task.codAmount)} cash`
+                    : "Prepaid · no cash to collect"}
+                </Text>
+              </View>
             </Card>
-          ) : null}
-          <Pressable onPress={fail} style={styles.problem}>
-            <Icon name="circleAlert" size={16} color={colors.danger} />
-            <Text variant="caption" weight="bold" color={colors.danger}>
-              Report a delivery problem
-            </Text>
-          </Pressable>
-        </View>
-      </ScrollView>
+            {error ? (
+              <View style={styles.error}>
+                <Icon name="circleAlert" size={16} color={colors.danger} />
+                <Text
+                  variant="caption"
+                  color={colors.danger}
+                  style={{ flex: 1 }}
+                >
+                  {error}
+                </Text>
+              </View>
+            ) : null}
+            {task.state === "accepted" ? (
+              <Button
+                title="I have arrived at pickup"
+                loading={busy}
+                onPress={() => void run(() => riderApi.arrivedPickup(task.id))}
+              />
+            ) : null}
+            {isPickup ? (
+              <Card tone="tint" style={styles.actionCard}>
+                <Text variant="title" weight="bold">
+                  Verify pickup
+                </Text>
+                <Text
+                  variant="caption"
+                  color={colors.textSecondary}
+                  style={{ marginBottom: 9 }}
+                >
+                  Ask the outlet for the pickup OTP.
+                </Text>
+                <Input
+                  label="Pickup OTP"
+                  value={pickupOtp}
+                  onChangeText={(value) =>
+                    setPickupOtp(value.replace(/\D/g, "").slice(0, 4))
+                  }
+                  keyboardType="number-pad"
+                  placeholder="4 digits"
+                />
+                <Button
+                  title="Confirm pickup"
+                  variant="success"
+                  loading={busy}
+                  disabled={pickupOtp.length !== 4}
+                  onPress={() =>
+                    void run(() => riderApi.pickup(task.id, pickupOtp))
+                  }
+                />
+              </Card>
+            ) : null}
+            {task.state === "picked_up" ? (
+              <Button
+                title="I have arrived at drop-off"
+                loading={busy}
+                onPress={() => void run(() => riderApi.arrivedDrop(task.id))}
+              />
+            ) : null}
+            {isDrop ? (
+              <Card tone="tint" style={styles.actionCard}>
+                <Text variant="title" weight="bold">
+                  Complete delivery
+                </Text>
+                <Text
+                  variant="caption"
+                  color={colors.textSecondary}
+                  style={{ marginBottom: 9 }}
+                >
+                  Ask the customer for the OTP. Do not share your OTP.
+                </Text>
+                <Input
+                  label="Customer OTP"
+                  value={dropOtp}
+                  onChangeText={(value) =>
+                    setDropOtp(value.replace(/\D/g, "").slice(0, 4))
+                  }
+                  keyboardType="number-pad"
+                  placeholder="4 digits"
+                />
+                <Pressable onPress={() => void uploadPod()} style={styles.pod}>
+                  <View style={styles.podIcon}>
+                    {pod ? (
+                      <Image source={{ uri: pod }} style={styles.podImage} />
+                    ) : (
+                      <Icon name="camera" size={20} color={colors.brand[600]} />
+                    )}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text variant="title" weight="semibold">
+                      Proof of delivery
+                    </Text>
+                    <Text variant="caption" color={colors.textSecondary}>
+                      {pod
+                        ? "Photo attached · tap to replace"
+                        : task.total >= 2000
+                          ? "Required for high-value order"
+                          : "Add a photo if you leave it at the door"}
+                    </Text>
+                  </View>
+                  <Icon
+                    name="chevronRight"
+                    size={18}
+                    color={colors.textTertiary}
+                  />
+                </Pressable>
+                <Input
+                  label="Delivery note (optional)"
+                  value={note}
+                  onChangeText={setNote}
+                  multiline
+                  placeholder="Left with security…"
+                />
+                <Button
+                  title="Mark as delivered"
+                  variant="success"
+                  loading={busy}
+                  disabled={dropOtp.length !== 4}
+                  onPress={() => void complete()}
+                />
+              </Card>
+            ) : null}
+            <Pressable onPress={fail} style={styles.problem}>
+              <Icon name="circleAlert" size={16} color={colors.danger} />
+              <Text variant="caption" weight="bold" color={colors.danger}>
+                Report a delivery problem
+              </Text>
+            </Pressable>
+          </View>
+        </ScrollView>
       </Screen>
       <RiderModal
         visible={Boolean(dialog)}

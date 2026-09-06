@@ -18,7 +18,7 @@ import { Icon } from "@/lib/icons";
 import { IconButton, StatusPill } from "@/components/ui/RiderUI";
 import { riderApi, type DeliveryTask } from "@/api/rider";
 import { colors } from "@/theme/colors";
-import { formatINR } from "@/lib/format";
+import { formatINR, formatDistance } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
 import type { RootStackParamList } from "@/navigation/types";
 
@@ -201,119 +201,130 @@ export function OrderMapScreen({
     setDialog({
       title,
       message,
-      actions: [{ label: "Got it", variant: "secondary", onPress: () => undefined }],
+      actions: [
+        { label: "Got it", variant: "secondary", onPress: () => undefined },
+      ],
     });
   return (
     <>
       <View style={styles.container}>
-      <MapSurface height={height} stops={stops} onLocate={() => undefined} />
-      <View style={[styles.top, { paddingTop: Math.max(insets.top, 12) }]}>
-        <IconButton icon="chevronLeft" onPress={() => navigation.goBack()} />
-        <View style={styles.topTitle}>
-          <Text variant="caption" weight="bold" color={colors.text}>
-            {task.orderCode}
-          </Text>
-          <Text variant="caption" color={colors.textSecondary}>
-            {label}
-          </Text>
-        </View>
-        <IconButton
-          icon="phone"
-          onPress={() =>
-            Linking.openURL(
-              `tel:${["available", "accepted", "at_pickup"].includes(task.state) ? task.vendorPhone : task.drop.phone}`,
-            ).catch(() => showDialog("Call", "Contact unavailable."))
-          }
-        />
-      </View>
-      <View
-        style={[styles.bottom, { paddingBottom: Math.max(insets.bottom, 16) }]}
-      >
-        <View style={styles.sheetHandle} />
-        <View style={styles.stateLine}>
-          <StatusPill
-            label={label}
-            color={stateColor}
-            background={`${stateColor}18`}
-            icon="navigation"
-          />
-          <Text variant="h2" weight="bold" color={colors.success}>
-            {formatINR(task.riderPayout)}
-          </Text>
-        </View>
-        <Text variant="title" weight="bold" style={{ marginTop: 10 }}>
-          {task.vendorName} → {task.drop.name}
-        </Text>
-        <Text
-          variant="bodySm"
-          color={colors.textSecondary}
-          numberOfLines={2}
-          style={{ marginTop: 3 }}
-        >
-          {["accepted", "at_pickup"].includes(task.state)
-            ? task.pickup.address
-            : task.drop.address}
-        </Text>
-        <View style={styles.mapMeta}>
-          <View style={styles.mapMetaItem}>
-            <Icon name="package" size={15} color={colors.textSecondary} />
+        <MapSurface height={height} stops={stops} />
+        <View style={[styles.top, { paddingTop: Math.max(insets.top, 12) }]}>
+          <IconButton icon="chevronLeft" onPress={() => navigation.goBack()} />
+          <View style={styles.topTitle}>
+            <Text variant="caption" weight="bold" color={colors.text}>
+              {task.orderCode}
+            </Text>
             <Text variant="caption" color={colors.textSecondary}>
-              {task.items.length} items
+              {label}
             </Text>
           </View>
-          <View style={styles.mapMetaItem}>
-            <Icon
-              name={task.codAmount > 0 ? "cash" : "circleCheck"}
-              size={15}
-              color={task.codAmount > 0 ? colors.warning : colors.success}
+          <IconButton
+            icon="phone"
+            onPress={() =>
+              Linking.openURL(
+                `tel:${["available", "accepted", "at_pickup"].includes(task.state) ? task.vendorPhone : task.drop.phone}`,
+              ).catch(() => showDialog("Call", "Contact unavailable."))
+            }
+          />
+        </View>
+        <View
+          style={[
+            styles.bottom,
+            { paddingBottom: Math.max(insets.bottom, 16) },
+          ]}
+        >
+          <View style={styles.sheetHandle} />
+          <View style={styles.stateLine}>
+            <StatusPill
+              label={label}
+              color={stateColor}
+              background={`${stateColor}18`}
+              icon="navigation"
             />
+            <Text variant="h2" weight="bold" color={colors.success}>
+              {formatINR(task.riderPayout)}
+            </Text>
+          </View>
+          <Text variant="title" weight="bold" style={{ marginTop: 10 }}>
+            {task.vendorName} → {task.drop.name}
+          </Text>
+          <Text
+            variant="bodySm"
+            color={colors.textSecondary}
+            numberOfLines={2}
+            style={{ marginTop: 3 }}
+          >
+            {["accepted", "at_pickup"].includes(task.state)
+              ? task.pickup.address
+              : task.drop.address}
+          </Text>
+          <View style={styles.mapMeta}>
+            <View style={styles.mapMetaItem}>
+              <Icon name="package" size={15} color={colors.textSecondary} />
+              <Text variant="caption" color={colors.textSecondary}>
+                {task.items.length} items
+              </Text>
+            </View>
+            <View style={styles.mapMetaItem}>
+              <Icon
+                name={task.codAmount > 0 ? "cash" : "circleCheck"}
+                size={15}
+                color={task.codAmount > 0 ? colors.warning : colors.success}
+              />
+              <Text
+                variant="caption"
+                color={task.codAmount > 0 ? colors.warning : colors.success}
+              >
+                {task.codAmount > 0
+                  ? `COD ${formatINR(task.codAmount)}`
+                  : "Prepaid"}
+              </Text>
+            </View>
+            <View style={styles.mapMetaItem}>
+              <Icon name="navigation" size={15} color={colors.textSecondary} />
+              <Text variant="caption" color={colors.textSecondary}>
+                {formatDistance(task.distanceKm)}
+              </Text>
+            </View>
+          </View>
+          {error ? (
             <Text
               variant="caption"
-              color={task.codAmount > 0 ? colors.warning : colors.success}
+              color={colors.danger}
+              style={{ marginVertical: 7 }}
             >
-              {task.codAmount > 0
-                ? `COD ${formatINR(task.codAmount)}`
-                : "Prepaid"}
+              {error}
             </Text>
+          ) : null}
+          <View style={styles.actions}>
+            <View style={{ flex: 1 }}>
+              <Button
+                title="Navigate"
+                variant="secondary"
+                size="sm"
+                leftIcon="navigation"
+                onPress={() => openMaps(task, showDialog)}
+              />
+            </View>
+            <View style={{ flex: 1.4 }}>
+              <Button
+                title={
+                  task.state === "available"
+                    ? "Back to offer"
+                    : task.state === "accepted"
+                      ? "Arrived at pickup"
+                      : task.state === "picked_up"
+                        ? "Arrived at drop"
+                        : "Open delivery"
+                }
+                size="sm"
+                loading={busy}
+                onPress={() => void action()}
+              />
+            </View>
           </View>
         </View>
-        {error ? (
-          <Text
-            variant="caption"
-            color={colors.danger}
-            style={{ marginVertical: 7 }}
-          >
-            {error}
-          </Text>
-        ) : null}
-        <View style={styles.actions}>
-          <View style={{ flex: 1 }}>
-            <Button
-              title="Navigate"
-              variant="secondary"
-              size="sm"
-              leftIcon="navigation"
-              onPress={() => openMaps(task, showDialog)}
-            />
-          </View>
-          <View style={{ flex: 1.4 }}>
-            <Button
-              title={
-                task.state === "available"
-                  ? "Back to offer"
-                  : task.state === "accepted"
-                    ? "Arrived at pickup"
-                    : task.state === "picked_up"
-                      ? "Arrived at drop"
-                      : "Open delivery"
-              }
-              size="sm"
-              loading={busy}
-              onPress={() => void action()}
-            />
-          </View>
-        </View>
-      </View>
       </View>
       <RiderModal
         visible={Boolean(dialog)}

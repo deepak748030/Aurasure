@@ -14,6 +14,7 @@ const config = require('./config/env');
 const { connectDB, disconnectDB } = require('./config/db');
 const { newId } = require('./utils/id');
 const seed = require('./seed/data');
+const { seedDemoWorld } = require('./seed/demo');
 
 const FoodCategory = require('./models/FoodCategory');
 const FoodVibe = require('./models/FoodVibe');
@@ -656,6 +657,7 @@ async function main() {
   const demoDelivery = await seedDemoDelivery(demoUser._id);
   const seededOrders = await seedDemoOrders(demoUser._id);
   const normalizedDemoOrders = await normalizeDemoOrders(demoUser._id);
+  const demoWorld = await seedDemoWorld({ demoUser, foodVendor: demoVendor, rider: demoRider });
 
   console.log('[seed] done ✓');
   console.log('  admin user      → phone ' + adminUser.phone + ' / role ' + adminUser.role);
@@ -682,6 +684,16 @@ async function main() {
   console.log('  app settings    ', appSettings);
   console.log('  notifications   ', notifications);
   console.log(`  demo user       → phone ${demoUser.phone} / password ${process.env.SEED_USER_PASSWORD || 'aurasure123'}`);
+  console.log('  ---- demo world ----');
+  if (demoWorld.shopVendor) console.log('  shop vendor     → phone', demoWorld.shopVendor, '/ password vendor@123 / shop / approved');
+  console.log('  extra customers ', demoWorld.customers, '(9812345001-3 / aurasure123)');
+  console.log('  shop products   ', demoWorld.shopProducts, '(1 left pending for the approval queue)');
+  console.log('  shop orders     ', demoWorld.shopOrders);
+  console.log('  rider tasks     ', demoWorld.riderTasks, '(available / accepted / picked_up / delivered)');
+  console.log('  support tickets ', demoWorld.tickets, '(open / in_progress / resolved)');
+  console.log('  vendor issues   ', demoWorld.vendorIssues);
+  console.log('  notifications   ', demoWorld.notifications);
+  console.log('  payments        ', demoWorld.payments, '(paid + failed)');
 
   await disconnectDB();
   process.exit(0);

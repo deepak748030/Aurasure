@@ -7,7 +7,6 @@
     "scheme": "aurasurevendor",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "entryPoint": "index.js",
     "icon": "./assets/images/icon.png",
     "splash": {
       "image": "./assets/images/splash-icon.png",
@@ -32,7 +31,6 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#B5165F"
       },
-      "navigationBarColor": "#F8F6F3",
       "permissions": [
         "POST_NOTIFICATIONS",
         "VIBRATE",
